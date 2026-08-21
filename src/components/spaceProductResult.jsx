@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "react-bootstrap";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -14,22 +14,7 @@ function SpaceProductResult({ data, space, getDriveImageUrl }) {
   const [isExporting, setIsExporting] = useState(false);
   const pdfRef = useRef(null);
 
-  useEffect(() => {
-    if (!space?.length) return;
-    setSelectedOptions((previous) => {
-      const newSelectedOptions = { ...previous };
-      space.forEach((item) => {
-        const availableOptions = getOptions(item);
-        const currentValue = newSelectedOptions[item.id];
-        if (!availableOptions.includes(currentValue)) {
-          newSelectedOptions[item.id] = availableOptions[0] || "";
-        }
-      });
-      return newSelectedOptions;
-    });
-  }, [space, data?.id]);
-
-  const getOptions = (item) => {
+  const getOptions = useCallback((item) => {
     if (String(item?.id) === "2") {
       if (String(data?.id) === "2") {
         return [item?.option_2, item?.option_3].filter(Boolean);
@@ -47,7 +32,22 @@ function SpaceProductResult({ data, space, getDriveImageUrl }) {
       item?.option_8,
       item?.option_9,
     ].filter(Boolean);
-  };
+  }, [data?.id]);
+
+  useEffect(() => {
+    if (!space?.length) return;
+    setSelectedOptions((previous) => {
+      const newSelectedOptions = { ...previous };
+      space.forEach((item) => {
+        const availableOptions = getOptions(item);
+        const currentValue = newSelectedOptions[item.id];
+        if (!availableOptions.includes(currentValue)) {
+          newSelectedOptions[item.id] = availableOptions[0] || "";
+        }
+      });
+      return newSelectedOptions;
+    });
+  }, [space, data?.id, getOptions]);
 
   const handleSelectOption = (itemId, value) => {
     setSelectedOptions((previous) => ({
