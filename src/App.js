@@ -4,7 +4,6 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Link,
   BrowserRouter,
 } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";

@@ -49,22 +49,6 @@ function SpaceProductResult({ data, space, getDriveImageUrl }) {
     }));
   };
 
-  // const waitForImages = async (element) => {
-  //   const images = Array.from(element.querySelectorAll("img"));
-
-  //   await Promise.all(
-  //     images.map((image) => {
-  //       if (image.complete && image.naturalWidth > 0) {
-  //         return Promise.resolve();
-  //       }
-
-  //       return new Promise((resolve) => {
-  //         image.onload = resolve;
-  //         image.onerror = resolve;
-  //       });
-  //     }),
-  //   );
-  // };
 
   const waitForImages = async (element) => {
     const images = Array.from(element.querySelectorAll("img"));

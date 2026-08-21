@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, Col, Image, Row } from "react-bootstrap";
 import WizardPage from "./WizardPage";
 import AdvancedPage from "./AdvancedPage";
 import Header from "./header";
 import LoadingPage from "./LoadingPage";
 
 function MainPage({ sheet, mode }) {
-  // 🔴 ตรงนี้ใช้แค่ SHEET_URL ตัวเดียวพอครับ
   const [links, setLinks] = useState({
     question: [],
     ans_small: [],
