@@ -16,29 +16,51 @@ function SpaceProductResult({ data, space, getDriveImageUrl }) {
   const pdfRef = useRef(null);
 
   // กำหนดค่าเริ่มต้นเป็น option_1
-  useEffect(() => {
-    if (!space?.length) return;
+useEffect(() => {
+  if (!space?.length) return;
 
-    setSelectedOptions((previous) => {
-      const initialValues = { ...previous };
+  setSelectedOptions((previous) => {
+    const newSelectedOptions = { ...previous };
 
-      space.forEach((item) => {
-        if (initialValues[item.id] === undefined && item.option_1) {
-          initialValues[item.id] = item.option_1;
-        }
-      });
+    space.forEach((item) => {
+      const availableOptions = getOptions(item);
+      const currentValue = newSelectedOptions[item.id];
 
-      return initialValues;
+      // ถ้าค่าเดิมไม่ได้อยู่ในตัวเลือกที่อนุญาต
+      // ให้เลือกตัวเลือกแรกอัตโนมัติ
+      if (!availableOptions.includes(currentValue)) {
+        newSelectedOptions[item.id] = availableOptions[0] || "";
+      }
     });
-  }, [space]);
+
+    return newSelectedOptions;
+  });
+}, [space, data?.id]);
 
   const getOptions = (item) => {
+    // เงื่อนไขเฉพาะแถว Sigen Battery
+    if (String(item.id) === "2") {
+      // ถ้าสินค้าที่เลือกมี data.id === 2
+      // แสดงเฉพาะ option_2 และ option_3
+      if (String(data?.id) === "2") {
+        return [item.option_2, item.option_3].filter(Boolean);
+      }
+
+      // ถ้า data.id ไม่ใช่ 2 แสดงเฉพาะ option_1
+      return [item.option_1].filter(Boolean);
+    }
+
+    // แถวอื่นแสดงตัวเลือกทั้งหมดตามปกติ
     return [
       item.option_1,
       item.option_2,
       item.option_3,
       item.option_4,
       item.option_5,
+      item.option_6,
+      item.option_7,
+      item.option_8,
+      item.option_9,
     ].filter(Boolean);
   };
 
@@ -48,7 +70,6 @@ function SpaceProductResult({ data, space, getDriveImageUrl }) {
       [itemId]: value,
     }));
   };
-
 
   const waitForImages = async (element) => {
     const images = Array.from(element.querySelectorAll("img"));
@@ -207,26 +228,30 @@ function SpaceProductResult({ data, space, getDriveImageUrl }) {
       </div>
 
       <div className="col-12 text-space p-2">
-        <div>
-          <h5>{detail?.title}</h5>
-
-          <p className="small text-secondary">{detail?.subTitle}</p>
-        </div>
+        {/*   <div>
+          <h5>{detail?.title}</h5> <p className="small text-secondary">{detail?.desc}</p> 
+        </div>*/}
 
         <div className="text-space row">
           {space?.map((item) => {
+
+
             const options = getOptions(item);
             const selectedValue = selectedOptions[item.id];
 
             return (
               <div className="space-data row w-100" key={item.id}>
+
                 <div className="space-left col-6">
                   <h5>{item.title}</h5>
                   <p>{item.sub_title}</p>
                 </div>
 
-                {String(item.id) === "4" ? (
+                {String(item.id) === "3" ||
+                String(item.id) === "4" ||
+                String(item.id) === "5" ? (
                   <div className="space-right col-6">
+
                     <select
                       name={`space-${item.id}`}
                       value={selectedValue || ""}
@@ -284,14 +309,14 @@ function SpaceProductResult({ data, space, getDriveImageUrl }) {
       </div>
 
       <a
-      href="https://lin.ee/ใส่ลิงก์ของคุณ"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="line-floating-button"
-    >
-      <FaLine />
-      <span>ปรึกษาสเปกผ่าน LINE</span>
-    </a>
+        href="https://lin.ee/60uFI44s"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="line-floating-button"
+      >
+        <FaLine />
+        <span>ปรึกษาสเปกผ่าน LINE</span>
+      </a>
 
       {/* ส่วนนี้ใช้สร้างหน้า PDF โดยเฉพาะ */}
       <PdfPage
