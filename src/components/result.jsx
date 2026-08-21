@@ -25,12 +25,6 @@ function ResultPage({ sheet }) {
   const [selectedInverter, setSelectedInverter] = useState(null);
   const [inverterTypes, setInverterTypes] = useState([]); // 👈 เก็บรายการ InverterType เป็น Array
   const [productSelected, setProductSelected] = useState(null);
-  const [isModel, setIsModel] = useState(false);
-  // 🌟 Fetch ข้อมูลจาก Sheet ทั้งหมดใน useEffect เดียว
-
-  const modelSuggest = (isModel) => {
-    setIsModel(isModel);
-  };
 
   const [space, setSpace] = useState([]);
   useEffect(() => {
