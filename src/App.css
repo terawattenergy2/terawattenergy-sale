@@ -1538,24 +1538,41 @@ border-bottom: var(--blue);
     font-size: 22px;
   }
 }
+@media (max-width: 425px) {
+  .inverter-card {
+    padding: none !important;
+        margin-bottom: 10px;
+
+  }
+  .advanced-card-2 {
+    padding: 0px !important;
+    display: block;
+    margin-bottom: 20px;
+  }
+}
 
 @media (max-width: 375px) {
   .inverter-card {
     padding: none !important;
+        margin-bottom: 10px;
+
   }
   .advanced-card-2 {
     padding: 0px !important;
-    margin: 0px;
-    padding: 0px !important;
+    display: block;
+    margin-bottom: 20px;
   }
 }
 @media (max-width: 320px) {
   .inverter-card {
     padding: none !important;
+    margin-bottom: 10px;
   }
   .advanced-card-2 {
     padding: 0px !important;
-    margin: 0px;
+    /* margin: 0px; */
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: block;
+    margin-bottom: 20px;
   }
 }
