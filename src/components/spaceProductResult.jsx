@@ -247,9 +247,9 @@ useEffect(() => {
                   <p>{item.sub_title}</p>
                 </div>
 
-                {String(item.id) === "3" ||
-                String(item.id) === "4" ||
-                String(item.id) === "5" ? (
+                {String(item?.id) === "3" ||
+                String(item?.id) === "4" ||
+                String(item?.id) === "5" ? (
                   <div className="space-right col-6">
 
                     <select
