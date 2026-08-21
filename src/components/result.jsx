@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Form, Row, Col, Image } from "react-bootstrap";
 import SpaceProductResult from "./spaceProductResult";
-import ModelSuggest from "./ModelSuggest";
 import LoadingResult from "./LoadingResult";
 
 const getDriveImageUrl = (url) => {
