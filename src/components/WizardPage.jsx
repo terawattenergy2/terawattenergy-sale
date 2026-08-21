@@ -87,7 +87,7 @@ function WizardPage({ data }) {
           {currentQuestion?.sub_ques || currentQuestion?.subTitle}
         </p>
 
-        <Row className="g-4 mt-2">
+        <Row className="g-3">
           {currentQuestion?.options?.map((option) => (
             <Col
               key={option.id}

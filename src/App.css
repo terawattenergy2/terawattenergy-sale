@@ -367,11 +367,7 @@
 .mode-switch .btn:focus,
 .mode-switch .btn.active {
   color: #ffffff !important;
-  background: linear-gradient(
-    135deg,
-    #1976d2,
-    #4da3ff
-  ) !important;
+  background: linear-gradient(135deg, #1976d2, #4da3ff) !important;
 }
 
 .mode-switch .btn:hover {
@@ -398,7 +394,23 @@
   .main-page {
     padding: 30px;
   }
-
+  .question-card h2 {
+    font-size: 30px;
+  }
+  .question-card p {
+    font-size: 18px;
+    margin-bottom: none;
+  }
+  .option-card h4 {
+    font-size: 18px;
+    margin: none;
+    padding: none;
+  }
+  .option-card p {
+    font-size: 16px;
+    margin: none;
+    padding: none;
+  }
   .header {
     flex-direction: column;
     gap: 20px;
@@ -433,12 +445,12 @@
   }
 
   .header h1 {
-    font-size: 38px;
+    font-size: 30px;
   }
 
   .header p {
     max-width: 320px;
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .header-right {
@@ -1168,7 +1180,6 @@ border-bottom: var(--blue);
   }
 }
 
-
 /* =========================
    PDF
 ========================= */
@@ -1221,11 +1232,7 @@ border-bottom: var(--blue);
 .pdf-customer-section {
   padding: 14px 18px 16px;
   margin-bottom: 18px;
-  background: linear-gradient(
-    135deg,
-    #f8fbfe 0%,
-    #f1f8ff 100%
-  );
+  background: linear-gradient(135deg, #f8fbfe 0%, #f1f8ff 100%);
   border: 1px solid #dceaf5;
   border-left: 4px solid #029cf5;
   border-radius: 10px;
@@ -1240,7 +1247,7 @@ border-bottom: var(--blue);
   border-bottom: 1px solid #dfe9f1;
 }
 
-.pdf-customer-heading h3{
+.pdf-customer-heading h3 {
   color: var(--title);
 }
 .pdf-customer-eyebrow {
@@ -1251,7 +1258,6 @@ border-bottom: var(--blue);
   font-weight: 700;
   letter-spacing: 1px;
 }
-
 
 .pdf-customer-grid {
   display: grid;
@@ -1461,7 +1467,7 @@ border-bottom: var(--blue);
   width: 100%;
   height: auto;
 }
-.btn-space{
+.btn-space {
   background-color: var(--button);
   border: none;
   border-radius: 12px;
@@ -1476,8 +1482,7 @@ border-bottom: var(--blue);
   font-weight: 700;
 }
 
-
-.card-onsize{
+.card-onsize {
   background-color: var(--button-opa);
   border-radius: 20px;
   padding: 20px;
@@ -1531,5 +1536,26 @@ border-bottom: var(--blue);
 
   .line-floating-button svg {
     font-size: 22px;
+  }
+}
+
+@media (max-width: 375px) {
+  .inverter-card {
+    padding: none !important;
+  }
+  .advanced-card-2 {
+    padding: 0px !important;
+    margin: 0px;
+    padding: 0px !important;
+  }
+}
+@media (max-width: 320px) {
+  .inverter-card {
+    padding: none !important;
+  }
+  .advanced-card-2 {
+    padding: 0px !important;
+    margin: 0px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 }
