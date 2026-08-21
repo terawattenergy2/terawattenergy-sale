@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import WizardPage from "./WizardPage";
 import AdvancedPage from "./AdvancedPage";
-import Header from "./header";
 import LoadingPage from "./LoadingPage";
 
 function MainPage({ sheet, mode }) {
