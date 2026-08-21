@@ -1,0 +1,104 @@
+:root {
+  --bg: #f6f8fc;
+  --card: #ffffff;
+
+  --card2: #fafbfd;
+
+  --border: #dce4ef;
+
+  --input: #f4f7fb;
+
+  --title: #1d2433;
+
+  --text: #5f6d7d;
+
+  --blue: #2f80ed;
+
+  --gold: #d18d2b;
+
+  --sub: #6b7280;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --button-opa: #dce9fa;
+  --text-button-opa: #000000;
+
+  --button: #2f80ed;
+  --text2: #000000;
+  --hover: #82e2ff;
+}
+
+.dark {
+  --bg: #0b1117;
+
+  --card: #161b22;
+
+  --card2: #1d2430;
+
+  --border: #2d3748;
+
+  --input: #202938;
+
+  --title: #ffffff;
+
+  --text: #98a3b3;
+
+  --blue: #4da3ff;
+
+  --gold: #e8a64d;
+
+  --sub: #9ca3af;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --button-opa: #000000;
+  --text-button-opa: #dce9fa;
+  --button: #4da3ff;
+
+  --text2: #ffffff;
+  --hover: #82e2ff;
+}
+
+.personal-page {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+  background-color: var(--bg);
+}
+
+.personal-card {
+  width: 100%;
+  max-width: 750px;
+  padding: 35px;
+  background-color: var(--card2);
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+}
+
+.personal-card h2 {
+  margin-bottom: 8px;
+  color: #192033;
+  font-weight: 700;
+}
+
+.personal-card .form-label {
+  color: #344054;
+  font-weight: 600;
+}
+
+.personal-card .form-control {
+  min-height: 48px;
+  padding: 10px 14px;
+  border-color: #d8e0ea;
+  border-radius: 10px;
+}
+
+.personal-card .form-control:focus {
+  border-color: #029cf5;
+  box-shadow: 0 0 0 3px rgba(2, 156, 245, 0.12);
+}
+
+.personal-card button {
+  min-width: 140px;
+  min-height: 46px;
+  border-radius: 10px;
+}
