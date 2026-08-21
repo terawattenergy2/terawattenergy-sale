@@ -8,6 +8,7 @@ export default function AdvancedPage({ data }) {
   const [selectedOptionsPhase, setSelectedOptionsPhase] = useState({});
   const [selectedOptionsEV, setSelectedOptionsEV] = useState({});
   const [dataResult, setDataResult] = useState({});
+  // eslint-disable-next-line no-unused-vars
   const [daytimeBill, setDaytimeBill] = useState(0);
   const [onSize, setOnSize] = useState(false);
   const [systemSize, setSystemSize] = useState(8);

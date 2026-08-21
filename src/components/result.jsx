@@ -131,7 +131,8 @@ function ResultPage({ sheet }) {
   if (!productSelected || productSelected.length === 0) {
     return <LoadingResult className="p-5 text-center"></LoadingResult>;
   }
-
+  
+// eslint-disable-next-line no-unused-vars
   const productDetails =
     productSelected.detail_product
       ?.split(/[,\n]+/)
