@@ -3,6 +3,7 @@ import { Button, Image } from "react-bootstrap";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import SpaceSuggestPdfPage from "./SpaceSuggestPdfPage";
+import { useNavigate } from "react-router-dom";
 
 function SpaceSuggest({ spaceSug, getDriveImageUrl }) {
   const pdfRef = useRef(null);
@@ -135,7 +136,11 @@ function SpaceSuggest({ spaceSug, getDriveImageUrl }) {
       setIsExporting(false);
     }
   };
+    const navigate = useNavigate();
 
+  const handleRestart = () => {
+    navigate("/");
+  };
   return (
     <div className="space-suggest-wrapper">
       {/* Card ที่แสดงบนหน้าเว็บ */}
@@ -256,6 +261,10 @@ function SpaceSuggest({ spaceSug, getDriveImageUrl }) {
 
       {/* ปุ่ม Export อยู่นอกหน้าสำหรับ PDF */}
       <div className="space-suggest-export">
+        <Button variant="outline-secondary" onClick={handleRestart}>
+                    Restart
+                  </Button>
+                 
         <Button
           type="button"
           className="btn-export-pdf"
