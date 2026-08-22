@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Image } from "react-bootstrap";
+import { Row, Col, Image, Button } from "react-bootstrap";
 import SpaceProductResult from "./spaceProductResult";
 import LoadingResult from "./LoadingResult";
+import { FaLine } from "react-icons/fa";
+import SpaceSuggest from "./spaceSuggest";
 
 const getDriveImageUrl = (url) => {
   if (!url) return "";
@@ -25,8 +27,11 @@ function ResultPage({ sheet }) {
   const [selectedInverter, setSelectedInverter] = useState(null);
   const [inverterTypes, setInverterTypes] = useState([]); // 👈 เก็บรายการ InverterType เป็น Array
   const [productSelected, setProductSelected] = useState(null);
-
+  const [isCustom, setIsCustom] = useState(false);
   const [space, setSpace] = useState([]);
+  const [spaceSug, setSpaceSug] = useState();
+  const [spaceSugOpen, setSpaceSugOpen] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -49,13 +54,7 @@ function ResultPage({ sheet }) {
             }));
 
             setInverterTypes(formattedInverterTypes);
-
-            // เลือกตัวแรกเป็นค่าเริ่มต้น
-            setSelectedInverter((previous) => {
-              return previous || formattedInverterTypes[0];
-            });
           }
-  
 
           // 🎯 2. ดึงและ Match ข้อมูลตาราง answer
           if (result.data.answer) {
@@ -118,6 +117,29 @@ function ResultPage({ sheet }) {
 
   const inverterSug =
     matchedProducts.length > 0 ? matchedProducts[0].ans_product : "SigenStor";
+  const inverterShortSug = matchedProducts[0]?.short || "";
+
+  useEffect(() => {
+    if (inverterTypes.length === 0) return;
+
+    const normalizedShort = String(inverterShortSug).trim().toLowerCase();
+    const suggestedInverter = normalizedShort
+      ? inverterTypes.find(
+          (inverter) =>
+            String(inverter.short).trim().toLowerCase() === normalizedShort,
+        )
+      : null;
+
+    setSelectedInverter((previous) => {
+      if (suggestedInverter) return suggestedInverter;
+
+      const previousStillExists = inverterTypes.find(
+        (inverter) => String(inverter.id) === String(previous?.id),
+      );
+
+      return previousStillExists || inverterTypes[0];
+    });
+  }, [inverterTypes, inverterShortSug]);
 
   const desSug =
     matchedProducts.length > 0
@@ -128,17 +150,18 @@ function ResultPage({ sheet }) {
     setSelectedInverter(value);
   };
 
-  if (!productSelected || productSelected.length === 0) {
+  if (!productSelected) {
     return <LoadingResult className="p-5 text-center"></LoadingResult>;
   }
-  
-// eslint-disable-next-line no-unused-vars
-  const productDetails =
-    productSelected.detail_product
-      ?.split(/[,\n]+/)
-      .map((detail) => detail.trim())
-      .filter(Boolean) || [];
 
+  const handleOpenSpace = () => {
+    setIsCustom(!isCustom);
+  };
+
+  const handleSelectSug = (item) => {
+    setSpaceSug(item);
+    setSpaceSugOpen(true);
+  };
   return (
     <Row>
       <Col xs={12}>
@@ -164,7 +187,11 @@ function ResultPage({ sheet }) {
                     : [];
 
                   return (
-                    <div key={item.id || idx} className="col-12 col-lg-6">
+                    <div
+                      key={item.id || idx}
+                      className="col-12 col-lg-6"
+                      onClick={() => handleSelectSug(item)}
+                    >
                       <div className="sug-inverter-card h-100 p-3 rounded">
                         <h4 className="text-center border-bottom mb-4 pb-3">
                           Option {idx + 1}
@@ -178,7 +205,6 @@ function ResultPage({ sheet }) {
                               className="product-image me-md-3"
                             />
                           )}
-
                           <div className="flex-grow-1">
                             <h3 className="mb-3">{item.ans_product}</h3>
 
@@ -213,6 +239,11 @@ function ResultPage({ sheet }) {
                   );
                 })}
               </div>
+              <div className="space-open" onClick={handleOpenSpace}>
+                <Button className="btn-space">
+                  {isCustom ? "ย้อนกลับ" : "ปรับแต่งด้วยตนเอง"}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="p-4 my-3 rounded border text-center">
@@ -221,59 +252,33 @@ function ResultPage({ sheet }) {
           )}
         </div>
 
+        {spaceSugOpen && !isCustom && (
+          <SpaceSuggest
+            // getDriveImageUrl={getDriveImageUrl}
+            spaceSug={spaceSug}
+            getDriveImageUrl={getDriveImageUrl}
+          />
+        )}
         {/*--- 2. เลือกประเภทอินเวอร์เตอร์ (ดึงจาก Tab: InverterType) --- */}
-        <div className="advanced-card mt-4 card-text">
-          <h3>เลือกประเภทอินเวอร์เตอร์</h3>
-          <p className="text-secondary small">
-            Hybrid / SigenStor / Micro — แต่ละแบบเหมาะกับสถานการณ์ต่างกัน{" "}
-          </p>
-          <div className="advanced-card-2 mt-4 card-text">
-            {inverterTypes.map((inverter) => (
-              <div
-                key={inverter.id}
-                className={`inverter-card ${
-                  selectedInverter?.id === inverter.id ? "active" : ""
-                }`}
-                onClick={() => handleSelect(inverter)}
-              >
-                <div className="inverter-header">
-                  {inverter.image && (
-                    <Image
-                      className="inverter-image"
-                      src={inverter.image}
-                      alt={inverter.label}
-                      style={{
-                        width: "100%",
-                        height: "160px",
-                        objectFit: "contain",
-                      }}
-                    />
-                  )}
-                </div>
-
-                <div className="inverter-body">
-                  <h3>{inverter.label}</h3>
-                  <p>{inverter.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>{" "}
-        </div>
-
-        {/* ----------------- 3. สเปกระบบ ----------------- */}
-        <div className="advanced-card mt-4 card-text">
-          <h2>ปรับแต่งสเปกระบบ</h2>
-          <p className="small text-secondary">
-            {" "}
-            เพิ่ม/ลดจำนวนโมดูล เปลี่ยนขนาดอินเวอร์เตอร์
-            หรือเปิด-ปิดอุปกรณ์เสริมได้ตามหน้างานจริง{" "}
-          </p>
+        {isCustom && (
           <SpaceProductResult
             data={selectedInverter}
             space={space}
             getDriveImageUrl={getDriveImageUrl}
-          />{" "}
-        </div>
+            inverterTypes={inverterTypes}
+            selectedInverter={selectedInverter}
+            handleSelect={handleSelect}
+          />
+        )}
+        <a
+          href="https://lin.ee/60uFI44s"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="line-floating-button"
+        >
+          <FaLine />
+          <span>ปรึกษาสเปกผ่าน LINE</span>
+        </a>
       </Col>
     </Row>
   );
