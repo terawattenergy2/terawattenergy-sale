@@ -3,6 +3,7 @@ import { Button, Col, Row } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import LoadingPage from "./LoadingPage";
 import PersonalPage from "./personalPage";
+import { IoHome } from "react-icons/io5";
 
 function WizardPage({ data }) {
 
@@ -37,6 +38,7 @@ function WizardPage({ data }) {
       },
     });
   };
+
   // 3. ปรับฟังก์ชันเลือก ให้เก็บทั้ง optionId, title (หรือ value) เข้าไปใน Object เดียวกัน
   const handleSelect = (questionId, optionId, optionValue, optionTitle) => {
     setSelect(optionId);
@@ -108,7 +110,8 @@ function WizardPage({ data }) {
                   )
                 }
               >
-                <div className="option-icon">☀️</div>
+                <div className="option-icon"><IoHome />
+</div>
                 <h4>{option.title || option.ans}</h4>
                 <p>{option.subTitle || option.sub_ans}</p>
               </div>
