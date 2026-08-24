@@ -10,7 +10,7 @@ function PdfPage({
   personalData,
   detail,
   selectedOptions,
-  optionCus
+  optionCus,
 }) {
   return (
     <div className="pdf-export-wrapper">
@@ -152,7 +152,8 @@ function PdfPage({
                 </div>
               </div>
             ))}
-            <div className="pdf-spec-row" key={optionCus.id}>
+            {data?.label === "SigenStor" ? (
+              <div className="pdf-spec-row" key={optionCus.id}>
                 <div className="pdf-spec-title">
                   <strong>{optionCus.title}</strong>
 
@@ -163,6 +164,9 @@ function PdfPage({
                   {selectedOptions[optionCus.id] || "-"}
                 </div>
               </div>
+            ) : (
+              <></>
+            )}
           </div>
 
           <div className="pdf-footer">

@@ -42,29 +42,72 @@ function SpaceProductResult({
     },
     [data?.id],
   );
+  const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    if (!space?.length) return;
-    setSelectedOptions((previous) => {
-      const newSelectedOptions = { ...previous };
-      space.forEach((item) => {
-        const availableOptions = getOptions(item);
-        const currentValue = newSelectedOptions[item.id];
-        if (!availableOptions.includes(currentValue)) {
-          newSelectedOptions[item.id] = availableOptions[0] || "";
-        }
-      });
-      return newSelectedOptions;
-    });
-  }, [space, data?.id, getOptions]);
+    setSelectedOptions({});
+    setCurrentStep(0);
+  }, [data?.id, data?.short]);
 
+  const optionCus = {
+    id: "5",
+    title: "ชุดชาร์จ EV แบบ DC",
+    sub_title: "รุ่น 12 kW ( สามารถอัพเกรด เป็นรุ่น 25Kw ได้)",
+    type: "stor",
+    option_1: "ไม่ติดตั้ง",
+    option_2: "ติดตั้ง",
+    option_3: "ติดตั้ง พร้อม License 25 KW",
+  };
   const handleSelectOption = (itemId, value) => {
-    setSelectedOptions((previous) => ({
-      ...previous,
-      [itemId]: value,
-    }));
+    const currentIndex = space?.findIndex(
+      (item) => String(item.id) === String(itemId),
+    );
+
+    setSelectedOptions((previous) => {
+      const updatedOptions = {
+        ...previous,
+        [itemId]: value,
+      };
+
+      // ถ้าเปลี่ยนคำตอบข้อก่อนหน้า ให้ล้างคำตอบข้อหลัง
+      if (currentIndex >= 0) {
+        space.slice(currentIndex + 1).forEach((nextItem) => {
+          delete updatedOptions[nextItem.id];
+        });
+
+        if (optionCus?.id !== undefined) {
+          delete updatedOptions[optionCus.id];
+        }
+      }
+
+      return updatedOptions;
+        scrollToNextQuestion(itemId);
+
+    });
+
+    // เลือกข้อนี้แล้ว ให้เปิดคำถามข้อถัดไป
+    if (currentIndex >= 0) {
+      setCurrentStep(currentIndex + 1);
+    }
   };
 
+  const visibleSpace = space?.slice(0, currentStep + 1) || [];
+
+  const hasAnswer = (value) => {
+    return value !== undefined && value !== null && value !== "";
+  };
+
+  const isMainCompleted =
+    space?.length > 0 &&
+    currentStep >= space.length &&
+    space.every((item) => hasAnswer(selectedOptions[item.id]));
+
+  const hasExtraQuestion = data?.label === "SigenStor";
+
+  const isExtraCompleted =
+    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
+
+  const isFormCompleted = isMainCompleted && isExtraCompleted;
   const waitForImages = async (element) => {
     const images = Array.from(element.querySelectorAll("img"));
     await Promise.all(
@@ -337,15 +380,27 @@ function SpaceProductResult({
     return getOptions(item);
   };
 
-  const optionCus = {
-    id: "5",
-    title: "ชุดชาร์จ EV แบบ DC",
-    sub_title: "รุ่น 12 kW ( สามารถอัพเกรด เป็นรุ่น 25Kw ได้)",
-    type: "stor",
-    option_1: "ไม่ติดตั้ง",
-    option_2: "ติดตั้ง",
-    option_3: "ติดตั้ง พร้อม License 25 KW",
-  };
+  const scrollToNextQuestion = (currentQuestionId) => {
+  setTimeout(() => {
+    const questions = Array.from(
+      document.querySelectorAll(".progressive-question")
+    );
+
+    const currentIndex = questions.findIndex(
+      (question) =>
+        String(question.dataset.questionId) === String(currentQuestionId)
+    );
+
+    const nextQuestion = questions[currentIndex + 1];
+
+    if (nextQuestion) {
+      nextQuestion.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, 150);
+};
 
   return (
     <div>
@@ -401,38 +456,65 @@ function SpaceProductResult({
         </div>
         <div className="col-12 text-space p-2">
           <div className="text-space row">
-            {space?.map((item) => {
+            {visibleSpace.map((item, index) => {
+              // ข้อแรกแสดงทันที
+              // ข้อถัดไปจะแสดงเมื่อข้อก่อนหน้าทั้งหมดมีคำตอบแล้ว
+              const canShow =
+                index === 0 ||
+                space
+                  .slice(0, index)
+                  .every((previousItem) =>
+                    hasAnswer(selectedOptions[previousItem.id]),
+                  );
+
+              if (!canShow) return null;
+
               const options = getMatchedOptions(item);
-              const selectedValue = selectedOptions[item.id];
+              const selectedValue = selectedOptions[item.id] || "";
+
+              const isSelectQuestion =
+                String(item?.id) === "3" ||
+                String(item?.id) === "4" ||
+                String(item?.id) === "5";
+
               return (
-                <div className="space-data row w-100" key={item.id}>
+                <div
+                  className="space-data row w-100 progressive-question"
+                  key={item.id}
+                >
                   <div className="space-left col-6">
                     <h5>{item.title}</h5>
                     <p>{item.sub_title}</p>
                   </div>
-                  {String(item?.id) === "3" ||
-                  String(item?.id) === "4" ||
-                  String(item?.id) === "5" ? (
+
+                  {isSelectQuestion ? (
                     <div className="space-right col-6">
                       <select
                         name={`space-${item.id}`}
-                        value={selectedValue || ""}
+                        value={selectedValue}
                         onChange={(event) =>
                           handleSelectOption(item.id, event.target.value)
                         }
                       >
-                        {options.map((option) => (
-                          <option key={option} value={option}>
+                        <option value="" disabled>
+                          กรุณาเลือก
+                        </option>
+
+                        {options.map((option, optionIndex) => (
+                          <option
+                            key={`${item.id}-${option}-${optionIndex}`}
+                            value={option}
+                          >
                             {option}
                           </option>
                         ))}
                       </select>
                     </div>
                   ) : (
-                    <div className="space-right col-6">
-                      {options.map((option, index) => (
+                    <div className=" row w-100 progressive-question space-right col-6">
+                      {options.map((option, optionIndex) => (
                         <Button
-                          key={`${item.id}-${option}-${index}`}
+                          key={`${item.id}-${option}-${optionIndex}`}
                           className="me-2 mb-2 btn-space"
                           variant={
                             selectedValue === option
@@ -449,45 +531,53 @@ function SpaceProductResult({
                 </div>
               );
             })}
-            {data.label === "SigenStor" ? (
-              <div className="space-data row w-100">
+            {data?.label === "SigenStor" && isMainCompleted && (
+              <div className="space-data row w-100 progressive-question">
                 <div className="space-left col-6">
                   <h5>{optionCus.title}</h5>
                   <p>{optionCus.sub_title}</p>
                 </div>
+
                 <div className="space-right col-6">
                   <select
                     name={`space-${optionCus.id}`}
+                    value={selectedOptions[optionCus.id] || ""}
                     onChange={(event) =>
                       handleSelectOption(optionCus.id, event.target.value)
                     }
-                    value={selectedOptions[optionCus.id] || ""}
                   >
+                    <option value="" disabled>
+                      กรุณาเลือก
+                    </option>
+
                     <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
+
                     <option value="ติดตั้ง">{optionCus.option_2}</option>
+
                     <option value="ติดตั้ง พร้อม License 25 KW">
                       {optionCus.option_3}
                     </option>
                   </select>
                 </div>
               </div>
-            ) : (
-              <></>
             )}
           </div>
         </div>
-        <div className="d-flex gap-3 mt-3">
-          <Button variant="outline-secondary" onClick={handleRestart}>
-            Restart
-          </Button>
-          <Button
-            variant="outline-success"
-            onClick={handleExportPDF}
-            disabled={isExporting}
-          >
-            {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
-          </Button>
-        </div>
+        {isFormCompleted && (
+          <div className="d-flex gap-3 mt-3">
+            <Button variant="outline-secondary" onClick={handleRestart}>
+              Restart
+            </Button>
+
+            <Button
+              variant="outline-success"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+            >
+              {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
+            </Button>
+          </div>
+        )}
 
         <PdfPage
           pdfRef={pdfRef}
