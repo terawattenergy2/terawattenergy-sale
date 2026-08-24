@@ -10,6 +10,7 @@ function PdfPage({
   personalData,
   detail,
   selectedOptions,
+  optionCus
 }) {
   return (
     <div className="pdf-export-wrapper">
@@ -151,6 +152,17 @@ function PdfPage({
                 </div>
               </div>
             ))}
+            <div className="pdf-spec-row" key={optionCus.id}>
+                <div className="pdf-spec-title">
+                  <strong>{optionCus.title}</strong>
+
+                  {optionCus.sub_title && <small>{optionCus.sub_title}</small>}
+                </div>
+
+                <div className="pdf-spec-value">
+                  {selectedOptions[optionCus.id] || "-"}
+                </div>
+              </div>
           </div>
 
           <div className="pdf-footer">

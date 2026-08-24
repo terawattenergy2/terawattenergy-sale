@@ -15,6 +15,8 @@ export default function AdvancedPage({ data }) {
   const [dailyEnergy, setDailyEnergy] = useState(18);
   const [backupEnergy, setBackupEnergy] = useState(10);
   const [budgetLevel, setBudgetLevel] = useState(8);
+
+
   const phase = [
     {
       id: 0,
