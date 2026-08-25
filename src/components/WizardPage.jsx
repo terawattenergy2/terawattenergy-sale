@@ -6,7 +6,6 @@ import PersonalPage from "./personalPage";
 import { IoHome } from "react-icons/io5";
 
 function WizardPage({ data }) {
-
   useEffect(() => {
     localStorage.removeItem("personal_data");
   }, []);
@@ -26,6 +25,7 @@ function WizardPage({ data }) {
   useEffect(() => {
     localStorage.setItem("wizard_answers", JSON.stringify(answers));
   }, [answers]);
+  console.log("answers", answers[0].value);
 
   const currentQuestion = question[step];
   const handlePersonalComplete = (personalData) => {
@@ -90,33 +90,80 @@ function WizardPage({ data }) {
         </p>
 
         <Row className="g-3">
-          {currentQuestion?.options?.map((option) => (
+          {answers[0].value === "large" && step === 1 ? (
             <Col
-              key={option.id}
+              key={currentQuestion?.options[1]?.id}
               xs={12}
-              sm={6}
-              lg={12 / currentQuestion?.options?.length}
+              sm={12}
+              lg={12 / currentQuestion?.options[1]?.length}
             >
-              <div
-                className={`option-card h-100 ${
-                  select === option.id ? "active" : ""
-                }`}
-                onClick={() =>
-                  handleSelect(
-                    currentQuestion?.id,
-                    option.id,
-                    option.value,
-                    option.title || option.ans,
-                  )
-                }
-              >
-                <div className="option-icon"><IoHome />
-</div>
-                <h4>{option.title || option.ans}</h4>
-                <p>{option.subTitle || option.sub_ans}</p>
-              </div>
+              <>
+                {" "}
+                <div
+                  className={`option-card h-100 ${
+                    select === currentQuestion?.options[1]?.id ? "active" : ""
+                  }`}
+                  onClick={() =>
+                    handleSelect(
+                      currentQuestion?.id,
+                      currentQuestion?.options[1]?.id,
+                      currentQuestion?.options[1]?.value,
+                      currentQuestion?.options[1]?.title ||
+                        currentQuestion?.options[1]?.ans,
+                    )
+                  }
+                >
+                  <div className="option-icon">
+                    <IoHome />
+                  </div>
+
+                  <h4>
+                    {currentQuestion?.options[1]?.title ||
+                      currentQuestion?.options[1]?.ans}
+                  </h4>
+                  <p>
+                    {currentQuestion?.options[1]?.subTitle ||
+                      currentQuestion?.options[1]?.sub_ans}
+                  </p>
+                </div>
+              </>
             </Col>
-          ))}
+          ) : (
+            <>
+              {currentQuestion?.options?.map((option) => (
+                <Col
+                  key={option.id}
+                  xs={12}
+                  sm={6}
+                  lg={12 / currentQuestion?.options?.length}
+                >
+                  <>
+                    {" "}
+                    <div
+                      className={`option-card h-100 ${
+                        select === option.id ? "active" : ""
+                      }`}
+                      onClick={() =>
+                        handleSelect(
+                          currentQuestion?.id,
+                          option.id,
+                          option.value,
+                          option.title || option.ans,
+                        )
+                      }
+                    >
+                      <div className="option-icon">
+                        <IoHome />
+                      </div>
+
+                      <h4>{option.title || option.ans}</h4>
+                      <p>{option.subTitle || option.sub_ans}</p>
+                    </div>
+                  </>
+                </Col>
+              ))}
+            </>
+          )}
         </Row>
 
         <div className="d-flex justify-content-between mt-5">

@@ -254,11 +254,12 @@ function ResultPage({ sheet }) {
             </div>
           ) : (
             <div className="p-4 my-3 rounded border text-center">
-              <Button variant="outline-secondary" onClick={handleRestart}>
-                <div>
+              {" "}
+              <div className="d-flex justify-content-center mb-3">
+                <Button variant="outline-secondary" onClick={handleRestart}>
                   <IoRefresh /> Restart{" "}
-                </div>
-              </Button>
+                </Button>{" "}
+              </div>
               ไม่พบสินค้าที่ตรงกับคำตอบของคุณ
             </div>
           )}
