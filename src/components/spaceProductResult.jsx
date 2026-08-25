@@ -669,6 +669,46 @@ function SpaceProductResult({
           Hybrid / SigenStor / Micro — แต่ละแบบเหมาะกับสถานการณ์ต่างกัน{" "}
         </p>
         <div className="advanced-card-2 mt-4 card-text">
+          {inverterTypes.map((inverter) => {
+            const isSelected =
+              String(selectedInverter?.id) === String(inverter.id);
+
+            return (
+              <div
+                key={inverter.id}
+                className={`inverter-card ${
+                  isSelected ? "inverter-card-selected" : ""
+                }`}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                onClick={() => handleSelect(inverter)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleSelect(inverter);
+                  }
+                }}
+              >
+                <div className="inverter-header">
+                  {inverter.image && (
+                    <Image
+                      className="inverter-image"
+                      src={inverter.image}
+                      alt={inverter.label}
+                    />
+                  )}
+                </div>
+
+                <div className="inverter-body">
+                  <h3>{inverter.label}</h3>
+                  <p>{inverter.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {/* <div className="advanced-card-2 mt-4 card-text">
           {inverterTypes.map((inverter) => (
             <div
               key={inverter.id}
@@ -706,7 +746,7 @@ function SpaceProductResult({
               </div>
             </div>
           ))}
-        </div>{" "}
+        </div>{" "} */}
       </div>
       <div className="advanced-card card-text">
         <h2>ปรับแต่งสเปกระบบ</h2>
