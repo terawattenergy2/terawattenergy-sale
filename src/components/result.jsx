@@ -37,7 +37,7 @@ function ResultPage({ sheet }) {
   const handleRestart = () => {
     navigate("/");
   };
-  
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -169,7 +169,6 @@ function ResultPage({ sheet }) {
     setSpaceSugOpen(true);
   };
 
-
   return (
     <Row>
       <Col xs={12}>
@@ -256,8 +255,9 @@ function ResultPage({ sheet }) {
           ) : (
             <div className="p-4 my-3 rounded border text-center">
               <Button variant="outline-secondary" onClick={handleRestart}>
-                <IoRefresh />
-                Restart
+                <div>
+                  <IoRefresh /> Restart{" "}
+                </div>
               </Button>
               ไม่พบสินค้าที่ตรงกับคำตอบของคุณ
             </div>
