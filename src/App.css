@@ -663,13 +663,6 @@ body {
   border-radius: 16px;
 }
 
-.space-data > .space-left,
-.space-data > .space-right {
-  width: 100%;
-  max-width: none;
-  min-width: 0;
-  padding: 0;
-}
 
 .space-left h5 {
   margin: 0 0 5px;
@@ -685,8 +678,23 @@ body {
   line-height: 1.55;
 }
 
+.space-data > .space-left,
+.space-data > .space-right, 
+.space-data > .space-center  {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  padding: 0;
+}
+
+
 .space-right {
   gap: 10px;
+}
+
+.space-center {
+  gap: 10px;
+  background-color: var(--blue);
 }
 
 .bg-secon {
@@ -1120,7 +1128,36 @@ border-bottom: var(--blue);
   color: var(--text2);
   background-color: var(--card2);
 }
+.option-2-neo{
+   position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  gap: 10px;
+}
+/* fd */
+.space-center {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  gap: 10px;
+}
 
+.space-data-default{
+  background-color: var(--card2);
+  /* gap: 24px; */
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+
+}
 @media (max-width: 767px) {
   .col-12.text-space {
     gap: 18px;
@@ -1128,10 +1165,23 @@ border-bottom: var(--blue);
     border-radius: 18px;
   }
 
+  .space-data-default.row {
+    /* grid-template-columns: minmax(0, 1fr); */
+    gap: 16px;
+    padding: 17px;
+  }
+
   .space-data.row {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     padding: 17px;
+  }
+
+  .space-data-default > .space-left,
+  .space-data-default > .space-right {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
   }
 
   .space-data > .space-left,
@@ -1171,6 +1221,9 @@ border-bottom: var(--blue);
   }
 
   .space-data.row {
+    padding: 14px;
+  }
+.space-data-default.row {
     padding: 14px;
   }
 
@@ -2228,4 +2281,281 @@ html {
 .progressive-question {
   scroll-margin-top: 120px;
   animation: showQuestion 0.35s ease;
+  
+}
+#target-section {
+  scroll-margin-top: 20px; 
+}
+
+/* ==============================
+   SIGEN MICRO CONFIGURATOR
+================================ */
+
+.micro-configurator {
+  --micro-primary: #1681f8;
+  --micro-primary-dark: #0865d7;
+  --micro-primary-light: #eaf3ff;
+  --micro-border: #dce5f1;
+  --micro-text: #202839;
+  --micro-muted: #70798a;
+}
+
+.micro-configurator > .text-space {
+  gap: 22px;
+  margin: 0;
+}
+
+/* กล่องคำถาม Phase */
+.micro-configurator .space-data {
+  margin: 0;
+  padding: 30px 38px;
+  align-items: center;
+  background: var(--card2);
+  border: 1px solid var(--micro-border);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(32, 75, 120, 0.04);
+}
+
+.micro-configurator .space-left h5 {
+  margin: 0 0 10px;
+  color: var(--micro-text);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.micro-configurator .space-left p {
+  margin: 0;
+  color: var(--micro-muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ปุ่ม Phase */
+.micro-configurator .space-right {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.micro-configurator .btn-space {
+  min-height: 58px;
+  margin: 10px !important;
+  padding: 13px 20px;
+  border: 1.5px solid var(--micro-primary);
+  border-radius: 16px;
+  /* font-size: 16px; */
+  font-weight: 600;
+  box-shadow: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.micro-configurator .btn-space.btn-outline-primary {
+  color: var(--micro-primary);
+  background: var(--micro-primary-light);
+}
+
+.micro-configurator .btn-space.btn-outline-primary:hover {
+  color: var(--text2);
+  background: var(--micro-primary);
+  border-color: var(--micro-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(22, 129, 248, 0.18);
+}
+
+.micro-configurator .btn-space.btn-primary {
+  color: var(--bg);
+  background: linear-gradient(
+    135deg,
+    var(--micro-primary-dark),
+    #49a3ff
+  );
+  border-color: transparent;
+  box-shadow: 0 8px 20px var(--shadow);
+}
+
+/* ตัวเลือกขนาด Inverter */
+.micro-configurator .option-2-neo {
+  margin: 0;
+  padding: 2px 24px;
+}
+
+.micro-configurator .option-2-neo > .d-flex {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(180px, 280px));
+  gap: 14px;
+  padding: 0;
+}
+
+.micro-configurator .option-2-neo .btn-space {
+  width: 100%;
+}
+
+/* กล่องรายการอุปกรณ์ */
+.micro-product-list {
+  width: 100%;
+  overflow: hidden;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(35, 72, 112, 0.05);
+}
+
+.micro-product-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px;
+  align-items: center;
+  min-height: 105px;
+  padding-left: 34px;
+  border-bottom: 1px solid #e6ecf4;
+}
+
+.micro-product-row:last-child {
+  border-bottom: 0;
+}
+
+.micro-product-info {
+  min-width: 0;
+  padding: 20px 28px 20px 0;
+}
+
+.micro-product-info h5 {
+  margin: 0 0 7px;
+  color: var(--micro-text);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.micro-product-info p {
+  margin: 0;
+  color: var(--micro-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* กล่องจำนวน */
+.micro-product-count {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  color: #ffffff;
+  background: linear-gradient(
+    145deg,
+    var(--micro-primary-dark),
+    #4ca6ff
+  );
+}
+
+.micro-product-count span {
+  margin-bottom: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.88;
+}
+
+.micro-product-count strong {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Animation ตอนคำตอบใหม่แสดง */
+.micro-configurator .progressive-question {
+
+  animation: microFadeIn 0.35s ease both;
+}
+
+@keyframes microFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tablet / Mobile */
+@media (max-width: 768px) {
+  .micro-configurator .space-data {
+    padding: 24px;
+    background-color: var(--card2);
+  }
+
+  .micro-configurator .space-left,
+  .micro-configurator .space-right {
+    width: 100% !important;
+  }
+
+  .micro-configurator .space-left {
+    margin-bottom: 20px;
+  }
+
+  .micro-configurator .option-2-neo {
+    padding: 0;
+  }
+
+  .micro-configurator .option-2-neo > .d-flex {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .micro-product-row {
+    grid-template-columns: minmax(0, 1fr) 100px;
+    min-height: 95px;
+    padding-left: 20px;
+  }
+
+  .micro-product-info {
+    padding: 16px 16px 16px 0;
+  }
+
+  .micro-product-info h5 {
+    font-size: 17px;
+  }
+
+  .micro-product-count {
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 520px) {
+  .micro-configurator .space-right,
+  .micro-configurator .option-2-neo > .d-flex {
+    grid-template-columns: 1fr;
+  }
+
+  .micro-configurator .btn-space {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .micro-product-row {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    padding-left: 16px;
+  }
+
+  .micro-product-info h5 {
+    font-size: 15px;
+  }
+
+  .micro-product-info p {
+    font-size: 13px;
+  }
+
+  .micro-product-count {
+    min-width: 76px;
+  }
+
+  .micro-product-count strong {
+    font-size: 20px;
+  }
 }

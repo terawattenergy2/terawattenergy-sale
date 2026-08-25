@@ -19,6 +19,220 @@ function SpaceProductResult({
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isExporting, setIsExporting] = useState(false);
   const pdfRef = useRef(null);
+  const MICRO_SIZE_KEY = "microSize";
+  const sugMicro = [
+    {
+      id: 0,
+      type: 3,
+
+      phase: [
+        {
+          id: 0,
+          title: "1 phase",
+          options: [
+            {
+              id: 0,
+              title: "3 kw (Single Phase)",
+              detail: [
+                {
+                  id: 0,
+                  title: "SigenMicro 1000",
+                  des: "SigenMicro Inverter 1000W 2-in-1",
+                  count: "3",
+                },
+                {
+                  id: 1,
+                  title: "SigenMicro AC Trunk-20P-2.3M-2.5",
+                  des: "SigenMicro AC Cable Kit-20-230-2.5",
+                  count: "3",
+                },
+                {
+                  id: 2,
+                  title: "Sigen Sensor SP-CT100-WI for SigenMicro [New]",
+                  des: "Sigen Power Sensor Single Phase CT 100A Wireless",
+                  count: "1",
+                },
+                {
+                  id: 3,
+                  title: "SigenMicro AC Trunk Terminator",
+                  des: "SigenMicro AC Trunk Terminator",
+                  count: "1",
+                },
+                {
+                  id: 4,
+                  title: "SigenMicro AC Trunk Coupler",
+                  des: "SigenMicro AC Trunk Coupler",
+                  count: "1",
+                },
+                {
+                  id: 5,
+                  title: "SigenMicro AC Branch Unlock Tool",
+                  des: "SigenMicro AC Branch Unlock Tool",
+                  count: "1",
+                },
+                {
+                  id: 6,
+                  title: "SigenMicro AC Trunk Unlock Tool",
+                  des: "SigenMicro AC Trunk Unlock Tool",
+                  count: "1",
+                },
+              ],
+            },
+            {
+              id: 1,
+              title: "5 kw (Single Phase)",
+              detail: [
+                {
+                  id: 0,
+                  title: "SigenMicro 1000",
+                  des: "SigenMicro Inverter 1000W 2-in-1",
+                  count: "5",
+                },
+                {
+                  id: 1,
+                  title: "SigenMicro AC Trunk-20P-2.3M-4.0",
+                  des: "SigenMicro AC Cable Kit-20-230-2.5",
+                  count: "5",
+                },
+                {
+                  id: 2,
+                  title: "Sigen Sensor SP-CT100-WI for SigenMicro [New]",
+                  des: "Sigen Power Sensor Single Phase CT 100A Wireless",
+                  count: "1",
+                },
+                {
+                  id: 3,
+                  title: "SigenMicro AC Trunk Terminator",
+                  des: "SigenMicro AC Trunk Terminator",
+                  count: "1",
+                },
+                {
+                  id: 4,
+                  title: "SigenMicro AC Trunk Coupler",
+                  des: "SigenMicro AC Trunk Coupler",
+                  count: "1",
+                },
+                {
+                  id: 5,
+                  title: "SigenMicro AC Branch Unlock Tool",
+                  des: "SigenMicro AC Branch Unlock Tool",
+                  count: "1",
+                },
+                {
+                  id: 6,
+                  title: "SigenMicro AC Trunk Unlock Tool",
+                  des: "SigenMicro AC Trunk Unlock Tool",
+                  count: "1",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: 0,
+          title: "3 phase",
+          options: [
+            {
+              id: 0,
+              title: "9 kw (Three Phase)",
+              detail: [
+                {
+                  id: 0,
+                  title: "SigenMicro 1000",
+                  des: "SigenMicro Inverter 1000W 2-in-1",
+                  count: "9",
+                },
+                {
+                  id: 1,
+                  title: "SigenMicro AC Trunk-20P-2.3M-2.5",
+                  des: "SigenMicro AC Cable Kit-20-230-2.5",
+                  count: "9",
+                },
+                {
+                  id: 2,
+                  title: "Sigen Sensor SP-CT100-WI for SigenMicro [New]",
+                  des: "Sigen Power Sensor Single Phase CT 100A Wireless",
+                  count: "1",
+                },
+                {
+                  id: 3,
+                  title: "SigenMicro AC Trunk Terminator",
+                  des: "SigenMicro AC Trunk Terminator",
+                  count: "3",
+                },
+                {
+                  id: 4,
+                  title: "SigenMicro AC Trunk Coupler",
+                  des: "SigenMicro AC Trunk Coupler",
+                  count: "3",
+                },
+                {
+                  id: 5,
+                  title: "SigenMicro AC Branch Unlock Tool",
+                  des: "SigenMicro AC Branch Unlock Tool",
+                  count: "1",
+                },
+                {
+                  id: 6,
+                  title: "SigenMicro AC Trunk Unlock Tool",
+                  des: "SigenMicro AC Trunk Unlock Tool",
+                  count: "1",
+                },
+              ],
+            },
+            {
+              id: 1,
+              title: "15 kw (Three Phase)",
+              detail: [
+                {
+                  id: 0,
+                  title: "SigenMicro 1000",
+                  des: "SigenMicro Inverter 1000W 2-in-1",
+                  count: "15",
+                },
+                {
+                  id: 1,
+                  title: "SigenMicro AC Trunk-20P-2.3M-4.0",
+                  des: "SigenMicro AC Cable Kit-20-230-2.5",
+                  count: "15",
+                },
+                {
+                  id: 2,
+                  title: "Sigen Sensor SP-CT100-WI for SigenMicro [New]",
+                  des: "Sigen Power Sensor Single Phase CT 100A Wireless",
+                  count: "1",
+                },
+                {
+                  id: 3,
+                  title: "SigenMicro AC Trunk Terminator",
+                  des: "SigenMicro AC Trunk Terminator",
+                  count: "3",
+                },
+                {
+                  id: 4,
+                  title: "SigenMicro AC Trunk Coupler",
+                  des: "SigenMicro AC Trunk Coupler",
+                  count: "3",
+                },
+                {
+                  id: 5,
+                  title: "SigenMicro AC Branch Unlock Tool",
+                  des: "SigenMicro AC Branch Unlock Tool",
+                  count: "1",
+                },
+                {
+                  id: 6,
+                  title: "SigenMicro AC Trunk Unlock Tool",
+                  des: "SigenMicro AC Trunk Unlock Tool",
+                  count: "1",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
 
   const getOptions = useCallback(
     (item) => {
@@ -58,6 +272,7 @@ function SpaceProductResult({
     option_2: "ติดตั้ง",
     option_3: "ติดตั้ง พร้อม License 25 KW",
   };
+
   const handleSelectOption = (itemId, value) => {
     const currentIndex = space?.findIndex(
       (item) => String(item.id) === String(itemId),
@@ -69,7 +284,6 @@ function SpaceProductResult({
         [itemId]: value,
       };
 
-      // ถ้าเปลี่ยนคำตอบข้อก่อนหน้า ให้ล้างคำตอบข้อหลัง
       if (currentIndex >= 0) {
         space.slice(currentIndex + 1).forEach((nextItem) => {
           delete updatedOptions[nextItem.id];
@@ -80,16 +294,38 @@ function SpaceProductResult({
         }
       }
 
-      return updatedOptions;
-        scrollToNextQuestion(itemId);
+      // ถ้า Micro เปลี่ยน Phase ให้ล้างขนาดที่เคยเลือก
+      if (String(data?.id) === "3" && String(itemId) === "0") {
+        delete updatedOptions[MICRO_SIZE_KEY];
+      }
 
+      return updatedOptions;
     });
 
-    // เลือกข้อนี้แล้ว ให้เปิดคำถามข้อถัดไป
     if (currentIndex >= 0) {
       setCurrentStep(currentIndex + 1);
     }
+
+    scrollToNextQuestion(itemId);
   };
+
+  const selectedMicroPhase = sugMicro[0]?.phase.find(
+    (phase) => phase.title === selectedOptions["0"],
+  );
+
+  const selectedMicroSize = selectedMicroPhase?.options.find(
+    (option) => option.title === selectedOptions[MICRO_SIZE_KEY],
+  );
+
+  // const isMicro = String(data?.id) === "3";
+
+  // const isMicroCompleted =
+  //   hasAnswer(selectedOptions["0"]) &&
+  //   hasAnswer(selectedOptions[MICRO_SIZE_KEY]);
+
+  // const isFormCompleted = isMicro
+  //   ? isMicroCompleted
+  //   : isMainCompleted && isExtraCompleted;
 
   const visibleSpace = space?.slice(0, currentStep + 1) || [];
 
@@ -381,26 +617,26 @@ function SpaceProductResult({
   };
 
   const scrollToNextQuestion = (currentQuestionId) => {
-  setTimeout(() => {
-    const questions = Array.from(
-      document.querySelectorAll(".progressive-question")
-    );
+    setTimeout(() => {
+      const questions = Array.from(
+        document.querySelectorAll(".progressive-question"),
+      );
 
-    const currentIndex = questions.findIndex(
-      (question) =>
-        String(question.dataset.questionId) === String(currentQuestionId)
-    );
+      const currentIndex = questions.findIndex(
+        (question) =>
+          String(question.dataset.questionId) === String(currentQuestionId),
+      );
 
-    const nextQuestion = questions[currentIndex + 1];
+      const nextQuestion = questions[currentIndex + 1];
 
-    if (nextQuestion) {
-      nextQuestion.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, 150);
-};
+      if (nextQuestion) {
+        nextQuestion.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 150);
+  };
 
   return (
     <div>
@@ -454,115 +690,202 @@ function SpaceProductResult({
         <div>
           <h4 className="mt-4 mb-4">{data?.label}</h4>
         </div>
-        <div className="col-12 text-space p-2">
-          <div className="text-space row">
-            {visibleSpace.map((item, index) => {
-              // ข้อแรกแสดงทันที
-              // ข้อถัดไปจะแสดงเมื่อข้อก่อนหน้าทั้งหมดมีคำตอบแล้ว
-              const canShow =
-                index === 0 ||
-                space
-                  .slice(0, index)
-                  .every((previousItem) =>
-                    hasAnswer(selectedOptions[previousItem.id]),
-                  );
-
-              if (!canShow) return null;
-
-              const options = getMatchedOptions(item);
-              const selectedValue = selectedOptions[item.id] || "";
-
-              const isSelectQuestion =
-                String(item?.id) === "3" ||
-                String(item?.id) === "4" ||
-                String(item?.id) === "5";
-
-              return (
-                <div
-                  className="space-data row w-100 progressive-question"
-                  key={item.id}
-                >
-                  <div className="space-left col-6">
-                    <h5>{item.title}</h5>
-                    <p>{item.sub_title}</p>
-                  </div>
-
-                  {isSelectQuestion ? (
-                    <div className="space-right col-6">
-                      <select
-                        name={`space-${item.id}`}
-                        value={selectedValue}
-                        onChange={(event) =>
-                          handleSelectOption(item.id, event.target.value)
-                        }
-                      >
-                        <option value="" disabled>
-                          กรุณาเลือก
-                        </option>
-
-                        {options.map((option, optionIndex) => (
-                          <option
-                            key={`${item.id}-${option}-${optionIndex}`}
-                            value={option}
-                          >
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div className=" row w-100 progressive-question space-right col-6">
-                      {options.map((option, optionIndex) => (
-                        <Button
-                          key={`${item.id}-${option}-${optionIndex}`}
-                          className="me-2 mb-2 btn-space"
-                          variant={
-                            selectedValue === option
-                              ? "primary"
-                              : "outline-primary"
-                          }
-                          onClick={() => handleSelectOption(item.id, option)}
-                        >
-                          {option}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {data?.label === "SigenStor" && isMainCompleted && (
-              <div className="space-data row w-100 progressive-question">
+        {String(data?.id) === "3" ? (
+          <div className="col-12 text-space p-2 micro-configurator">
+            <div className="text-space row">
+              {/* คำถาม Phase */}
+              <div
+                className="space-data row w-100 progressive-question"
+                data-question-id="0"
+              >
                 <div className="space-left col-6">
-                  <h5>{optionCus.title}</h5>
-                  <p>{optionCus.sub_title}</p>
+                  <h5>เฟสไฟฟ้า</h5>
+                  <p>เปลี่ยนรุ่นอินเวอร์เตอร์และ Gateway ให้ตรงเฟส</p>
                 </div>
 
                 <div className="space-right col-6">
-                  <select
-                    name={`space-${optionCus.id}`}
-                    value={selectedOptions[optionCus.id] || ""}
-                    onChange={(event) =>
-                      handleSelectOption(optionCus.id, event.target.value)
-                    }
-                  >
-                    <option value="" disabled>
-                      กรุณาเลือก
-                    </option>
-
-                    <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
-
-                    <option value="ติดตั้ง">{optionCus.option_2}</option>
-
-                    <option value="ติดตั้ง พร้อม License 25 KW">
-                      {optionCus.option_3}
-                    </option>
-                  </select>
+                  {sugMicro[0].phase.map((phase) => (
+                    <Button
+                      key={phase.title}
+                      className="me-2 mb-2 btn-space"
+                      variant={
+                        selectedOptions["0"] === phase.title
+                          ? "primary"
+                          : "outline-primary"
+                      }
+                      onClick={() => handleSelectOption("0", phase.title)}
+                    >
+                      {phase.title}
+                    </Button>
+                  ))}
                 </div>
               </div>
-            )}
+
+              {/* แสดงขนาด หลังเลือก Phase */}
+              {selectedMicroPhase && (
+                <div
+                  className="space-data-default option-2-neo row w-100 progressive-question"
+                  data-question-id={MICRO_SIZE_KEY}
+                >
+                  {/* ไม่มีคำถาม */}
+
+                  <div className="d-flex col-12 justify-content-center">
+                    {selectedMicroPhase.options.map((option) => (
+                      <Button
+                        key={option.title}
+                        className="me-2 mb-2 btn-space "
+                        variant={
+                          selectedOptions[MICRO_SIZE_KEY] === option.title
+                            ? "primary"
+                            : "outline-primary"
+                        }
+                        onClick={() =>
+                          handleSelectOption(MICRO_SIZE_KEY, option.title)
+                        }
+                      >
+                        {option.title}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* แสดงรายการอุปกรณ์ หลังเลือกขนาด */}
+              {selectedMicroSize && (
+                <div
+                  className="w-100 progressive-question"
+                  data-question-id="micro-detail"
+                >
+                  <div className="micro-product-list">
+                    {selectedMicroSize.detail.map((product) => (
+                      <div className="micro-product-row" key={product.id}>
+                        <div className="micro-product-info">
+                          <h5>{product.title}</h5>
+                          <p>{product.des}</p>
+                        </div>
+
+                        <div className="micro-product-count">
+                          <span>จำนวน</span>
+                          <strong>{product.count}</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="col-12 text-space p-2">
+            <div className="text-space row">
+              {visibleSpace.map((item, index) => {
+                // ข้อแรกแสดงทันที
+                // ข้อถัดไปจะแสดงเมื่อข้อก่อนหน้าทั้งหมดมีคำตอบแล้ว
+                const canShow =
+                  index === 0 ||
+                  space
+                    .slice(0, index)
+                    .every((previousItem) =>
+                      hasAnswer(selectedOptions[previousItem.id]),
+                    );
+
+                if (!canShow) return null;
+
+                const options = getMatchedOptions(item);
+                const selectedValue = selectedOptions[item.id] || "";
+
+                const isSelectQuestion =
+                  String(item?.id) === "3" ||
+                  String(item?.id) === "4" ||
+                  String(item?.id) === "5";
+
+                return (
+                  <div
+                    className="space-data row w-100 progressive-question"
+                    key={item.id}
+                  >
+                    <div className="space-left col-6">
+                      <h5>{item.title}</h5>
+                      <p>{item.sub_title}</p>
+                    </div>
+
+                    {isSelectQuestion ? (
+                      <div className="space-right col-6">
+                        <select
+                          name={`space-${item.id}`}
+                          value={selectedValue}
+                          onChange={(event) =>
+                            handleSelectOption(item.id, event.target.value)
+                          }
+                        >
+                          <option value="" disabled>
+                            กรุณาเลือก
+                          </option>
+
+                          {options.map((option, optionIndex) => (
+                            <option
+                              key={`${item.id}-${option}-${optionIndex}`}
+                              value={option}
+                            >
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div className=" row w-100 progressive-question space-right col-6">
+                        {options.map((option, optionIndex) => (
+                          <Button
+                            key={`${item.id}-${option}-${optionIndex}`}
+                            className="me-2 mb-2 btn-space"
+                            variant={
+                              selectedValue === option
+                                ? "primary"
+                                : "outline-primary"
+                            }
+                            onClick={() => handleSelectOption(item.id, option)}
+                          >
+                            {option}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {data?.label === "SigenStor" && isMainCompleted && (
+                <div className="space-data row w-100 progressive-question">
+                  <div className="space-left col-6">
+                    <h5>{optionCus.title}</h5>
+                    <p>{optionCus.sub_title}</p>
+                  </div>
+
+                  <div className="space-right col-6">
+                    <select
+                      name={`space-${optionCus.id}`}
+                      value={selectedOptions[optionCus.id] || ""}
+                      onChange={(event) =>
+                        handleSelectOption(optionCus.id, event.target.value)
+                      }
+                    >
+                      <option value="" disabled>
+                        กรุณาเลือก
+                      </option>
+
+                      <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
+
+                      <option value="ติดตั้ง">{optionCus.option_2}</option>
+
+                      <option value="ติดตั้ง พร้อม License 25 KW">
+                        {optionCus.option_3}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {isFormCompleted && (
           <div className="d-flex gap-3 mt-3">
             <Button variant="outline-secondary" onClick={handleRestart}>
