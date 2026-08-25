@@ -37,7 +37,7 @@ function Header({ mode, setMode, theme, setTheme }) {
         >
           <span className="mode-indicator" />
 
-          Sales Wizard
+          Smart Match
         </Button>
 
         <div className="theme-switch">
