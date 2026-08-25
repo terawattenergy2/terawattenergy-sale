@@ -1,46 +1,68 @@
-import { Button } from "react-bootstrap";
+import { Button, Image } from "react-bootstrap";
 import { AiFillMoon, AiFillSun } from "react-icons/ai";
+import imgLogo from "../components/assets/images/LOGO-TE.png";
+
 function Header({ mode, setMode, theme, setTheme }) {
   return (
-    <div className="header">
-      <div className="header-left">
-        <h1>Terawatt</h1>
-        <p>ระบบแนะนำชุดโซลาร์และแบตเตอรี่สำหรับบ้าน</p>
-      </div>
-      <div className="header-right ">
-         <div className="mode-switch">
-          <Button
-            className={mode === "wizard" ? "active" : ""}
-            onClick={() => setMode("wizard")}
-          >
-            <span className="text"> โหมดเซลล์ (Wizard)</span>
-          </Button>
+    <header className="header">
+      <div className="header-brand">
+        <Image
+          src={imgLogo}
+          alt="Terawatt Energy"
+          className="header-brand-logo"
+        />
 
-          {/* <Button
-            className={mode === "advanced" ? "active" : ""}
-            onClick={() => setMode("advanced")}
-          >
-            <span className="text">โหมดเทคนิค (Advanced)</span>
-          </Button> */}
+        <span
+          className="header-brand-divider"
+          aria-hidden="true"
+        />
+
+        <div className="header-brand-content">
+          <span className="header-brand-eyebrow">
+            TERAWATT SMART DESIGN
+          </span>
+
+          <h1>TeraMatch</h1>
+
+          <p>Solar & Storage Configurator</p>
         </div>
-        <div className={`theme-switch ${theme === "light" ? "active" : ""}`}>
+      </div>
+
+      <div className="header-actions">
+        <Button
+          className={`header-mode-button ${
+            mode === "wizard" ? "active" : ""
+          }`}
+          onClick={() => setMode("wizard")}
+        >
+          <span className="mode-indicator" />
+
+          Sales Wizard
+        </Button>
+
+        <div className="theme-switch">
           <span
+            role="button"
+            tabIndex={0}
+            aria-label="โหมดสว่าง"
             onClick={() => setTheme("light")}
-            className={`${theme === "light" ? "active" : ""}`}
+            className={theme === "light" ? "active" : ""}
           >
             <AiFillSun />
           </span>
+
           <span
+            role="button"
+            tabIndex={0}
+            aria-label="โหมดมืด"
             onClick={() => setTheme("dark")}
-            className={`${theme === "dark" ? "active" : ""}`}
+            className={theme === "dark" ? "active" : ""}
           >
             <AiFillMoon />
           </span>
-
         </div>
-       
       </div>
-    </div>
+    </header>
   );
 }
 

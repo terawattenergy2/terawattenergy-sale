@@ -257,41 +257,186 @@
    HEADER
 ========================= */
 
+/* =========================
+   TERAMATCH HEADER
+========================= */
+
 .header {
-  width: 100%;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
   gap: 32px;
-  /* margin-bottom: 0px; */
+
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 10px 4px 22px;
+
+  border-bottom: 1px solid var(--border);
 }
 
-.header-left {
-  flex: 1;
+/* ฝั่ง Logo และชื่อ */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
   min-width: 0;
 }
 
-.header h1 {
+.header-brand-logo {
+  display: block;
+  width: 110px;
+  height: 64px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.header-brand-divider {
+  width: 1px;
+  height: 54px;
+  flex-shrink: 0;
+
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--border) 18%,
+    var(--border) 82%,
+    transparent
+  );
+}
+
+.header-brand-content {
+  min-width: 0;
+}
+
+.header-brand-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.header-brand-content h1 {
   margin: 0;
+
   color: var(--title);
-  font-size: clamp(38px, 5vw, 54px);
-  font-weight: 500;
-  line-height: 1.1;
+  font-size: clamp(34px, 3.5vw, 46px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
-.header p {
-  margin: 8px 0 0;
+.header-brand-content p {
+  margin: 7px 0 0;
+
   color: var(--sub);
-  font-size: clamp(14px, 1.5vw, 18px);
-  line-height: 1.5;
+  font-size: clamp(12px, 1.2vw, 15px);
+  line-height: 1.4;
 }
 
-.header-right {
+/* ฝั่งปุ่ม */
+.header-actions {
   display: flex;
-  flex-direction: row;
-  /* align-items: flex-end; */
+  align-items: center;
+  justify-content: flex-end;
   gap: 12px;
   flex-shrink: 0;
+}
+
+.header-mode-button {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 48px;
+  padding: 10px 20px !important;
+
+  color: var(--sub) !important;
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 999px !important;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  box-shadow: var(--shadow);
+}
+
+.header-mode-button.active {
+  color: #ffffff !important;
+  background: linear-gradient(
+    135deg,
+    #1976d2,
+    #4da3ff
+  ) !important;
+
+  border-color: transparent !important;
+}
+
+.mode-indicator {
+  width: 7px;
+  height: 7px;
+
+  background: currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Mobile */
+@media (max-width: 576px) {
+  .header {
+    gap: 15px;
+    padding-bottom: 16px;
+  }
+
+  .header-brand {
+    gap: 12px;
+  }
+
+  .header-brand-logo {
+    width: 72px;
+    height: 50px;
+  }
+
+  .header-brand-divider {
+    height: 43px;
+  }
+
+  .header-brand-eyebrow {
+    font-size: 8px;
+  }
+
+  .header-brand-content h1 {
+    font-size: 28px;
+  }
+
+  .header-brand-content p {
+    margin-top: 4px;
+    font-size: 10px;
+  }
+
+  .header-mode-button {
+    min-height: 43px;
+    padding: 8px 14px !important;
+    font-size: 12px;
+  }
 }
 
 /* =========================
@@ -3091,4 +3236,28 @@ html {
   .space-product-result .space-right select:hover {
     transform: none;
   }
+}
+
+.wizard-step-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 16px;
+  color: var(--sub);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.wizard-step-track {
+  width: 110px;
+  height: 5px;
+  overflow: hidden;
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.wizard-step-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #1976d2, #53b3ff);
+  border-radius: inherit;
 }
