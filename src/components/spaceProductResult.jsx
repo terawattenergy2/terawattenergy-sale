@@ -264,7 +264,7 @@ function SpaceProductResult({
     setCurrentStep(0);
   }, [data?.id, data?.short]);
 
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const handleRestart = () => {
     navigate("/");
   };
@@ -313,7 +313,6 @@ function SpaceProductResult({
 
     scrollToNextQuestion(itemId);
   };
-
 
   // const isFormCompleted = isMainCompleted && isExtraCompleted;
   const waitForImages = async (element) => {
@@ -396,16 +395,15 @@ function SpaceProductResult({
     }
   };
 
- 
-//   const handleReset = () => {
-//   setSelectedOptions({});
-//   setCurrentStep(0);
+  //   const handleReset = () => {
+  //   setSelectedOptions({});
+  //   setCurrentStep(0);
 
-//   document.querySelector(".micro-configurator")?.scrollIntoView({
-//     behavior: "smooth",
-//     block: "start",
-//   });
-// };
+  //   document.querySelector(".micro-configurator")?.scrollIntoView({
+  //     behavior: "smooth",
+  //     block: "start",
+  //   });
+  // };
 
   const [personalData] = useState(() => {
     try {
@@ -420,40 +418,40 @@ function SpaceProductResult({
     .filter(Boolean)
     .join(" ");
 
-const saveToGoogleSheet = async () => {
-  const payload = {
-    name: personalData.firstName || "",
-    username: personalData.lastName || "",
-    email: personalData.email || "",
-    phone: personalData.phone || "",
-    suggest_product: data?.label || "",
-    phase: selectedOptions["0"] || "",
+  const saveToGoogleSheet = async () => {
+    const payload = {
+      name: personalData.firstName || "",
+      username: personalData.lastName || "",
+      email: personalData.email || "",
+      phone: personalData.phone || "",
+      suggest_product: data?.label || "",
+      phase: selectedOptions["0"] || "",
 
-    inverter_size: isMicro
-      ? selectedOptions[MICRO_SIZE_KEY] || ""
-      : selectedOptions["1"] || "",
+      inverter_size: isMicro
+        ? selectedOptions[MICRO_SIZE_KEY] || ""
+        : selectedOptions["1"] || "",
 
-    bat: selectedOptions["2"] || "",
-    bat_module: selectedOptions["3"] || "",
-    home_energy: selectedOptions["4"] || "",
-    ev_dc: selectedOptions["5"] || "",
+      bat: selectedOptions["2"] || "",
+      bat_module: selectedOptions["3"] || "",
+      home_energy: selectedOptions["4"] || "",
+      ev_dc: selectedOptions["5"] || "",
 
-    micro_products: isMicro
-      ? (selectedMicroSize?.detail || [])
-          .map((product) => `${product.title} x ${product.count}`)
-          .join(", ")
-      : "",
+      micro_products: isMicro
+        ? (selectedMicroSize?.detail || [])
+            .map((product) => `${product.title} x ${product.count}`)
+            .join(", ")
+        : "",
+    };
+
+    await fetch(GOOGLE_SHEET_API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payload),
+    });
   };
-
-  await fetch(GOOGLE_SHEET_API_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8",
-    },
-    body: JSON.stringify(payload),
-  });
-};
 
   const dataCus = [
     {
@@ -625,44 +623,44 @@ const saveToGoogleSheet = async () => {
       }
     }, 150);
   };
-// 
-const selectedMicroPhase = sugMicro[0]?.phase.find(
-  (phase) => phase.title === selectedOptions["0"],
-);
+  //
+  const selectedMicroPhase = sugMicro[0]?.phase.find(
+    (phase) => phase.title === selectedOptions["0"],
+  );
 
-const selectedMicroSize = selectedMicroPhase?.options.find(
-  (option) => option.title === selectedOptions[MICRO_SIZE_KEY],
-);
+  const selectedMicroSize = selectedMicroPhase?.options.find(
+    (option) => option.title === selectedOptions[MICRO_SIZE_KEY],
+  );
 
-const visibleSpace = space?.slice(0, currentStep + 1) || [];
+  const visibleSpace = space?.slice(0, currentStep + 1) || [];
 
-const hasAnswer = (value) => {
-  return value !== undefined && value !== null && value !== "";
-};
+  const hasAnswer = (value) => {
+    return value !== undefined && value !== null && value !== "";
+  };
 
-const isMainCompleted =
-  space?.length > 0 &&
-  currentStep >= space.length &&
-  space.every((item) => hasAnswer(selectedOptions[item.id]));
+  const isMainCompleted =
+    space?.length > 0 &&
+    currentStep >= space.length &&
+    space.every((item) => hasAnswer(selectedOptions[item.id]));
 
-const hasExtraQuestion = data?.label === "SigenStor";
+  const hasExtraQuestion = data?.label === "SigenStor";
 
-const isExtraCompleted =
-  !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
+  const isExtraCompleted =
+    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
 
-// ตรวจสอบว่าเป็น SigenMicro
-const isMicro = String(data?.id) === "3";
+  // ตรวจสอบว่าเป็น SigenMicro
+  const isMicro = String(data?.id) === "3";
 
-// Micro ต้องเลือกทั้งเฟสและขนาด
-const isMicroCompleted =
-  hasAnswer(selectedOptions["0"]) &&
-  hasAnswer(selectedOptions[MICRO_SIZE_KEY]) &&
-  Boolean(selectedMicroSize);
+  // Micro ต้องเลือกทั้งเฟสและขนาด
+  const isMicroCompleted =
+    hasAnswer(selectedOptions["0"]) &&
+    hasAnswer(selectedOptions[MICRO_SIZE_KEY]) &&
+    Boolean(selectedMicroSize);
 
-// เลือกวิธีตรวจตามประเภท Inverter
-const isFormCompleted = isMicro
-  ? isMicroCompleted
-  : isMainCompleted && isExtraCompleted;
+  // เลือกวิธีตรวจตามประเภท Inverter
+  const isFormCompleted = isMicro
+    ? isMicroCompleted
+    : isMainCompleted && isExtraCompleted;
   return (
     <div className="space-product-result">
       <div className="advanced-card card-text">
@@ -755,12 +753,15 @@ const isFormCompleted = isMicro
               {/* แสดงขนาด หลังเลือก Phase */}
               {selectedMicroPhase && (
                 <div
-                  className="space-data-default option-2-neo row w-100 progressive-question"
-                  data-question-id={MICRO_SIZE_KEY}
+                  className="space-data row w-100 progressive-question"
+                  data-question-id="0"
                 >
-                  {/* ไม่มีคำถาม */}
+                  <div className="space-left col-6">
+                    <h5>กำลังการติดตั้ง</h5>
+                    {/* <p>เปลี่ยนรุ่นอินเวอร์เตอร์และ Gateway ให้ตรงเฟส</p> */}
+                  </div>
 
-                  <div className="d-flex col-12 justify-content-center">
+                  <div className="space-right col-6">
                     {selectedMicroPhase.options.map((option) => (
                       <Button
                         key={option.title}
@@ -921,35 +922,35 @@ const isFormCompleted = isMicro
             </div>
           </div>
         )}
-      {isFormCompleted && (
-  <div className="result-actions mt-3">
-    <Button variant="outline-secondary" onClick={handleRestart}>
-      Reset
-    </Button>
+        {isFormCompleted && (
+          <div className="result-actions mt-3">
+            <Button variant="outline-secondary" onClick={handleRestart}>
+              Reset
+            </Button>
 
-    <Button
-      variant="outline-success"
-      onClick={handleExportPDF}
-      disabled={isExporting}
-    >
-      {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
-    </Button>
-  </div>
-)}
-      <PdfPage
-  pdfRef={pdfRef}
-  data={data}
-  getDriveImageUrl={getDriveImageUrl}
-  space={space}
-  fullName={fullName}
-  personalData={personalData}
-  detail={detail}
-  selectedOptions={selectedOptions}
-  optionCus={optionCus}
-  isMicro={isMicro}
-  microSizeKey={MICRO_SIZE_KEY}
-  selectedMicroSize={selectedMicroSize}
-/>
+            <Button
+              variant="outline-success"
+              onClick={handleExportPDF}
+              disabled={isExporting}
+            >
+              {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
+            </Button>
+          </div>
+        )}
+        <PdfPage
+          pdfRef={pdfRef}
+          data={data}
+          getDriveImageUrl={getDriveImageUrl}
+          space={space}
+          fullName={fullName}
+          personalData={personalData}
+          detail={detail}
+          selectedOptions={selectedOptions}
+          optionCus={optionCus}
+          isMicro={isMicro}
+          microSizeKey={MICRO_SIZE_KEY}
+          selectedMicroSize={selectedMicroSize}
+        />
       </div>
     </div>
   );
