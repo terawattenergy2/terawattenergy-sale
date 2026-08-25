@@ -4,6 +4,8 @@ import SpaceProductResult from "./spaceProductResult";
 import LoadingResult from "./LoadingResult";
 import { FaLine } from "react-icons/fa";
 import SpaceSuggest from "./spaceSuggest";
+import { useNavigate } from "react-router-dom";
+import { IoRefresh } from "react-icons/io5";
 
 const getDriveImageUrl = (url) => {
   if (!url) return "";
@@ -162,6 +164,11 @@ function ResultPage({ sheet }) {
     setSpaceSug(item);
     setSpaceSugOpen(true);
   };
+
+  const navigate = useNavigate();
+  const handleRestart = () => {
+    navigate("/");
+  };
   return (
     <Row>
       <Col xs={12}>
@@ -247,6 +254,10 @@ function ResultPage({ sheet }) {
             </div>
           ) : (
             <div className="p-4 my-3 rounded border text-center">
+              <Button variant="outline-secondary" onClick={handleRestart}>
+                <IoRefresh />
+                Restart
+              </Button>
               ไม่พบสินค้าที่ตรงกับคำตอบของคุณ
             </div>
           )}
