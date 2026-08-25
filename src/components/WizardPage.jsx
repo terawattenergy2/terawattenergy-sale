@@ -25,7 +25,6 @@ function WizardPage({ data }) {
   useEffect(() => {
     localStorage.setItem("wizard_answers", JSON.stringify(answers));
   }, [answers]);
-  console.log("answers", answers[0].value);
 
   const currentQuestion = question[step];
   const handlePersonalComplete = (personalData) => {

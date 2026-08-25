@@ -11,7 +11,14 @@ function PdfPage({
   detail,
   selectedOptions,
   optionCus,
+
+  // ข้อมูลสำหรับ SigenMicro
+  isMicro = false,
+  microSizeKey = "microSize",
+  selectedMicroSize,
 }) {
+  const microProducts = selectedMicroSize?.detail || [];
+
   return (
     <div className="pdf-export-wrapper">
       <div
@@ -22,7 +29,7 @@ function PdfPage({
           overflow: "hidden",
         }}
       >
-        {/* รูปโลโก้ลายน้ำ */}
+        {/* โลโก้ลายน้ำ */}
         <div
           aria-hidden="true"
           style={{
@@ -49,7 +56,7 @@ function PdfPage({
           />
         </div>
 
-        {/* เนื้อหา PDF อยู่เหนือลายน้ำ */}
+        {/* เนื้อหา PDF */}
         <div
           style={{
             position: "relative",
@@ -84,18 +91,18 @@ function PdfPage({
               <div className="pdf-customer-item">
                 <span className="pdf-customer-label">อีเมล</span>
 
-                <strong>{personalData.email || "-"}</strong>
+                <strong>{personalData?.email || "-"}</strong>
               </div>
 
               <div className="pdf-customer-item">
                 <span className="pdf-customer-label">เบอร์โทรศัพท์</span>
 
-                <strong>{personalData.phone || "-"}</strong>
+                <strong>{personalData?.phone || "-"}</strong>
               </div>
             </div>
           </div>
 
-          {/* อินเวอร์เตอร์ที่เลือก */}
+          {/* Inverter ที่เลือก */}
           {data && (
             <div className="pdf-inverter-card">
               <div className="pdf-inverter-image">
@@ -132,6 +139,7 @@ function PdfPage({
           {detail?.title && (
             <div className="pdf-product-detail">
               <h3>{detail.title}</h3>
+
               <p>{detail.subTitle}</p>
             </div>
           )}
@@ -139,35 +147,89 @@ function PdfPage({
           <h3 className="pdf-section-title">รายละเอียดสเปกระบบ</h3>
 
           <div className="pdf-spec-list">
-            {space?.map((item) => (
-              <div className="pdf-spec-row" key={item.id}>
-                <div className="pdf-spec-title">
-                  <strong>{item.title}</strong>
+            {isMicro ? (
+              <>
+                {/* Phase ของ Micro */}
+                <div className="pdf-spec-row">
+                  <div className="pdf-spec-title">
+                    <strong>เฟสไฟฟ้า</strong>
+                  </div>
 
-                  {item.sub_title && <small>{item.sub_title}</small>}
+                  <div className="pdf-spec-value">
+                    {selectedOptions?.["0"] || "-"}
+                  </div>
                 </div>
 
-                <div className="pdf-spec-value">
-                  {selectedOptions[item.id] || "-"}
+                {/* ขนาด Micro */}
+                <div className="pdf-spec-row">
+                  <div className="pdf-spec-title">
+                    <strong>ขนาดระบบ SigenMicro</strong>
+                  </div>
+
+                  <div className="pdf-spec-value">
+                    {selectedOptions?.[microSizeKey] || "-"}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {data?.label === "SigenStor" ? (
-              <div className="pdf-spec-row" key={optionCus.id}>
+              </>
+            ) : (
+              <>
+                {/* ข้อมูลของ Hybrid, SigenStor และ NEO */}
+                {space?.map((item) => (
+                  <div className="pdf-spec-row" key={item.id}>
+                    <div className="pdf-spec-title">
+                      <strong>{item.title}</strong>
+
+                      {item.sub_title && <small>{item.sub_title}</small>}
+                    </div>
+
+                    <div className="pdf-spec-value">
+                      {selectedOptions?.[item.id] || "-"}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {/* คำถาม EV DC ของ SigenStor */}
+            {!isMicro && data?.label === "SigenStor" && (
+              <div className="pdf-spec-row">
                 <div className="pdf-spec-title">
                   <strong>{optionCus.title}</strong>
 
-                  {optionCus.sub_title && <small>{optionCus.sub_title}</small>}
+                  {optionCus.sub_title && (
+                    <small>{optionCus.sub_title}</small>
+                  )}
                 </div>
 
                 <div className="pdf-spec-value">
-                  {selectedOptions[optionCus.id] || "-"}
+                  {selectedOptions?.[optionCus.id] || "-"}
                 </div>
               </div>
-            ) : (
-              <></>
             )}
           </div>
+
+          {/* รายการสินค้า SigenMicro */}
+          {isMicro && microProducts.length > 0 && (
+            <>
+              <h3 className="pdf-section-title">รายการอุปกรณ์ในชุด</h3>
+
+              <div className="pdf-spec-list">
+                {microProducts.map((product) => (
+                  <div className="pdf-spec-row" key={product.id}>
+                    <div className="pdf-spec-title">
+                      <strong>{product.title}</strong>
+
+                      {product.des && <small>{product.des}</small>}
+                    </div>
+
+                    <div className="pdf-spec-value">
+                      จำนวน {product.count || "-"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           <div className="pdf-footer">
             วันที่สร้างเอกสาร:{" "}

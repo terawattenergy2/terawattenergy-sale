@@ -206,7 +206,7 @@ export default function AdvancedPage({ data }) {
         )}
       </div>
 
-      <div className="advanced-card mt-4 card-text">
+      <div className="advanced-card card-text">
         <h2>กรอกสเปกโดยตรง</h2>
 
         <p>สำหรับช่างติดตั้ง</p>

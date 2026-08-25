@@ -7,7 +7,22 @@ function Header({ mode, setMode, theme, setTheme }) {
         <h1>Terawatt</h1>
         <p>ระบบแนะนำชุดโซลาร์และแบตเตอรี่สำหรับบ้าน</p>
       </div>
-      <div className="header-right">
+      <div className="header-right ">
+         <div className="mode-switch">
+          <Button
+            className={mode === "wizard" ? "active" : ""}
+            onClick={() => setMode("wizard")}
+          >
+            <span className="text"> โหมดเซลล์ (Wizard)</span>
+          </Button>
+
+          {/* <Button
+            className={mode === "advanced" ? "active" : ""}
+            onClick={() => setMode("advanced")}
+          >
+            <span className="text">โหมดเทคนิค (Advanced)</span>
+          </Button> */}
+        </div>
         <div className={`theme-switch ${theme === "light" ? "active" : ""}`}>
           <span
             onClick={() => setTheme("light")}
@@ -21,22 +36,9 @@ function Header({ mode, setMode, theme, setTheme }) {
           >
             <AiFillMoon />
           </span>
-        </div>
-        <div className="mode-switch">
-          <Button
-            className={mode === "wizard" ? "active" : ""}
-            onClick={() => setMode("wizard")}
-          >
-            <span className="text"> โหมดเซลล์ (Wizard)</span>
-          </Button>
 
-          <Button
-            className={mode === "advanced" ? "active" : ""}
-            onClick={() => setMode("advanced")}
-          >
-            <span className="text">โหมดเทคนิค (Advanced)</span>
-          </Button>
         </div>
+       
       </div>
     </div>
   );

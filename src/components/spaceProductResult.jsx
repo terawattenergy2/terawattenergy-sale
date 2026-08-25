@@ -252,6 +252,7 @@ function SpaceProductResult({
         item?.option_7,
         item?.option_8,
         item?.option_9,
+        item?.option_10,
       ].filter(Boolean);
     },
     [data?.id],
@@ -309,41 +310,8 @@ function SpaceProductResult({
     scrollToNextQuestion(itemId);
   };
 
-  const selectedMicroPhase = sugMicro[0]?.phase.find(
-    (phase) => phase.title === selectedOptions["0"],
-  );
 
-  const selectedMicroSize = selectedMicroPhase?.options.find(
-    (option) => option.title === selectedOptions[MICRO_SIZE_KEY],
-  );
-
-  // const isMicro = String(data?.id) === "3";
-
-  // const isMicroCompleted =
-  //   hasAnswer(selectedOptions["0"]) &&
-  //   hasAnswer(selectedOptions[MICRO_SIZE_KEY]);
-
-  // const isFormCompleted = isMicro
-  //   ? isMicroCompleted
-  //   : isMainCompleted && isExtraCompleted;
-
-  const visibleSpace = space?.slice(0, currentStep + 1) || [];
-
-  const hasAnswer = (value) => {
-    return value !== undefined && value !== null && value !== "";
-  };
-
-  const isMainCompleted =
-    space?.length > 0 &&
-    currentStep >= space.length &&
-    space.every((item) => hasAnswer(selectedOptions[item.id]));
-
-  const hasExtraQuestion = data?.label === "SigenStor";
-
-  const isExtraCompleted =
-    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
-
-  const isFormCompleted = isMainCompleted && isExtraCompleted;
+  // const isFormCompleted = isMainCompleted && isExtraCompleted;
   const waitForImages = async (element) => {
     const images = Array.from(element.querySelectorAll("img"));
     await Promise.all(
@@ -428,6 +396,15 @@ function SpaceProductResult({
   const handleRestart = () => {
     navigate("/");
   };
+  const handleReset = () => {
+  setSelectedOptions({});
+  setCurrentStep(0);
+
+  document.querySelector(".micro-configurator")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+};
 
   const [personalData] = useState(() => {
     try {
@@ -442,30 +419,40 @@ function SpaceProductResult({
     .filter(Boolean)
     .join(" ");
 
-  const saveToGoogleSheet = async () => {
-    const payload = {
-      name: personalData.firstName || "",
-      username: personalData.lastName || "",
-      email: personalData.email || "",
-      phone: personalData.phone || "",
-      suggest_product: data?.label || "",
-      phase: selectedOptions["0"] || "",
-      inverter_size: selectedOptions["1"] || "",
-      bat: selectedOptions["2"] || "",
-      bat_module: selectedOptions["3"] || "",
-      home_energy: selectedOptions["4"] || "",
-      ev_dc: selectedOptions["5"] || "",
-    };
+const saveToGoogleSheet = async () => {
+  const payload = {
+    name: personalData.firstName || "",
+    username: personalData.lastName || "",
+    email: personalData.email || "",
+    phone: personalData.phone || "",
+    suggest_product: data?.label || "",
+    phase: selectedOptions["0"] || "",
 
-    await fetch(GOOGLE_SHEET_API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payload),
-    });
+    inverter_size: isMicro
+      ? selectedOptions[MICRO_SIZE_KEY] || ""
+      : selectedOptions["1"] || "",
+
+    bat: selectedOptions["2"] || "",
+    bat_module: selectedOptions["3"] || "",
+    home_energy: selectedOptions["4"] || "",
+    ev_dc: selectedOptions["5"] || "",
+
+    micro_products: isMicro
+      ? (selectedMicroSize?.detail || [])
+          .map((product) => `${product.title} x ${product.count}`)
+          .join(", ")
+      : "",
   };
+
+  await fetch(GOOGLE_SHEET_API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8",
+    },
+    body: JSON.stringify(payload),
+  });
+};
 
   const dataCus = [
     {
@@ -637,10 +624,47 @@ function SpaceProductResult({
       }
     }, 150);
   };
+// 
+const selectedMicroPhase = sugMicro[0]?.phase.find(
+  (phase) => phase.title === selectedOptions["0"],
+);
 
+const selectedMicroSize = selectedMicroPhase?.options.find(
+  (option) => option.title === selectedOptions[MICRO_SIZE_KEY],
+);
+
+const visibleSpace = space?.slice(0, currentStep + 1) || [];
+
+const hasAnswer = (value) => {
+  return value !== undefined && value !== null && value !== "";
+};
+
+const isMainCompleted =
+  space?.length > 0 &&
+  currentStep >= space.length &&
+  space.every((item) => hasAnswer(selectedOptions[item.id]));
+
+const hasExtraQuestion = data?.label === "SigenStor";
+
+const isExtraCompleted =
+  !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
+
+// ตรวจสอบว่าเป็น SigenMicro
+const isMicro = String(data?.id) === "3";
+
+// Micro ต้องเลือกทั้งเฟสและขนาด
+const isMicroCompleted =
+  hasAnswer(selectedOptions["0"]) &&
+  hasAnswer(selectedOptions[MICRO_SIZE_KEY]) &&
+  Boolean(selectedMicroSize);
+
+// เลือกวิธีตรวจตามประเภท Inverter
+const isFormCompleted = isMicro
+  ? isMicroCompleted
+  : isMainCompleted && isExtraCompleted;
   return (
-    <div>
-      <div className="advanced-card mt-4 card-text">
+    <div className="space-product-result">
+      <div className="advanced-card card-text">
         <h3>เลือกประเภทอินเวอร์เตอร์</h3>
         <p className="text-secondary small">
           Hybrid / SigenStor / Micro — แต่ละแบบเหมาะกับสถานการณ์ต่างกัน{" "}
@@ -654,7 +678,18 @@ function SpaceProductResult({
                   ? "active"
                   : ""
               }`}
+              role="button"
+              tabIndex={0}
+              aria-pressed={
+                String(selectedInverter?.id) === String(inverter.id)
+              }
               onClick={() => handleSelect(inverter)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleSelect(inverter);
+                }
+              }}
             >
               <div className="inverter-header">
                 {inverter.image && (
@@ -662,11 +697,6 @@ function SpaceProductResult({
                     className="inverter-image"
                     src={inverter.image}
                     alt={inverter.label}
-                    style={{
-                      width: "100%",
-                      height: "160px",
-                      objectFit: "contain",
-                    }}
                   />
                 )}
               </div>
@@ -679,7 +709,7 @@ function SpaceProductResult({
           ))}
         </div>{" "}
       </div>
-      <div className="advanced-card mt-4 card-text">
+      <div className="advanced-card card-text">
         <h2>ปรับแต่งสเปกระบบ</h2>
         <p className="small text-secondary">
           {" "}
@@ -700,7 +730,7 @@ function SpaceProductResult({
               >
                 <div className="space-left col-6">
                   <h5>เฟสไฟฟ้า</h5>
-                  <p>เปลี่ยนรุ่นอินเวอร์เตอร์และ Gateway ให้ตรงเฟส</p>
+                  {/* <p>เปลี่ยนรุ่นอินเวอร์เตอร์และ Gateway ให้ตรงเฟส</p> */}
                 </div>
 
                 <div className="space-right col-6">
@@ -733,7 +763,7 @@ function SpaceProductResult({
                     {selectedMicroPhase.options.map((option) => (
                       <Button
                         key={option.title}
-                        className="me-2 mb-2 btn-space "
+                        className="me-2 btn-space "
                         variant={
                           selectedOptions[MICRO_SIZE_KEY] === option.title
                             ? "primary"
@@ -776,7 +806,7 @@ function SpaceProductResult({
             </div>
           </div>
         ) : (
-          <div className="col-12 text-space p-2">
+          <div className="col-12 text-space p-2 micro-configurator">
             <div className="text-space row">
               {visibleSpace.map((item, index) => {
                 // ข้อแรกแสดงทันที
@@ -803,6 +833,7 @@ function SpaceProductResult({
                   <div
                     className="space-data row w-100 progressive-question"
                     key={item.id}
+                    data-question-id={item.id}
                   >
                     <div className="space-left col-6">
                       <h5>{item.title}</h5>
@@ -854,7 +885,10 @@ function SpaceProductResult({
                 );
               })}
               {data?.label === "SigenStor" && isMainCompleted && (
-                <div className="space-data row w-100 progressive-question">
+                <div
+                  className="space-data row w-100 progressive-question"
+                  data-question-id={optionCus.id}
+                >
                   <div className="space-left col-6">
                     <h5>{optionCus.title}</h5>
                     <p>{optionCus.sub_title}</p>
@@ -886,33 +920,35 @@ function SpaceProductResult({
             </div>
           </div>
         )}
-        {isFormCompleted && (
-          <div className="d-flex gap-3 mt-3">
-            <Button variant="outline-secondary" onClick={handleRestart}>
-              Restart
-            </Button>
+      {isFormCompleted && (
+  <div className="result-actions mt-3">
+    <Button variant="outline-secondary" onClick={handleRestart}>
+      Reset
+    </Button>
 
-            <Button
-              variant="outline-success"
-              onClick={handleExportPDF}
-              disabled={isExporting}
-            >
-              {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
-            </Button>
-          </div>
-        )}
-
-        <PdfPage
-          pdfRef={pdfRef}
-          data={data}
-          getDriveImageUrl={getDriveImageUrl}
-          space={space}
-          fullName={fullName}
-          personalData={personalData}
-          detail={detail}
-          selectedOptions={selectedOptions}
-          optionCus={optionCus}
-        />
+    <Button
+      variant="outline-success"
+      onClick={handleExportPDF}
+      disabled={isExporting}
+    >
+      {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
+    </Button>
+  </div>
+)}
+      <PdfPage
+  pdfRef={pdfRef}
+  data={data}
+  getDriveImageUrl={getDriveImageUrl}
+  space={space}
+  fullName={fullName}
+  personalData={personalData}
+  detail={detail}
+  selectedOptions={selectedOptions}
+  optionCus={optionCus}
+  isMicro={isMicro}
+  microSizeKey={MICRO_SIZE_KEY}
+  selectedMicroSize={selectedMicroSize}
+/>
       </div>
     </div>
   );
