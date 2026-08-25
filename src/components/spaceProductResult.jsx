@@ -264,6 +264,10 @@ function SpaceProductResult({
     setCurrentStep(0);
   }, [data?.id, data?.short]);
 
+   const navigate = useNavigate();
+  const handleRestart = () => {
+    navigate("/");
+  };
   const optionCus = {
     id: "5",
     title: "ชุดชาร์จ EV แบบ DC",
@@ -392,19 +396,16 @@ function SpaceProductResult({
     }
   };
 
-  const navigate = useNavigate();
-  const handleRestart = () => {
-    navigate("/");
-  };
-  const handleReset = () => {
-  setSelectedOptions({});
-  setCurrentStep(0);
+ 
+//   const handleReset = () => {
+//   setSelectedOptions({});
+//   setCurrentStep(0);
 
-  document.querySelector(".micro-configurator")?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-};
+//   document.querySelector(".micro-configurator")?.scrollIntoView({
+//     behavior: "smooth",
+//     block: "start",
+//   });
+// };
 
   const [personalData] = useState(() => {
     try {
