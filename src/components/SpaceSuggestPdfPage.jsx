@@ -1,14 +1,8 @@
 import React from "react";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
 
-function SpaceSuggestPdfPage({
-  pdfRef,
-  spaceSug,
-  getDriveImageUrl,
-}) {
-  const productImage = getDriveImageUrl?.(
-    spaceSug?.img_product
-  );
+function SpaceSuggestPdfPage({ fullName, personalData, pdfRef, spaceSug, getDriveImageUrl }) {
+  const productImage = getDriveImageUrl?.(spaceSug?.img_product);
 
   const addOns = [
     {
@@ -25,10 +19,7 @@ function SpaceSuggestPdfPage({
 
   return (
     <div className="space-suggest-pdf-stage">
-      <div
-        ref={pdfRef}
-        className="space-suggest-pdf"
-      >
+      <div ref={pdfRef} className="space-suggest-pdf">
         {/* ลายน้ำ */}
         <div className="space-pdf-watermark">
           <img src={imgLogo} alt="" />
@@ -40,16 +31,43 @@ function SpaceSuggestPdfPage({
             <div>
               <span>RECOMMENDED SOLUTION</span>
               <h2>สรุปผลิตภัณฑ์ที่แนะนำ</h2>
-              <p>
-                ระบบพลังงานที่เหมาะสมตามข้อมูลที่คุณเลือก
-              </p>
+              <p>ระบบพลังงานที่เหมาะสมตามข้อมูลที่คุณเลือก</p>
             </div>
 
-            <img
-              src={imgLogo}
-              alt="Terawatt"
-              className="space-pdf-logo"
-            />
+            <img src={imgLogo} alt="Terawatt" className="space-pdf-logo" />
+          </div>
+
+ {/* ข้อมูลผู้ใช้งาน */}
+          <div className="pdf-customer-section">
+            <div className="pdf-customer-heading">
+              <div>
+                <span className="pdf-customer-eyebrow">
+                  CUSTOMER INFORMATION
+                </span>
+
+                <h3>ข้อมูลผู้ใช้งาน</h3>
+              </div>
+            </div>
+
+            <div className="pdf-customer-grid">
+              <div className="pdf-customer-item pdf-name-item">
+                <span className="pdf-customer-label">ชื่อ–นามสกุล</span>
+
+                <strong>{fullName || "-"}</strong>
+              </div>
+
+              <div className="pdf-customer-item">
+                <span className="pdf-customer-label">อีเมล</span>
+
+                <strong>{personalData?.email || "-"}</strong>
+              </div>
+
+              <div className="pdf-customer-item">
+                <span className="pdf-customer-label">เบอร์โทรศัพท์</span>
+
+                <strong>{personalData?.phone || "-"}</strong>
+              </div>
+            </div>
           </div>
 
           {/* สินค้าหลัก */}
@@ -73,19 +91,11 @@ function SpaceSuggestPdfPage({
               </div>
 
               <div className="space-pdf-product-info">
-                <span className="space-pdf-selected">
-                  ผลิตภัณฑ์ที่แนะนำ
-                </span>
+                <span className="space-pdf-selected">ผลิตภัณฑ์ที่แนะนำ</span>
 
-                <h3>
-                  {spaceSug?.ans_product ||
-                    "ยังไม่ได้เลือกผลิตภัณฑ์"}
-                </h3>
+                <h3>{spaceSug?.ans_product || "ยังไม่ได้เลือกผลิตภัณฑ์"}</h3>
 
-                <p>
-                  {spaceSug?.detail_product ||
-                    "ไม่มีรายละเอียดผลิตภัณฑ์"}
-                </p>
+                <p>{spaceSug?.detail_product || "ไม่มีรายละเอียดผลิตภัณฑ์"}</p>
               </div>
             </div>
           </div>
@@ -100,10 +110,7 @@ function SpaceSuggestPdfPage({
 
               <div className="space-pdf-addon-grid">
                 {addOns.map((item, index) => (
-                  <div
-                    className="space-pdf-addon-card"
-                    key={item.id}
-                  >
+                  <div className="space-pdf-addon-card" key={item.id}>
                     <div className="space-pdf-addon-number">
                       {String(index + 1).padStart(2, "0")}
                     </div>
@@ -114,6 +121,13 @@ function SpaceSuggestPdfPage({
                           src={item.image}
                           alt={item.name}
                           crossOrigin="anonymous"
+                          style={{
+                            width: "auto",
+                            height: "auto",
+                            maxWidth: "100%",
+                            maxHeight: "150px",
+                            objectFit: "contain",
+                          }}
                         />
                       ) : (
                         <span>ไม่มีรูป</span>
