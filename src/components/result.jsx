@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Row, Col, Image, Button } from "react-bootstrap";
 import SpaceProductResult from "./spaceProductResult";
 import LoadingResult from "./LoadingResult";
@@ -25,6 +25,8 @@ const getDriveImageUrl = (url) => {
 
 function ResultPage({ sheet }) {
   // 🌟 States
+  const spaceSugRef = useRef(null);
+  const customSpaceRef = useRef(null);
   const [matchedProducts, setMatchedProducts] = useState([]);
   const [selectedInverter, setSelectedInverter] = useState(null);
   const [inverterTypes, setInverterTypes] = useState([]); // 👈 เก็บรายการ InverterType เป็น Array
@@ -37,7 +39,56 @@ function ResultPage({ sheet }) {
   const handleRestart = () => {
     navigate("/");
   };
+  const scrollToSection = (selector) => {
+    let attempt = 0;
 
+    const findAndScroll = () => {
+      window.requestAnimationFrame(() => {
+        const target = document.querySelector(selector);
+
+        if (target) {
+          target.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          return;
+        }
+
+        // รอกรณี React ยัง render ข้อมูลไม่เสร็จ
+        attempt += 1;
+
+        if (attempt < 10) {
+          window.setTimeout(findAndScroll, 50);
+        }
+      });
+    };
+
+    findAndScroll();
+  };
+  useEffect(() => {
+    if (!isCustom) return;
+
+    const scrollTimer = window.setTimeout(() => {
+      customSpaceRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+
+    return () => window.clearTimeout(scrollTimer);
+  }, [isCustom]);
+  useEffect(() => {
+    if (!spaceSugOpen || isCustom || !spaceSug) return;
+
+    const scrollTimer = window.setTimeout(() => {
+      spaceSugRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+
+    return () => window.clearTimeout(scrollTimer);
+  }, [spaceSugOpen, spaceSug, isCustom]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -154,6 +205,8 @@ function ResultPage({ sheet }) {
 
   const handleSelect = (value) => {
     setSelectedInverter(value);
+
+    scrollToSection(".space-product-result > .advanced-card:nth-of-type(2)");
   };
 
   if (!productSelected) {
@@ -167,6 +220,9 @@ function ResultPage({ sheet }) {
   const handleSelectSug = (item) => {
     setSpaceSug(item);
     setSpaceSugOpen(true);
+    setIsCustom(false);
+
+    scrollToSection("#space-suggest-result");
   };
 
   return (
@@ -266,22 +322,28 @@ function ResultPage({ sheet }) {
         </div>
 
         {spaceSugOpen && !isCustom && (
-          <SpaceSuggest
-            // getDriveImageUrl={getDriveImageUrl}
-            spaceSug={spaceSug}
-            getDriveImageUrl={getDriveImageUrl}
-          />
+          <div
+            ref={spaceSugRef}
+            style={{ overflowWrap: "anywhere", scrollMarginTop: "24px" }}
+          >
+            <SpaceSuggest
+              spaceSug={spaceSug}
+              getDriveImageUrl={getDriveImageUrl}
+            />
+          </div>
         )}
         {/*--- 2. เลือกประเภทอินเวอร์เตอร์ (ดึงจาก Tab: InverterType) --- */}
         {isCustom && (
-          <SpaceProductResult
-            data={selectedInverter}
-            space={space}
-            getDriveImageUrl={getDriveImageUrl}
-            inverterTypes={inverterTypes}
-            selectedInverter={selectedInverter}
-            handleSelect={handleSelect}
-          />
+          <div ref={customSpaceRef} style={{ scrollMarginTop: "24px" }}>
+            <SpaceProductResult
+              data={selectedInverter}
+              space={space}
+              getDriveImageUrl={getDriveImageUrl}
+              inverterTypes={inverterTypes}
+              selectedInverter={selectedInverter}
+              handleSelect={handleSelect}
+            />
+          </div>
         )}
         <a
           href="https://lin.ee/60uFI44s"
