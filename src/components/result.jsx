@@ -33,7 +33,11 @@ function ResultPage({ sheet }) {
   const [space, setSpace] = useState([]);
   const [spaceSug, setSpaceSug] = useState();
   const [spaceSugOpen, setSpaceSugOpen] = useState(false);
-
+  const navigate = useNavigate();
+  const handleRestart = () => {
+    navigate("/");
+  };
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -165,10 +169,7 @@ function ResultPage({ sheet }) {
     setSpaceSugOpen(true);
   };
 
-  const navigate = useNavigate();
-  const handleRestart = () => {
-    navigate("/");
-  };
+
   return (
     <Row>
       <Col xs={12}>
