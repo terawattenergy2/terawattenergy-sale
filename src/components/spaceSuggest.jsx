@@ -8,15 +8,19 @@ import { useNavigate } from "react-router-dom";
 function SpaceSuggest({ spaceSug, getDriveImageUrl }) {
   const pdfRef = useRef(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [personalData] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("personal_data") || "{}");
-    } catch (error) {
-      console.error("อ่านข้อมูลส่วนตัวไม่ได้:", error);
-      return {};
-    }
-  });
+const [personalData] = useState(() => {
+  try {
+    return JSON.parse(
+      localStorage.getItem("personal_data") || "{}"
+    );
+  } catch (error) {
+    console.error("อ่านข้อมูลส่วนตัวไม่ได้:", error);
 
+    localStorage.removeItem("personal_data");
+
+    return {};
+  }
+});
   const fullName = [personalData.firstName, personalData.lastName]
     .filter(Boolean)
     .join(" ");

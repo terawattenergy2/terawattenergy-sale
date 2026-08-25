@@ -89,7 +89,7 @@ function WizardPage({ data }) {
         </p>
 
         <Row className="g-3">
-          {answers[0].value === "large" && step === 1 ? (
+          {answers[0]?.value === "large" && step === 1 ? (
             <Col
               key={currentQuestion?.options[1]?.id}
               xs={12}
