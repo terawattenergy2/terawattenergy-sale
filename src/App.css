@@ -821,7 +821,9 @@ background-color: var(--card);
   gap: 22px;
 
 }
-
+.text-name{
+  color: var(--text2)
+}
 .col-12.text-space > div:first-child h5 {
   margin: 0 0 6px;
   color: var(--title);

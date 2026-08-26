@@ -92,7 +92,7 @@ function PersonalPage({ onComplete, onBack }) {
           <Row>
             <Col xs={12} md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>ชื่อ</Form.Label>
+                <Form.Label className = 'text-name'>ชื่อ</Form.Label>
 
                 <Form.Control
                   type="text"
@@ -107,7 +107,7 @@ function PersonalPage({ onComplete, onBack }) {
 
             <Col xs={12} md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>นามสกุล</Form.Label>
+                <Form.Label className = 'text-name'>นามสกุล</Form.Label>
 
                 <Form.Control
                   type="text"
@@ -122,7 +122,7 @@ function PersonalPage({ onComplete, onBack }) {
           </Row>
 
           <Form.Group className="mb-3">
-            <Form.Label>อีเมล</Form.Label>
+            <Form.Label className = 'text-name'>อีเมล</Form.Label>
 
             <Form.Control
               type="email"
@@ -135,7 +135,7 @@ function PersonalPage({ onComplete, onBack }) {
           </Form.Group>
 
           <Form.Group className="mb-4">
-            <Form.Label>เบอร์โทรศัพท์</Form.Label>
+            <Form.Label className = 'text-name'>เบอร์โทรศัพท์</Form.Label>
 
             <Form.Control
               type="tel"
