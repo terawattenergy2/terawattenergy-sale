@@ -80,13 +80,17 @@ function WizardPage({ data }) {
           ขั้นตอนที่ {step + 1} จาก {question.length}
         </p>
       </div> */}
-      <div className="wizard-step-summary">
-  <span>  ขั้นตอนที่ {step + 1} จาก {question.length}</span>
+     <div className="wizard-step-summary">
+  <span>
+    ขั้นตอนที่ {step + 1} จาก {question.length}
+  </span>
 
   <div className="wizard-step-track">
     <div
       className="wizard-step-progress"
-      style={{ width: "33.33%" }}
+      style={{
+        width: `${((step + 1) / question.length) * 100}%`,
+      }}
     />
   </div>
 </div>
