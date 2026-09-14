@@ -233,6 +233,8 @@ function SpaceProductResult({
       ],
     },
   ];
+console.log('selectedOptions', selectedOptions);
+console.log('space', space);
 
   const getOptions = useCallback(
     (item) => {
@@ -314,7 +316,6 @@ function SpaceProductResult({
     scrollToNextQuestion(itemId);
   };
 
-  // const isFormCompleted = isMainCompleted && isExtraCompleted;
   const waitForImages = async (element) => {
     const images = Array.from(element.querySelectorAll("img"));
     await Promise.all(
@@ -394,16 +395,6 @@ function SpaceProductResult({
       setIsExporting(false);
     }
   };
-
-  //   const handleReset = () => {
-  //   setSelectedOptions({});
-  //   setCurrentStep(0);
-
-  //   document.querySelector(".micro-configurator")?.scrollIntoView({
-  //     behavior: "smooth",
-  //     block: "start",
-  //   });
-  // };
 
   const [personalData] = useState(() => {
     try {
@@ -598,6 +589,22 @@ function SpaceProductResult({
       return (matchedData?.bat || []).map((option) => option.title);
     }
 
+    // Home Energy Gateway: แสดงเฉพาะรุ่นที่ตรงกับเฟสที่เลือก
+    if (itemId === "4") {
+      const phase = String(selectedOptions["0"] ?? "")
+        .match(/\b([13])\s*phase\b/i)?.[1];
+
+      return getOptions(item).filter((option) => {
+        const text = String(option).trim();
+
+        // ตัวเลือกไม่เพิ่ม Gateway ใช้ได้ทั้งสองเฟส
+        if (text === "ไม่เพิ่มเติม") return true;
+
+        const optionPhase = text.match(/\b([13])\s*phase\b/i)?.[1];
+        return Boolean(phase && optionPhase === phase);
+      });
+    }
+
     // ตัวเลือกอื่น ๆ ใช้ข้อมูลเดิมจาก Google Sheet
     return getOptions(item);
   };
@@ -633,6 +640,7 @@ function SpaceProductResult({
   );
 
   const visibleSpace = space?.slice(0, currentStep + 1) || [];
+console.log('visibleSpace', visibleSpace);
 
   const hasAnswer = (value) => {
     return value !== undefined && value !== null && value !== "";
@@ -661,6 +669,8 @@ function SpaceProductResult({
   const isFormCompleted = isMicro
     ? isMicroCompleted
     : isMainCompleted && isExtraCompleted;
+
+    
   return (
     <div className="space-product-result">
       <div className="advanced-card card-text">
@@ -708,45 +718,7 @@ function SpaceProductResult({
             );
           })}
         </div>
-        {/* <div className="advanced-card-2 mt-4 card-text">
-          {inverterTypes.map((inverter) => (
-            <div
-              key={inverter.id}
-              className={`inverter-card ${
-                String(selectedInverter?.id) === String(inverter.id)
-                  ? "active"
-                  : ""
-              }`}
-              role="button"
-              tabIndex={0}
-              aria-pressed={
-                String(selectedInverter?.id) === String(inverter.id)
-              }
-              onClick={() => handleSelect(inverter)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  handleSelect(inverter);
-                }
-              }}
-            >
-              <div className="inverter-header">
-                {inverter.image && (
-                  <Image
-                    className="inverter-image"
-                    src={inverter.image}
-                    alt={inverter.label}
-                  />
-                )}
-              </div>
-
-              <div className="inverter-body">
-                <h3>{inverter.label}</h3>
-                <p>{inverter.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>{" "} */}
+      
       </div>
       <div className="advanced-card card-text">
         <h2>ปรับแต่งสเปกระบบ</h2>
@@ -864,7 +836,10 @@ function SpaceProductResult({
                 if (!canShow) return null;
 
                 const options = getMatchedOptions(item);
-                const selectedValue = selectedOptions[item.id] || "";
+                const currentValue = selectedOptions[item.id] ?? "";
+                const selectedValue = options.includes(currentValue)
+                  ? currentValue
+                  : "";
 
                 const isSelectQuestion =
                   String(item?.id) === "3" ||
@@ -926,6 +901,7 @@ function SpaceProductResult({
                   </div>
                 );
               })}
+            
               {data?.label === "SigenStor" && isMainCompleted && (
                 <div
                   className="space-data row w-100 progressive-question"
@@ -936,7 +912,7 @@ function SpaceProductResult({
                     <p>{optionCus.sub_title}</p>
                   </div>
 
-                  <div className="space-right col-6">
+                <div className="space-right col-6">
                     <select
                       name={`space-${optionCus.id}`}
                       value={selectedOptions[optionCus.id] || ""}
@@ -945,7 +921,7 @@ function SpaceProductResult({
                       }
                     >
                       <option value="" disabled>
-                        กรุณาเลือก
+                        กรุณาเลือก 
                       </option>
 
                       <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
