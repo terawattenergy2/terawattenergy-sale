@@ -675,7 +675,6 @@ function SpaceProductResult({
   );
 
   const visibleSpace = space?.slice(0, currentStep + 1) || [];
-console.log('space', space);
 
   const hasAnswer = (value) => {
     return value !== undefined && value !== null && value !== "";
@@ -897,7 +896,6 @@ console.log('space', space);
                 const selectedValue = options.includes(currentValue)
                   ? currentValue
                   : "";
-        {console.log("visibleSpace", visibleSpace)}
 
                 const isSelectQuestion =
                   String(item?.id) === "3" ||
@@ -1055,7 +1053,6 @@ console.log('space', space);
             </Button>
           </div>
         )}
-        {console.log("selectedOptions", selectedOptions)}
         <PdfPage
           energySummary={energySummary}
           pdfRef={pdfRef}
