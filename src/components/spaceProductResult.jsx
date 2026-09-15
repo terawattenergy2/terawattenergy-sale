@@ -548,7 +548,6 @@ function SpaceProductResult({
     },
   ];
 
-  const [onCheckBatt, setOnCheckBatt] = useState();
 
   const matchedData = dataCus.find(
     (item) =>
@@ -868,7 +867,6 @@ const isExtraCompleted =
                               onChange={(event) =>
                                 handleSelectOption(item.id, event.target.value)
                               }
-                              onClick={() => setOnCheckBatt(selectedValue)}
                             >
                               <option value="" disabled>
                                 กรุณาเลือก
