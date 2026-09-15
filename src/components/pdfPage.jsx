@@ -3,6 +3,7 @@ import imgLogo from "../components/assets/images/LOGO-TE.png";
 
 function PdfPage({
   pdfRef,
+  energySummary,
   data,
   getDriveImageUrl,
   space,
@@ -17,6 +18,11 @@ function PdfPage({
   microSizeKey = "microSize",
   selectedMicroSize,
 }) {
+  const formatEnergyValue = (value) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(value)
+      : "—";
+
   const microProducts = selectedMicroSize?.detail || [];
 
   return (
@@ -229,6 +235,40 @@ function PdfPage({
                 ))}
               </div>
             </>
+          )}
+
+          {energySummary && (selectedOptions?.["1"] || selectedOptions?.[microSizeKey]) && (
+            <section style={{ marginTop: "20px", color: "#1d2939", breakInside: "avoid" }}>
+              <h3 className="pdf-section-title">สรุปประโยชน์ของระบบ</h3>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", lineHeight: 1.5 }}>
+                <tbody>
+                  {[
+                    { label: "ลดค่าไฟโดยประมาณจากแบตเตอรี่", unit: "บาท/รอบ", value: energySummary.savings },
+                    { label: "ผลิตไฟได้โดยประมาณ", unit: "หน่วย/วัน", value: energySummary.production },
+                    { label: "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่", unit: "ชม./รอบ", value: energySummary.airconHours },
+                  ].map(({ label, unit, value }) => (
+                    <tr key={label}>
+                      <th scope="row" style={{ padding: "10px", textAlign: "left", fontWeight: 500, borderBottom: "1px solid #dce3eb", width: "68%" }}>{label}</th>
+                      <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid #dce3eb", whiteSpace: "nowrap" }}>
+                        <strong style={{ fontSize: "18px" }}>{formatEnergyValue(value)}</strong>{" "}{unit}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p style={{ fontSize: "11px", lineHeight: 1.6, color: "#596579", margin: "10px 0 4px" }}>
+                ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน โดยสมมติขนาดแผงเพียงพอ;
+                ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+              </p>
+              <p style={{ fontSize: "11px", lineHeight: 1.6, color: "#596579", margin: 0 }}>
+                ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ
+                {isMicro
+                  ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
+                  : energySummary.savings == null || energySummary.airconHours == null
+                    ? " ยังไม่มีข้อมูลแบตเตอรี่ที่ใช้คำนวณได้ กรุณาตรวจสอบรุ่นและจำนวนแบตเตอรี่"
+                    : ""}
+              </p>
+            </section>
           )}
 
           <div className="pdf-footer">

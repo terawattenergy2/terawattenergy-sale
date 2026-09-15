@@ -1,9 +1,41 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Button, Image } from "react-bootstrap";
+import { Button, Image, Modal, Spinner } from "react-bootstrap";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNavigate } from "react-router-dom";
 import PdfPage from "./pdfPage";
+
+// ค่าคงที่ถอดจากแท็บ "สูตรคิด" ไม่ได้ดึงสดจาก Google Sheets
+const ENERGY_ASSUMPTIONS = {
+  equivalentSunHours: 4,
+  electricityRate: 4.5,
+  batteryEnergyFraction: 0.5, // จำลองสูตรหาร 2 ในชีต ไม่ใช่การแปลง C-rate
+  airconPowerKw: 1,
+};
+
+function calculateEnergySummary(options, isMicro) {
+  const model = String(isMicro ? options.microSize || "" : options["1"] || "");
+  // อ่านเลขกำลังเฉพาะรูปแบบชื่อรุ่นที่ใช้ในตัวเลือก ไม่อ่าน SP2 เป็นกำลังไฟ
+  const powerMatch = isMicro
+    ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
+    : model.match(/(?:Hybrid|EC)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
+  const inverterKw = powerMatch ? Number(powerMatch[1]) : null;
+  const production = inverterKw === null ? null : inverterKw * ENERGY_ASSUMPTIONS.equivalentSunHours;
+  const capacityMatch = String(options["2"] || "").match(/\(\s*(\d+(?:\.\d+)?)\s*kWh\s*\)/i);
+  const rawCount = String(options["3"] ?? "").trim();
+  const count = /^\d+$/.test(rawCount) ? Number(rawCount) : null;
+  const batteryKwh = !isMicro && capacityMatch && count !== null
+    ? Number(capacityMatch[1]) * count : null;
+  const usableForEstimate = batteryKwh === null ? null : batteryKwh * ENERGY_ASSUMPTIONS.batteryEnergyFraction;
+  return {
+    production,
+    savings: usableForEstimate === null ? null : usableForEstimate * ENERGY_ASSUMPTIONS.electricityRate,
+    airconHours: usableForEstimate === null ? null : usableForEstimate / ENERGY_ASSUMPTIONS.airconPowerKw,
+  };
+}
+
+const formatEnergyValue = value => value === null || !Number.isFinite(value)
+  ? "—" : new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(value);
 
 function SpaceProductResult({
   data,
@@ -333,6 +365,8 @@ function SpaceProductResult({
     if (!pdfRef.current) return;
     try {
       setIsExporting(true);
+      // ให้เบราว์เซอร์แสดง Loading ก่อนเริ่มงานสร้าง PDF
+      await new Promise((resolve) => window.requestAnimationFrame(() => window.setTimeout(resolve, 0)));
       try {
         await saveToGoogleSheet();
       } catch (sheetError) {
@@ -549,6 +583,7 @@ function SpaceProductResult({
   ];
 
 
+
   const matchedData = dataCus.find(
     (item) =>
       item.title?.trim().toLowerCase() === data?.short?.trim().toLowerCase(),
@@ -640,6 +675,7 @@ function SpaceProductResult({
   );
 
   const visibleSpace = space?.slice(0, currentStep + 1) || [];
+console.log('space', space);
 
   const hasAnswer = (value) => {
     return value !== undefined && value !== null && value !== "";
@@ -650,18 +686,21 @@ function SpaceProductResult({
     currentStep >= space.length &&
     space.every((item) => hasAnswer(selectedOptions[item.id]));
 
-const batteryCount = String(selectedOptions["3"] ?? "");
+  const batteryCount = String(selectedOptions["3"] ?? "");
+  const hasExtraQuestion =
+    String(data?.id) === "1" &&
+    batteryCount !== "" &&
+    batteryCount !== "6";
 
-const hasExtraQuestion =
-  String(data?.id) === "1" &&
-  batteryCount !== "" &&
-  batteryCount !== "6";
+  const isExtraCompleted =
+    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
 
-const isExtraCompleted =
-  !hasExtraQuestion || hasAnswer(selectedOptions[optionCus.id]);
 
   // ตรวจสอบว่าเป็น SigenMicro
   const isMicro = String(data?.id) === "3";
+
+  // คำนวณจาก state ทุก render จึงอัปเดตทันทีเมื่อเปลี่ยนตัวเลือก
+  const energySummary = calculateEnergySummary(selectedOptions, isMicro);
 
   // Micro ต้องเลือกทั้งเฟสและขนาด
   const isMicroCompleted =
@@ -676,6 +715,22 @@ const isExtraCompleted =
 
   return (
     <div className="space-product-result">
+      <Modal
+        show={isExporting}
+        centered
+        backdrop="static"
+        keyboard={false}
+        aria-labelledby="pdf-loading-title"
+      >
+        <Modal.Body className="text-center py-5 px-4">
+          <Spinner animation="border" variant="primary" aria-hidden="true" />
+          <div role="status" aria-live="polite">
+            <h3 id="pdf-loading-title" className="h5 mt-4 mb-2">กำลังสร้างไฟล์ PDF</h3>
+            <p className="text-secondary mb-0">กำลังเตรียมข้อมูลและรูปภาพ กรุณารอสักครู่</p>
+          </div>
+        </Modal.Body>
+      </Modal>
+
       <div className="advanced-card card-text">
         <h3>เลือกประเภทอินเวอร์เตอร์</h3>
         <p className="text-secondary small">
@@ -842,6 +897,7 @@ const isExtraCompleted =
                 const selectedValue = options.includes(currentValue)
                   ? currentValue
                   : "";
+        {console.log("visibleSpace", visibleSpace)}
 
                 const isSelectQuestion =
                   String(item?.id) === "3" ||
@@ -883,6 +939,7 @@ const isExtraCompleted =
                             </select>
 
                             {String(data?.id) === "1" &&
+                              String(item?.id) === "3" &&
                               String(selectedValue) === "6" && (
                                 <p className="text-danger mt-2 mb-0">
                                   หากติดแบต 6 ก้อน ไม่สามารถติด EVDC ได้
@@ -913,7 +970,6 @@ const isExtraCompleted =
                 );
               })}
               {hasExtraQuestion && isMainCompleted && (
-
                   <div
                     className="space-data row w-100 progressive-question"
                     data-question-id={optionCus.id}
@@ -949,6 +1005,41 @@ const isExtraCompleted =
             </div>
           </div>
         )}
+        {(selectedOptions["1"] || selectedOptions[MICRO_SIZE_KEY]) && (
+          <section className="mt-4 mb-4" aria-labelledby="energy-summary-title">
+            <h3 id="energy-summary-title" className="h5 mb-3">สรุปประโยชน์ของระบบ</h3>
+            <div className="row g-3">
+              {[
+                { label: "ลดค่าไฟโดยประมาณจากแบตเตอรี่", unit: "บาท/รอบ", value: energySummary.savings },
+                { label: "ผลิตไฟได้โดยประมาณ", unit: "หน่วย/วัน", value: energySummary.production },
+                { label: "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่", unit: "ชม./รอบ", value: energySummary.airconHours },
+              ].map(({ label, unit, value }) => (
+                <div className="col-12 col-md-4" key={label}>
+                  <div className="border rounded-3 p-4 h-100 d-flex flex-column">
+                    <h4 className="h6 mb-4">{label}</h4>
+                    <div className="d-flex align-items-end gap-3 mt-auto">
+                      <strong className="fs-2" aria-live="polite">{formatEnergyValue(value)}</strong>
+                      <span className="text-nowrap">{unit}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="small text-secondary mt-3 mb-1">
+              ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน โดยสมมติขนาดแผงเพียงพอ;
+              ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+            </p>
+            <p className="small text-secondary mb-0">
+              ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ
+              
+              {isMicro
+                ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
+                : energySummary.savings === null || energySummary.airconHours === null
+                  ? " ยังไม่มีข้อมูลแบตเตอรี่ที่ใช้คำนวณได้ กรุณาตรวจสอบรุ่นและจำนวนแบตเตอรี่"
+                  : ""}
+            </p>
+          </section>
+        )}
         {isFormCompleted && (
           <div className="result-actions mt-3">
             <Button variant="outline-secondary" onClick={handleRestart}>
@@ -964,7 +1055,9 @@ const isExtraCompleted =
             </Button>
           </div>
         )}
+        {console.log("selectedOptions", selectedOptions)}
         <PdfPage
+          energySummary={energySummary}
           pdfRef={pdfRef}
           data={data}
           getDriveImageUrl={getDriveImageUrl}
