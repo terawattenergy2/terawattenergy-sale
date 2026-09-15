@@ -245,13 +245,13 @@ function ResultPage({ sheet }) {
     setSpaceSugOpen(true);
     setIsCustom(false);
 
-    scrollToSection("#space-suggest-result");
+    scrollToSection("#selected-product-details");
   };
 
   return (
     <Row>
       <Col xs={12}>
-        <div className="advanced-card mt-4 card-text">
+        <div id="product-comparison" className="advanced-card mt-4 card-text">
           <h2>อินเวอร์เตอร์ที่แนะนำ: {inverterSug}</h2>
 
           <p className="text-secondary small">{desSug}</p>
@@ -331,11 +331,20 @@ function ResultPage({ sheet }) {
 
         {spaceSugOpen && !isCustom && (
           <div
+            id="selected-product-details"
             ref={spaceSugRef}
             style={{ overflowWrap: "anywhere", scrollMarginTop: "24px" }}
           >
             <SpaceSuggest
               spaceSug={spaceSug}
+              onCompare={() => scrollToSection("#product-comparison")}
+              onCustomize={() => {
+                const matchingInverter = inverterTypes.find(inverter =>
+                  String(inverter.short).trim().toLowerCase() === String(spaceSug?.short || "").trim().toLowerCase()
+                );
+                if (matchingInverter) setSelectedInverter(matchingInverter);
+                setIsCustom(true);
+              }}
               getDriveImageUrl={getDriveImageUrl}
             />
           </div>

@@ -1,11 +1,12 @@
 import React, { useRef, useState } from "react";
-import { Button, Image } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import SelectedProductDetails from "./SelectedProductDetails";
 import SpaceSuggestPdfPage from "./SpaceSuggestPdfPage";
 import { useNavigate } from "react-router-dom";
 
-function SpaceSuggest({ spaceSug, getDriveImageUrl }) {
+function SpaceSuggest({ spaceSug, getDriveImageUrl, onCompare, onCustomize }) {
   const pdfRef = useRef(null);
   const [isExporting, setIsExporting] = useState(false);
 const [personalData] = useState(() => {
@@ -24,12 +25,6 @@ const [personalData] = useState(() => {
   const fullName = [personalData.firstName, personalData.lastName]
     .filter(Boolean)
     .join(" ");
-
-  const imageUrl = getDriveImageUrl?.(spaceSug?.img_product);
-
-  const imageUrl_1 = getDriveImageUrl?.(spaceSug?.img_add_1);
-
-  const imageUrl_2 = getDriveImageUrl?.(spaceSug?.img_add_2);
 
   const handleExportPDF = async () => {
     if (!pdfRef.current || isExporting) return;
@@ -133,103 +128,12 @@ const [personalData] = useState(() => {
   };
   return (
     <div className="space-suggest-wrapper">
-      {/* Card ที่แสดงบนหน้าเว็บ */}
-      <div className="space-suggest-card">
-        <div className="space-suggest-header">
-          <span className="space-suggest-eyebrow">RECOMMENDED SOLUTION</span>
-
-          <h3>{spaceSug?.ans_product}</h3>
-
-          <p>{spaceSug?.detail_product}</p>
-        </div>
-
-        <div className="sug-open">
-          <div className="sug-product-glow" />
-
-          {imageUrl && (
-            <Image
-              src={imageUrl}
-              alt={spaceSug?.ans_product || "Product"}
-              className="sug-open-image"
-              crossOrigin="anonymous"
-            />
-          )}
-
-          <div className="sug-product-label">
-            <span>ผลิตภัณฑ์ที่แนะนำ</span>
-
-            <strong>{spaceSug?.ans_product}</strong>
-          </div>
-        </div>
-
-        {(spaceSug?.ans_add_on_1 || spaceSug?.ans_add_on_2) && (
-          <div className="sug-accessories">
-            <div className="sug-accessories-heading">
-              <div>
-                <span>RECOMMENDED ADD-ONS</span>
-                <h4>อุปกรณ์เสริมที่แนะนำ</h4>
-              </div>
-
-              <div className="sug-accessories-count">
-                {
-                  [spaceSug?.ans_add_on_1, spaceSug?.ans_add_on_2].filter(
-                    Boolean,
-                  ).length
-                }{" "}
-                รายการ
-              </div>
-            </div>
-
-            <div className="sug-accessories-grid">
-              {spaceSug?.ans_add_on_1 && (
-                <div className="sug-addon-card">
-                  <div className="sug-addon-number">01</div>
-
-                  <div className="sug-addon-image-box">
-                    {imageUrl_1 && (
-                      <Image
-                        src={imageUrl_1}
-                        alt={spaceSug.ans_add_on_1}
-                        className="sug-addon-image"
-                        crossOrigin="anonymous"
-                      />
-                    )}
-                  </div>
-
-                  <div className="sug-open-detail">
-                    <span>อุปกรณ์เสริม</span>
-
-                    <h5>{spaceSug.ans_add_on_1}</h5>
-                  </div>
-                </div>
-              )}
-
-              {spaceSug?.ans_add_on_2 && (
-                <div className="sug-addon-card">
-                  <div className="sug-addon-number">02</div>
-
-                  <div className="sug-addon-image-box">
-                    {imageUrl_2 && (
-                      <Image
-                        src={imageUrl_2}
-                        alt={spaceSug.ans_add_on_2}
-                        className="sug-addon-image"
-                        crossOrigin="anonymous"
-                      />
-                    )}
-                  </div>
-
-                  <div className="sug-open-detail">
-                    <span>อุปกรณ์เสริม</span>
-
-                    <h5>{spaceSug.ans_add_on_2}</h5>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      <SelectedProductDetails
+        product={spaceSug}
+        getDriveImageUrl={getDriveImageUrl}
+        onCompare={onCompare}
+        onCustomize={onCustomize}
+      />
 
       {/* ปุ่ม Export อยู่นอกหน้าสำหรับ PDF */}
       <div className="space-suggest-export">

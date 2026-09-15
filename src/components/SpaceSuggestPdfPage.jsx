@@ -1,177 +1,47 @@
 import React from "react";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
+import "./spaceSuggestPdf.css";
 
 function SpaceSuggestPdfPage({ fullName, personalData, pdfRef, spaceSug, getDriveImageUrl }) {
-  const productImage = getDriveImageUrl?.(spaceSug?.img_product);
-
-  const addOns = [
-    {
-      id: 1,
-      name: spaceSug?.ans_add_on_1,
-      image: getDriveImageUrl?.(spaceSug?.img_add_1),
-    },
-    {
-      id: 2,
-      name: spaceSug?.ans_add_on_2,
-      image: getDriveImageUrl?.(spaceSug?.img_add_2),
-    },
-  ].filter((item) => item.name);
+  const imageUrl = (value) => value ? (getDriveImageUrl?.(value) || value) : "";
+  const details = String(spaceSug?.detail_product || "").split(/[,\n]+/).map(text => text.trim()).filter(Boolean);
+  const addOns = [1, 2].map(number => ({
+    number, name: spaceSug?.[`ans_add_on_${number}`], image: imageUrl(spaceSug?.[`img_add_${number}`]),
+  })).filter(item => item.name);
+  const productImage = imageUrl(spaceSug?.img_product);
+  const date = new Date().toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="space-suggest-pdf-stage">
-      <div ref={pdfRef} className="space-suggest-pdf">
-        {/* ลายน้ำ */}
-        <div className="space-pdf-watermark">
-          <img src={imgLogo} alt="" />
-        </div>
-
-        <div className="space-pdf-content">
-          {/* Header */}
-          <div className="space-pdf-header">
-            <div>
-              <span>RECOMMENDED SOLUTION</span>
-              <h2>สรุปผลิตภัณฑ์ที่แนะนำ</h2>
-              <p>ระบบพลังงานที่เหมาะสมตามข้อมูลที่คุณเลือก</p>
-            </div>
-
-            <img src={imgLogo} alt="Terawatt" className="space-pdf-logo" />
-          </div>
-
- {/* ข้อมูลผู้ใช้งาน */}
-          <div className="pdf-customer-section">
-            <div className="pdf-customer-heading">
-              <div>
-                <span className="pdf-customer-eyebrow">
-                  CUSTOMER INFORMATION
-                </span>
-
-                <h3>ข้อมูลผู้ใช้งาน</h3>
-              </div>
-            </div>
-
-            <div className="pdf-customer-grid">
-              <div className="pdf-customer-item pdf-name-item">
-                <span className="pdf-customer-label">ชื่อ–นามสกุล</span>
-
-                <strong>{fullName || "-"}</strong>
-              </div>
-
-              <div className="pdf-customer-item">
-                <span className="pdf-customer-label">อีเมล</span>
-
-                <strong>{personalData?.email || "-"}</strong>
-              </div>
-
-              <div className="pdf-customer-item">
-                <span className="pdf-customer-label">เบอร์โทรศัพท์</span>
-
-                <strong>{personalData?.phone || "-"}</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* สินค้าหลัก */}
-          <div className="space-pdf-section">
-            <div className="space-pdf-section-heading">
-              <span>MAIN PRODUCT</span>
-              <h3>ผลิตภัณฑ์หลัก</h3>
-            </div>
-
-            <div className="space-pdf-product-card">
-              <div className="space-pdf-product-image">
-                {productImage ? (
-                  <img
-                    src={productImage}
-                    alt={spaceSug?.ans_product || "Product"}
-                    crossOrigin="anonymous"
-                  />
-                ) : (
-                  <span>ไม่มีรูปสินค้า</span>
-                )}
-              </div>
-
-              <div className="space-pdf-product-info">
-                <span className="space-pdf-selected">ผลิตภัณฑ์ที่แนะนำ</span>
-
-                <h3>{spaceSug?.ans_product || "ยังไม่ได้เลือกผลิตภัณฑ์"}</h3>
-
-                <p>{spaceSug?.detail_product || "ไม่มีรายละเอียดผลิตภัณฑ์"}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* อุปกรณ์เสริม */}
-          {addOns.length > 0 && (
-            <div className="space-pdf-section">
-              <div className="space-pdf-section-heading">
-                <span>RECOMMENDED ADD-ONS</span>
-                <h3>อุปกรณ์เสริมที่แนะนำ</h3>
-              </div>
-
-              <div className="space-pdf-addon-grid">
-                {addOns.map((item, index) => (
-                  <div className="space-pdf-addon-card" key={item.id}>
-                    <div className="space-pdf-addon-number">
-                      {String(index + 1).padStart(2, "0")}
-                    </div>
-
-                    <div className="space-pdf-addon-image">
-                      {item.image ? (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          crossOrigin="anonymous"
-                          style={{
-                            width: "auto",
-                            height: "auto",
-                            maxWidth: "100%",
-                            maxHeight: "150px",
-                            objectFit: "contain",
-                          }}
-                        />
-                      ) : (
-                        <span>ไม่มีรูป</span>
-                      )}
-                    </div>
-
-                    <div className="space-pdf-addon-info">
-                      <span>อุปกรณ์เสริม</span>
-                      <strong>{item.name}</strong>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* หมายเหตุ */}
-          <div className="space-pdf-note">
-            <strong>หมายเหตุ</strong>
-
-            <p>
-              รายการผลิตภัณฑ์เป็นคำแนะนำเบื้องต้น
-              กรุณาปรึกษาผู้เชี่ยวชาญเพื่อสำรวจพื้นที่และยืนยันสเปกระบบ
-              ก่อนติดตั้งจริง
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div className="space-pdf-footer">
-            <span>TERAWATT ENERGY</span>
-
-            <span>
-              วันที่สร้างเอกสาร:{" "}
-              {new Date().toLocaleDateString("th-TH", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
-          </div>
-        </div>
+    <div className="tera-pdf-stage" aria-hidden="true">
+      <div ref={pdfRef} className="tera-pdf-page">
+        <header className="tera-pdf-header">
+          <img src={imgLogo} alt="Terawatt Energy" />
+          <div><span>TERAMATCH / SOLAR & STORAGE</span><h1>สรุประบบที่แนะนำ</h1><p>รายละเอียดผลิตภัณฑ์และอุปกรณ์สำหรับคุณ</p></div>
+        </header>
+        <section className="tera-pdf-customer">
+          <div><span>จัดทำสำหรับ</span><strong>{fullName || "ไม่ระบุชื่อ"}</strong></div>
+          <div><span>อีเมล</span><strong>{personalData?.email || "—"}</strong></div>
+          <div><span>โทรศัพท์</span><strong>{personalData?.phone || "—"}</strong></div>
+        </section>
+        <section className="tera-pdf-hero">
+          <div className="tera-pdf-product-image">{productImage ? <img src={productImage} alt={spaceSug?.ans_product || "ผลิตภัณฑ์"} crossOrigin="anonymous" /> : <span>ไม่มีรูปสินค้า</span>}</div>
+          <div><span className="tera-pdf-tag">ผลิตภัณฑ์ที่คุณเลือก</span><h2>{spaceSug?.ans_product || "ยังไม่ได้เลือกผลิตภัณฑ์"}</h2><p>ชุดแนะนำตามข้อมูลที่คุณเลือกใน TeraMatch</p></div>
+        </section>
+        <section>
+          <h3 className="tera-pdf-heading"><span>01</span> คุณสมบัติผลิตภัณฑ์</h3>
+          {details.length ? <div className="tera-pdf-features">{details.map((text, index) => <div className="tera-pdf-feature" key={index}><span aria-hidden="true">✓</span><p>{text}</p></div>)}</div> : <p className="tera-pdf-empty">ยังไม่มีรายละเอียดคุณสมบัติระบุในข้อมูล</p>}
+        </section>
+        <section>
+          <h3 className="tera-pdf-heading"><span>02</span> อุปกรณ์เสริมที่แนะนำ <small>{addOns.length} รายการ</small></h3>
+          {addOns.length ? <div className="tera-pdf-addons">{addOns.map(item => <article key={item.number}>
+            <div className="tera-pdf-addon-image">{item.image ? <img src={item.image} alt={item.name} crossOrigin="anonymous" /> : <span>ไม่มีรูป</span>}</div>
+            <div><span>อุปกรณ์เสริม {item.number}</span><h4>{item.name}</h4></div>
+          </article>)}</div> : <p className="tera-pdf-empty">ไม่มีอุปกรณ์เสริมระบุในชุดแนะนำนี้</p>}
+        </section>
+        <aside className="tera-pdf-note"><strong>ก่อนตัดสินใจติดตั้ง</strong><p>รายการนี้เป็นคำแนะนำเบื้องต้น กรุณายืนยันจำนวนอุปกรณ์ ราคา และความเหมาะสมกับหน้างานกับผู้เชี่ยวชาญก่อนติดตั้งจริง</p></aside>
+        <footer className="tera-pdf-footer"><strong>TERAWATT ENERGY</strong><span>วันที่จัดทำ {date}</span></footer>
       </div>
     </div>
   );
 }
-
 export default SpaceSuggestPdfPage;
