@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Row, Col, Image, Button } from "react-bootstrap";
+import { Row, Col, Button } from "react-bootstrap";
+import "./resultComparison.css";
 import SpaceProductResult from "./spaceProductResult";
 import LoadingResult from "./LoadingResult";
 import { FaLine } from "react-icons/fa";
@@ -22,6 +23,28 @@ const getDriveImageUrl = (url) => {
 
   return url;
 };
+
+// จัดหมวดจากข้อความเดิม โดยเก็บข้อความที่ไม่ตรงหมวดไว้ในรายละเอียดอื่น
+const comparisonSections = [
+  { key: "design", title: "การออกแบบและการติดตั้ง", symbol: "◇", pattern: /ดีไซน์|บาง|modular|5-in-one|ติดตั้ง/i },
+  { key: "noise", title: "เสียงขณะทำงาน", symbol: "◌", pattern: /เสียง|เงียบ|พัดลม|\bdB\b/i },
+  { key: "solar", title: "การรองรับแผงโซลาร์", symbol: "☀", pattern: /แผง|โซลาร์|MPPT/i },
+  { key: "protection", title: "การป้องกันน้ำและฝุ่น", symbol: "⬡", pattern: /กันน้ำ|กันฝุ่น|IP\d+/i },
+  { key: "ev", title: "การชาร์จรถยนต์ไฟฟ้า", symbol: "↯", pattern: /รถไฟฟ้า|รถยนต์ไฟฟ้า|EV|Charging/i },
+  { key: "backup", title: "ระบบไฟสำรอง", symbol: "ϟ", pattern: /ไฟสำรอง|Backup/i },
+  { key: "energy", title: "การจัดการพลังงาน", symbol: "◎", pattern: /AI|วิเคราะห์|จัดการพลังงาน/i },
+  { key: "other", title: "รายละเอียดอื่น", symbol: "＋" },
+];
+
+function groupProductDetails(value) {
+  const groups = {};
+  String(value || "").split(/[,\n]+/).map(text => text.trim()).filter(Boolean).forEach(text => {
+    const section = comparisonSections.find(item => item.pattern?.test(text));
+    const key = section?.key || "other";
+    (groups[key] ||= []).push(text);
+  });
+  return groups;
+}
 
 function ResultPage({ sheet }) {
   // 🌟 States
@@ -234,80 +257,65 @@ function ResultPage({ sheet }) {
           <p className="text-secondary small">{desSug}</p>
 
           {matchedProducts.length > 0 ? (
-            <div className="p-3 my-2 rounded border">
-              <strong>
-                พบสินค้าที่ตรงกับการเลือกของคุณ ({matchedProducts.length}{" "}
-                รายการ):
-              </strong>
-
-              <div className="row g-3 mt-1">
-                {matchedProducts.map((item, idx) => {
-                  const productDetails = item.detail_product
-                    ? item.detail_product
-                        .split(/[,\n]+/)
-                        .map((detail) => detail.trim())
-                        .filter(Boolean)
-                    : [];
-
-                  return (
-                    <div
-                      key={item.id || idx}
-                      className="col-12 col-lg-6"
-                      onClick={() => handleSelectSug(item)}
-                    >
-                      <div className="sug-inverter-card h-100 p-3 rounded">
-                        <h4 className="text-center border-bottom mb-4 pb-3">
-                          Option {idx + 1}
-                        </h4>
-
-                        <div className="d-flex flex-column flex-md-row">
-                          {item.img_product && (
-                            <Image
-                              src={getDriveImageUrl(item.img_product)}
-                              alt={item.ans_product}
-                              className="product-image me-md-3"
-                            />
-                          )}
-                          <div className="flex-grow-1">
-                            <h3 className="mb-3">{item.ans_product}</h3>
-
-                            {productDetails.length > 0 && (
-                              <div className="product-details">
-                                {productDetails.map((detail, detailIndex) => (
-                                  <div
-                                    key={detailIndex}
-                                    className="product-detail-item"
-                                  >
-                                    {detail}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {item.ans_add_on_1 && (
-                              <div className="product-detail-item add-on-detail">
-                                <strong>Add On 1:</strong> {item.ans_add_on_1}
-                              </div>
-                            )}
-
-                            {item.ans_add_on_2 && (
-                              <div className="product-detail-item add-on-detail">
-                                <strong>Add On 2:</strong> {item.ans_add_on_2}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+            <section className="tera-compare" aria-label="เปรียบเทียบอินเวอร์เตอร์ที่แนะนำ">
+              <p className="tera-compare__intro">
+                เปรียบเทียบ {matchedProducts.length} รุ่นที่เหมาะกับคุณ แล้วเลือกระบบที่ต้องการ
+              </p>
+              <div className="tera-compare__scroll" tabIndex={0} role="region" aria-label="ตารางเปรียบเทียบสินค้า เลื่อนแนวนอนเพื่อดูทุกรุ่น">
+                <div className="tera-compare__grid" style={{ "--product-count": matchedProducts.length }}>
+                  {matchedProducts.map((item, index) => (
+                    <div className="tera-compare__hero" key={`hero-${index}`}>
+                      <p className="tera-compare__eyebrow">ตัวเลือก {index + 1}</p>
+                      <h3>{item.ans_product}</h3>
+                      <div className="tera-compare__image">
+                        {item.img_product ? (
+                          <img src={getDriveImageUrl(item.img_product)} alt={item.ans_product || "อินเวอร์เตอร์"} />
+                        ) : <span>ไม่มีรูปสินค้า</span>}
                       </div>
+                      <button type="button" className="tera-compare__choose" onClick={() => handleSelectSug(item)}>
+                        เลือกรุ่นนี้ <span aria-hidden="true">↗</span>
+                      </button>
                     </div>
-                  );
-                })}
+                  ))}
+                  {comparisonSections.map(section => {
+                    const values = matchedProducts.map(item => groupProductDetails(item.detail_product)[section.key] || []);
+                    if (!values.some(items => items.length)) return null;
+                    return (
+                      <React.Fragment key={section.key}>
+                        <h3 className="tera-compare__section tera-compare__category">
+                          <span className="tera-compare__icon" aria-hidden="true">{section.symbol}</span>
+                          {section.title}
+                        </h3>
+                        {values.map((details, index) => (
+                          <div className="tera-compare__features" key={`${section.key}-${index}`}>
+                            <p className="tera-compare__model">{matchedProducts[index].ans_product}</p>
+                            {details.length ? (
+                              <ul>{details.map((text, i) => <li key={i}>{text}</li>)}</ul>
+                            ) : <p className="tera-compare__missing">ไม่ระบุในข้อมูล</p>}
+                          </div>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                  {["ans_add_on_1", "ans_add_on_2"].map((field, index) => (
+                    matchedProducts.some(item => item[field]) && (
+                      <React.Fragment key={field}>
+                        <h3 className="tera-compare__section">อุปกรณ์เสริม {index + 1}</h3>
+                        {matchedProducts.map((item, i) => (
+                          <div className="tera-compare__spec" key={`${field}-${i}`}>{item[field] || "—"}</div>
+                        ))}
+                      </React.Fragment>
+                    )
+                  ))}
+                </div>
               </div>
-              <div className="space-open" onClick={handleOpenSpace}>
-                <Button className="btn-space">
-                  {isCustom ? "ย้อนกลับ" : "ปรับแต่งด้วยตนเอง"}
-                </Button>
+              <div className="tera-compare__footer">
+                <p>ต้องการเลือกอุปกรณ์ให้เหมาะกับหน้างาน?</p>
+                <button type="button" className="tera-compare__custom" onClick={handleOpenSpace}>
+                  {isCustom ? "ย้อนกลับ" : "ปรับแต่งด้วยตนเอง"} <span aria-hidden="true">›</span>
+                </button>
               </div>
-            </div>
+            </section>
           ) : (
             <div className="p-4 my-3 rounded border text-center">
               {" "}

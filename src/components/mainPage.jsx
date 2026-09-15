@@ -4,88 +4,125 @@ import AdvancedPage from "./AdvancedPage";
 import LoadingPage from "./LoadingPage";
 
 function MainPage({ sheet, mode }) {
-  const [links, setLinks] = useState({
-    question: [],
-    ans_small: [],
-    ans_medium: [],
-    ans_large: [],
-  });
+  const [links, setLinks] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const controller = new AbortController();
+    let active = true;
+    let timedOut = false;
+
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 30000);
+
+    async function fetchData() {
+      setLoading(true);
+      setError("");
+      setLinks(null);
+
       try {
-        const response = await fetch(sheet);
+        // เริ่มจาก /exec ต้นฉบับทุกครั้ง รวมถึงตอนลองใหม่
+        const response = await fetch(sheet, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`โหลดข้อมูลไม่สำเร็จ (HTTP ${response.status})`);
+        }
+
         const result = await response.json();
 
-        if (result.success) {
-          // 🔄 แปลงข้อมูล question จาก Sheet มาเป็นโครงสร้าง quesData
-          const formattedQuesData = result.data.question.map((item, index) => {
-            // ดึงตัวเลือกตอบ ans_1, ans_2, ans_3 มาจัดรูป
-            const options = [];
+        if (result.success !== true) {
+          throw new Error(result.message || "ระบบส่งข้อมูลกลับมาไม่สำเร็จ");
+        }
 
-            if (item.ans_1) {
-              options.push({
-                id: 0,
-                ans: item.ans_1,
-                sub_ans: item.sub_ans_1,
-                value: item.value_1,
-              });
-            }
-            if (item.ans_2) {
-              options.push({
-                id: 1,
-                ans: item.ans_2,
-                sub_ans: item.sub_ans_2,
-                value: item.value_2,
-              });
-            }
-            if (item.ans_3) {
-              options.push({
-                id: 2,
-                ans: item.ans_3,
-                sub_ans: item.sub_ans_3,
-                value: item.value_3,
-              });
-            }
+        if (
+          !Array.isArray(result.data?.question) ||
+          result.data.question.length === 0
+        ) {
+          throw new Error("ไม่พบข้อมูลคำถาม กรุณาตรวจสอบชีต question");
+        }
 
-            return {
-              id: index, // หรือใช้ Number(item.num) - 1
-              ques: item.ques || "",
-              sub_ques: (item.sub_ques || "").trim(), // .trim() เพื่อตัด \n ท้ายข้อความ
-              options: options,
-            };
-          });
+        const formattedQuesData = result.data.question.map((item, index) => {
+          const options = [1, 2, 3]
+            .filter((number) => item[`ans_${number}`])
+            .map((number) => ({
+              id: number - 1,
+              ans: item[`ans_${number}`],
+              sub_ans: item[`sub_ans_${number}`],
+              value: item[`value_${number}`],
+            }));
 
-          // นำข้อมูลที่แปลงแล้วไปเก็บบน State
+          return {
+            id: index,
+            ques: item.ques || "",
+            sub_ques: String(item.sub_ques || "").trim(),
+            options,
+          };
+        });
+
+        if (active) {
           setLinks({
             ...result.data,
-            question: formattedQuesData, // เก็บตัวที่ Map แล้วลงไป
+            question: formattedQuesData,
           });
         }
-      } catch (error) {
-        console.error("Fetch Error:", error);
+      } catch (err) {
+        if (!active) return;
+
+        console.error("Fetch Error:", err);
+
+        setError(
+          timedOut
+            ? "โหลดข้อมูลนานเกิน 30 วินาที กรุณาลองใหม่"
+            : err.message || "ไม่สามารถโหลดข้อมูลได้"
+        );
+      } finally {
+        clearTimeout(timeoutId);
+        if (active) setLoading(false);
       }
-    };
+    }
 
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
 
-  }, [sheet]);
+    return () => {
+      active = false;
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [sheet, retryCount]);
 
-  return (
-    <>
-      {!links ? (
-        <LoadingPage />
-      ) : (
-        <>
-          {mode === "wizard" ? (
-            <WizardPage data={links} />
-          ) : (
-            <AdvancedPage data={links} />
-          )}
-        </>
-      )}
-    </>
+  if (loading) {
+    return <LoadingPage />;
+  }
+
+  if (error) {
+    return (
+      <div className="container py-5 text-center" role="alert">
+        <h4>ไม่สามารถโหลดข้อมูลได้</h4>
+        <p>{error}</p>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setRetryCount((count) => count + 1)}
+        >
+          ลองใหม่
+        </button>
+      </div>
+    );
+  }
+
+  if (!links) return null;
+
+  return mode === "wizard" ? (
+    <WizardPage data={links} />
+  ) : (
+    <AdvancedPage data={links} />
   );
 }
 

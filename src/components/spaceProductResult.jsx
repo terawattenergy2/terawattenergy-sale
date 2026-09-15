@@ -233,8 +233,6 @@ function SpaceProductResult({
       ],
     },
   ];
-console.log('selectedOptions', selectedOptions);
-console.log('space', space);
 
   const getOptions = useCallback(
     (item) => {
@@ -550,6 +548,8 @@ console.log('space', space);
     },
   ];
 
+  const [onCheckBatt, setOnCheckBatt] = useState();
+
   const matchedData = dataCus.find(
     (item) =>
       item.title?.trim().toLowerCase() === data?.short?.trim().toLowerCase(),
@@ -591,8 +591,9 @@ console.log('space', space);
 
     // Home Energy Gateway: แสดงเฉพาะรุ่นที่ตรงกับเฟสที่เลือก
     if (itemId === "4") {
-      const phase = String(selectedOptions["0"] ?? "")
-        .match(/\b([13])\s*phase\b/i)?.[1];
+      const phase = String(selectedOptions["0"] ?? "").match(
+        /\b([13])\s*phase\b/i,
+      )?.[1];
 
       return getOptions(item).filter((option) => {
         const text = String(option).trim();
@@ -640,7 +641,6 @@ console.log('space', space);
   );
 
   const visibleSpace = space?.slice(0, currentStep + 1) || [];
-console.log('visibleSpace', visibleSpace);
 
   const hasAnswer = (value) => {
     return value !== undefined && value !== null && value !== "";
@@ -651,10 +651,15 @@ console.log('visibleSpace', visibleSpace);
     currentStep >= space.length &&
     space.every((item) => hasAnswer(selectedOptions[item.id]));
 
-  const hasExtraQuestion = data?.label === "SigenStor";
+const batteryCount = String(selectedOptions["3"] ?? "");
 
-  const isExtraCompleted =
-    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
+const hasExtraQuestion =
+  String(data?.id) === "1" &&
+  batteryCount !== "" &&
+  batteryCount !== "6";
+
+const isExtraCompleted =
+  !hasExtraQuestion || hasAnswer(selectedOptions[optionCus.id]);
 
   // ตรวจสอบว่าเป็น SigenMicro
   const isMicro = String(data?.id) === "3";
@@ -670,7 +675,6 @@ console.log('visibleSpace', visibleSpace);
     ? isMicroCompleted
     : isMainCompleted && isExtraCompleted;
 
-    
   return (
     <div className="space-product-result">
       <div className="advanced-card card-text">
@@ -718,7 +722,6 @@ console.log('visibleSpace', visibleSpace);
             );
           })}
         </div>
-      
       </div>
       <div className="advanced-card card-text">
         <h2>ปรับแต่งสเปกระบบ</h2>
@@ -845,7 +848,6 @@ console.log('visibleSpace', visibleSpace);
                   String(item?.id) === "3" ||
                   String(item?.id) === "4" ||
                   String(item?.id) === "5";
-
                 return (
                   <div
                     className="space-data row w-100 progressive-question"
@@ -856,29 +858,40 @@ console.log('visibleSpace', visibleSpace);
                       <h5>{item.title}</h5>
                       <p>{item.sub_title}</p>
                     </div>
-
                     {isSelectQuestion ? (
                       <div className="space-right col-6">
-                        <select
-                          name={`space-${item.id}`}
-                          value={selectedValue}
-                          onChange={(event) =>
-                            handleSelectOption(item.id, event.target.value)
-                          }
-                        >
-                          <option value="" disabled>
-                            กรุณาเลือก
-                          </option>
-
-                          {options.map((option, optionIndex) => (
-                            <option
-                              key={`${item.id}-${option}-${optionIndex}`}
-                              value={option}
+                        <>
+                          <div className="space-right col-6 d-flex flex-column align-items-start">
+                            <select
+                              name={`space-${item.id}`}
+                              value={selectedValue}
+                              onChange={(event) =>
+                                handleSelectOption(item.id, event.target.value)
+                              }
+                              onClick={() => setOnCheckBatt(selectedValue)}
                             >
-                              {option}
-                            </option>
-                          ))}
-                        </select>
+                              <option value="" disabled>
+                                กรุณาเลือก
+                              </option>
+
+                              {options.map((option, optionIndex) => (
+                                <option
+                                  key={`${item.id}-${option}-${optionIndex}`}
+                                  value={option}
+                                >
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+
+                            {String(data?.id) === "1" &&
+                              String(selectedValue) === "6" && (
+                                <p className="text-danger mt-2 mb-0">
+                                  หากติดแบต 6 ก้อน ไม่สามารถติด EVDC ได้
+                                </p>
+                              )}
+                          </div>
+                        </>
                       </div>
                     ) : (
                       <div className=" row w-100 progressive-question space-right col-6">
@@ -901,40 +914,40 @@ console.log('visibleSpace', visibleSpace);
                   </div>
                 );
               })}
-            
-              {data?.label === "SigenStor" && isMainCompleted && (
-                <div
-                  className="space-data row w-100 progressive-question"
-                  data-question-id={optionCus.id}
-                >
-                  <div className="space-left col-6">
-                    <h5>{optionCus.title}</h5>
-                    <p>{optionCus.sub_title}</p>
+              {hasExtraQuestion && isMainCompleted && (
+
+                  <div
+                    className="space-data row w-100 progressive-question"
+                    data-question-id={optionCus.id}
+                  >
+                    <div className="space-left col-6">
+                      <h5>{optionCus.title}</h5>
+                      <p>{optionCus.sub_title}</p>
+                    </div>
+
+                    <div className="space-right col-6">
+                      <select
+                        name={`space-${optionCus.id}`}
+                        value={selectedOptions[optionCus.id] || ""}
+                        onChange={(event) =>
+                          handleSelectOption(optionCus.id, event.target.value)
+                        }
+                      >
+                        <option value="" disabled>
+                          กรุณาเลือก
+                        </option>
+
+                        <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
+
+                        <option value="ติดตั้ง">{optionCus.option_2}</option>
+
+                        <option value="ติดตั้ง พร้อม License 25 KW">
+                          {optionCus.option_3}
+                        </option>
+                      </select>
+                    </div>
                   </div>
-
-                <div className="space-right col-6">
-                    <select
-                      name={`space-${optionCus.id}`}
-                      value={selectedOptions[optionCus.id] || ""}
-                      onChange={(event) =>
-                        handleSelectOption(optionCus.id, event.target.value)
-                      }
-                    >
-                      <option value="" disabled>
-                        กรุณาเลือก 
-                      </option>
-
-                      <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
-
-                      <option value="ติดตั้ง">{optionCus.option_2}</option>
-
-                      <option value="ติดตั้ง พร้อม License 25 KW">
-                        {optionCus.option_3}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         )}
