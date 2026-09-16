@@ -706,6 +706,10 @@ body {
   font-size: 10px;
 }
 
+.smallest {
+  font-size: 10px;
+}
+
 .advanced-card-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

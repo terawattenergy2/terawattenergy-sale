@@ -26,23 +26,79 @@ const getDriveImageUrl = (url) => {
 
 // จัดหมวดจากข้อความเดิม โดยเก็บข้อความที่ไม่ตรงหมวดไว้ในรายละเอียดอื่น
 const comparisonSections = [
-  { key: "design", title: "การออกแบบและการติดตั้ง", symbol: "◇", pattern: /ดีไซน์|บาง|modular|5-in-one|ติดตั้ง/i },
-  { key: "noise", title: "เสียงขณะทำงาน", symbol: "◌", pattern: /เสียง|เงียบ|พัดลม|\bdB\b/i },
-  { key: "solar", title: "การรองรับแผงโซลาร์", symbol: "☀", pattern: /แผง|โซลาร์|MPPT/i },
-  { key: "protection", title: "การป้องกันน้ำและฝุ่น", symbol: "⬡", pattern: /กันน้ำ|กันฝุ่น|IP\d+/i },
-  { key: "ev", title: "การชาร์จรถยนต์ไฟฟ้า", symbol: "↯", pattern: /รถไฟฟ้า|รถยนต์ไฟฟ้า|EV|Charging/i },
-  { key: "backup", title: "ระบบไฟสำรอง", symbol: "ϟ", pattern: /ไฟสำรอง|Backup/i },
-  { key: "energy", title: "การจัดการพลังงาน", symbol: "◎", pattern: /AI|วิเคราะห์|จัดการพลังงาน/i },
+  {
+    key: "design",
+    title: "การออกแบบและการติดตั้ง",
+    symbol: "◇",
+    pattern: /ดีไซน์|บาง|modular|5-in-one|ติดตั้ง/i,
+  },
+  {
+    key: "noise",
+    title: "เสียงขณะทำงาน",
+    symbol: "◌",
+    pattern: /เสียง|เงียบ|พัดลม|\bdB\b/i,
+  },
+  {
+    key: "solar",
+    title: "การรองรับแผงโซลาร์",
+    symbol: "☀",
+    pattern: /แผง|โซลาร์|MPPT/i,
+  },
+  {
+    key: "protection",
+    title: "การป้องกันน้ำและฝุ่น",
+    symbol: "⬡",
+    pattern: /กันน้ำ|กันฝุ่น|IP\d+/i,
+  },
+  {
+    key: "ev",
+    title: "การชาร์จรถยนต์ไฟฟ้า",
+    symbol: "↯",
+    pattern: /รถไฟฟ้า|รถยนต์ไฟฟ้า|EV|Charging/i,
+  },
+  {
+    key: "backup",
+    title: "ระบบไฟสำรอง",
+    symbol: "ϟ",
+    pattern: /ไฟสำรอง|Backup/i,
+  },
+  {
+    key: "energy",
+    title: "การจัดการพลังงาน",
+    symbol: "◎",
+    pattern: /AI|วิเคราะห์|จัดการพลังงาน/i,
+  },
   { key: "other", title: "รายละเอียดอื่น", symbol: "＋" },
 ];
 
-function groupProductDetails(value) {
+// Keep empty comma-separated slots so main/sub details retain the same index.
+const cleanDetail = (value) => {
+  const text = String(value ?? "").trim();
+  return /^[\-–—]+$/.test(text) ? "" : text;
+};
+
+const splitDetails = (value) =>
+  String(value ?? "").split(/,|\r\n|\n|\r/).map(cleanDetail);
+
+function groupProductDetails(value, subValue) {
+  const details = splitDetails(value);
+  const subDetails = splitDetails(subValue);
   const groups = {};
-  String(value || "").split(/[,\n]+/).map(text => text.trim()).filter(Boolean).forEach(text => {
-    const section = comparisonSections.find(item => item.pattern?.test(text));
+
+  details.forEach((text, index) => {
+    // A sub-detail is only displayed under its corresponding main detail.
+    if (!text) return;
+    const section = comparisonSections.find((item) =>
+      item.pattern?.test(text),
+    );
     const key = section?.key || "other";
-    (groups[key] ||= []).push(text);
+    (groups[key] ||= []).push({
+      index,
+      text,
+      valueDetail: subDetails[index] || "",
+    });
   });
+
   return groups;
 }
 
@@ -257,62 +313,127 @@ function ResultPage({ sheet }) {
           <p className="text-secondary small">{desSug}</p>
 
           {matchedProducts.length > 0 ? (
-            <section className="tera-compare" aria-label="เปรียบเทียบอินเวอร์เตอร์ที่แนะนำ">
+            <section
+              className="tera-compare"
+              aria-label="เปรียบเทียบอินเวอร์เตอร์ที่แนะนำ"
+            >
               <p className="tera-compare__intro">
-                เปรียบเทียบ {matchedProducts.length} รุ่นที่เหมาะกับคุณ แล้วเลือกระบบที่ต้องการ
+                เปรียบเทียบ {matchedProducts.length} รุ่นที่เหมาะกับคุณ
+                แล้วเลือกระบบที่ต้องการ
               </p>
-              <div className="tera-compare__scroll" tabIndex={0} role="region" aria-label="ตารางเปรียบเทียบสินค้า เลื่อนแนวนอนเพื่อดูทุกรุ่น">
-                <div className="tera-compare__grid" style={{ "--product-count": matchedProducts.length }}>
+              <div
+                className="tera-compare__scroll"
+                tabIndex={0}
+                role="region"
+                aria-label="ตารางเปรียบเทียบสินค้า เลื่อนแนวนอนเพื่อดูทุกรุ่น"
+              >
+                <div
+                  className="tera-compare__grid"
+                  style={{ "--product-count": matchedProducts.length }}
+                >
                   {matchedProducts.map((item, index) => (
                     <div className="tera-compare__hero" key={`hero-${index}`}>
-                      <p className="tera-compare__eyebrow">ตัวเลือก {index + 1}</p>
+                      <p className="tera-compare__eyebrow">
+                        ตัวเลือก {index + 1}
+                      </p>
                       <h3>{item.ans_product}</h3>
                       <div className="tera-compare__image">
                         {item.img_product ? (
-                          <img src={getDriveImageUrl(item.img_product)} alt={item.ans_product || "อินเวอร์เตอร์"} />
-                        ) : <span>ไม่มีรูปสินค้า</span>}
+                          <img
+                            src={getDriveImageUrl(item.img_product)}
+                            alt={item.ans_product || "อินเวอร์เตอร์"}
+                          />
+                        ) : (
+                          <span>ไม่มีรูปสินค้า</span>
+                        )}
                       </div>
-                      <button type="button" className="tera-compare__choose" onClick={() => handleSelectSug(item)}>
+                      <button
+                        type="button"
+                        className="tera-compare__choose"
+                        onClick={() => handleSelectSug(item)}
+                      >
                         เลือกรุ่นนี้ <span aria-hidden="true">↗</span>
                       </button>
                     </div>
                   ))}
-                  {comparisonSections.map(section => {
-                    const values = matchedProducts.map(item => groupProductDetails(item.detail_product)[section.key] || []);
-                    if (!values.some(items => items.length)) return null;
+                  {comparisonSections.map((section) => {
+                    const values = matchedProducts.map(
+                      (item) =>
+                        groupProductDetails(
+                          item.detail_product,
+                          item.sub_detail_product,
+                        )[section.key] || [],
+                    );
+                    if (!values.some((items) => items.length)) return null;
+
+                    // Share row positions across models, including empty cells.
+                    const detailIndexes = [...new Set(
+                      values.flatMap((details) => details.map((detail) => detail.index)),
+                    )].sort((a, b) => a - b);
+                    const rowsWithSubDetail = new Set(
+                      values.flatMap((details) =>
+                        details.filter((detail) => detail.valueDetail)
+                          .map((detail) => detail.index),
+                      ),
+                    );
                     return (
                       <React.Fragment key={section.key}>
                         <h3 className="tera-compare__section tera-compare__category">
-                          <span className="tera-compare__icon" aria-hidden="true">{section.symbol}</span>
+                          <span
+                            className="tera-compare__icon"
+                            aria-hidden="true"
+                          >
+                            {section.symbol}
+                          </span>
                           {section.title}
                         </h3>
                         {values.map((details, index) => (
-                          <div className="tera-compare__features" key={`${section.key}-${index}`}>
-                            <p className="tera-compare__model">{matchedProducts[index].ans_product}</p>
-                            {details.length ? (
-                              <ul>{details.map((text, i) => <li key={i}>{text}</li>)}</ul>
-                            ) : <p className="tera-compare__missing">ไม่ระบุในข้อมูล</p>}
+                          <div
+                            className="tera-compare__features"
+                            key={`${section.key}-${index}`}
+                          >
+                            <p className="tera-compare__model">
+                              {matchedProducts[index].ans_product}
+                            </p>
+                            <ul>
+                              {detailIndexes.map((detailIndex) => {
+                                const detail = details.find(
+                                  (entry) => entry.index === detailIndex,
+                                );
+                                return (
+                                  <li key={detailIndex}>
+                                    <div style={{ minHeight: "1.5em" }}>
+                                      {detail?.text || "-"}
+                                    </div>
+                                    {rowsWithSubDetail.has(detailIndex) && (
+                                      <p
+                                        className="text-secondary smallest"
+                                        style={{ minHeight: "1.5em", margin: "0.5em 0 0" }}
+                                      >
+                                        {detail?.valueDetail || ""}
+                                      </p>
+                                    )}
+                                  </li>
+                                );
+                              })}
+                            </ul>
                           </div>
                         ))}
                       </React.Fragment>
                     );
                   })}
-                  {["ans_add_on_1", "ans_add_on_2"].map((field, index) => (
-                    matchedProducts.some(item => item[field]) && (
-                      <React.Fragment key={field}>
-                        <h3 className="tera-compare__section">อุปกรณ์เสริม {index + 1}</h3>
-                        {matchedProducts.map((item, i) => (
-                          <div className="tera-compare__spec" key={`${field}-${i}`}>{item[field] || "—"}</div>
-                        ))}
-                      </React.Fragment>
-                    )
-                  ))}
+                
                 </div>
               </div>
               <div className="tera-compare__footer">
                 <p>ต้องการเลือกอุปกรณ์ให้เหมาะกับหน้างาน?</p>
-                <button type="button" className="tera-compare__custom" onClick={handleOpenSpace}>
-                  {isCustom ? "ย้อนกลับ" : "ปรับแต่งด้วยตนเอง"} <span aria-hidden="true">›</span>
+                <button
+                  type="button"
+                  className="tera-compare__custom"
+                  onClick={handleOpenSpace}
+                >
+                  {isCustom ? "ย้อนกลับ" : "ปรับแต่งด้วยตนเอง"}{" "}
+                  <span aria-hidden="true">›</span>
                 </button>
               </div>
             </section>
@@ -339,8 +460,12 @@ function ResultPage({ sheet }) {
               spaceSug={spaceSug}
               onCompare={() => scrollToSection("#product-comparison")}
               onCustomize={() => {
-                const matchingInverter = inverterTypes.find(inverter =>
-                  String(inverter.short).trim().toLowerCase() === String(spaceSug?.short || "").trim().toLowerCase()
+                const matchingInverter = inverterTypes.find(
+                  (inverter) =>
+                    String(inverter.short).trim().toLowerCase() ===
+                    String(spaceSug?.short || "")
+                      .trim()
+                      .toLowerCase(),
                 );
                 if (matchingInverter) setSelectedInverter(matchingInverter);
                 setIsCustom(true);
