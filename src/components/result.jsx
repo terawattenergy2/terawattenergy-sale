@@ -3,7 +3,17 @@ import { Row, Col, Button } from "react-bootstrap";
 import "./resultComparison.css";
 import SpaceProductResult from "./spaceProductResult";
 import LoadingResult from "./LoadingResult";
-import { FaLine, FaCubes, FaExchangeAlt, FaBatteryFull, FaLightbulb, FaRulerCombined, FaChargingStation, FaBolt, FaCheckCircle } from "react-icons/fa";
+import {
+  FaLine,
+  FaCubes,
+  FaExchangeAlt,
+  FaBatteryFull,
+  FaLightbulb,
+  FaRulerCombined,
+  FaChargingStation,
+  FaBolt,
+  FaCheckCircle,
+} from "react-icons/fa";
 import SpaceSuggest from "./spaceSuggest";
 import { useNavigate } from "react-router-dom";
 import { IoRefresh } from "react-icons/io5";
@@ -73,10 +83,12 @@ const comparisonSections = [
 
 const cleanDetail = (value) => {
   const text = String(value ?? "").trim();
-  return /^[\-–—]+$/.test(text) ? "" : text;
+  return /^[-–—]+$/.test(text) ? "" : text;
 };
 const splitDetails = (value) =>
-  String(value ?? "").split(/,|\r\n|\n|\r/).map(cleanDetail);
+  String(value ?? "")
+    .split(/,|\r\n|\n|\r/)
+    .map(cleanDetail);
 
 const detailIconRules = [
   { pattern: /all[\s-]*in[\s-]*one/i, Icon: FaCubes },
@@ -98,7 +110,9 @@ function buildComparisonRows(products) {
   return Array.from({ length: count }, (_, index) => {
     const representative = parsed.find((item) => item.main[index])?.main[index];
     if (!representative) return null;
-    const section = comparisonSections.find((item) => item.pattern?.test(representative));
+    const section = comparisonSections.find((item) =>
+      item.pattern?.test(representative),
+    );
     return {
       index,
       sectionKey: section?.key || "other",
@@ -365,27 +379,36 @@ function ResultPage({ sheet }) {
                     </div>
                   ))}
                   {comparisonSections.map((section) => {
-                    const rows = buildComparisonRows(matchedProducts)
-                      .filter((row) => row.sectionKey === section.key);
+                    const rows = buildComparisonRows(matchedProducts).filter(
+                      (row) => row.sectionKey === section.key,
+                    );
                     if (!rows.length) return null;
                     return (
                       <React.Fragment key={section.key}>
                         <h3 className="tera-compare__section tera-compare__category">
-                          <span className="tera-compare__icon" aria-hidden="true">
+                          <span
+                            className="tera-compare__icon"
+                            aria-hidden="true"
+                          >
                             {section.symbol}
                           </span>
                           {section.title}
                         </h3>
-                        <div style={{
-                          gridColumn: "1 / -1",
-                          display: "grid",
-                          gridTemplateColumns: `repeat(${matchedProducts.length}, minmax(0, 1fr))`,
-                          textAlign: "center",
-                          padding: "24px 0",
-                        }}>
+                        <div
+                          style={{
+                            gridColumn: "1 / -1",
+                            display: "grid",
+                            gridTemplateColumns: `repeat(${matchedProducts.length}, minmax(0, 1fr))`,
+                            textAlign: "center",
+                            padding: "24px 0",
+                          }}
+                        >
                           {matchedProducts.map((item, index) => (
-                            <p className="tera-compare__model" key={`model-${index}`}
-                              style={{ margin: "0 0 24px", padding: "0 12px" }}>
+                            <p
+                              className="tera-compare__model"
+                              key={`model-${index}`}
+                              style={{ margin: "0 0 24px", padding: "0 12px" }}
+                            >
                               {item.ans_product}
                             </p>
                           ))}
@@ -394,27 +417,55 @@ function ResultPage({ sheet }) {
                               {/* Icons, labels and descriptions each share a grid row.
                                   Wrapped text therefore moves every model down equally. */}
                               {row.cells.map((cell, index) => {
-                                const Icon = detailIconRules.find((rule) =>
-                                  rule.pattern.test(cell.text))?.Icon || FaCheckCircle;
+                                const Icon =
+                                  detailIconRules.find((rule) =>
+                                    rule.pattern.test(cell.text),
+                                  )?.Icon || FaCheckCircle;
                                 return (
-                                  <div key={`icon-${index}`} aria-hidden="true"
-                                    style={{ minHeight: "24px", padding: "0 12px 8px" }}>
-                                    {cell.text && <Icon style={{ width: "20px", height: "20px" }} />}
+                                  <div
+                                    key={`icon-${index}`}
+                                    aria-hidden="true"
+                                    style={{
+                                      minHeight: "24px",
+                                      padding: "0 12px 8px",
+                                    }}
+                                  >
+                                    {cell.text && (
+                                      <Icon
+                                        style={{
+                                          width: "20px",
+                                          height: "20px",
+                                        }}
+                                      />
+                                    )}
                                   </div>
                                 );
                               })}
                               {row.cells.map((cell, index) => (
-                                <div key={`label-${index}`} style={{
-                                  fontSize: "18px", fontWeight: 600, lineHeight: 1.5,
-                                  padding: "0 12px", overflowWrap: "anywhere",
-                                }}>
+                                <div
+                                  key={`label-${index}`}
+                                  style={{
+                                    fontSize: "18px",
+                                    fontWeight: 600,
+                                    lineHeight: 1.5,
+                                    padding: "0 12px",
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
                                   {cell.text || "-"}
                                 </div>
                               ))}
                               {row.cells.map((cell, index) => (
-                                <div key={`sub-${index}`} className="text-secondary smallest"
-                                  style={{ padding: "12px 12px 32px", lineHeight: 1.7,
-                                    minHeight: "24px", overflowWrap: "anywhere" }}>
+                                <div
+                                  key={`sub-${index}`}
+                                  className="text-secondary smallest"
+                                  style={{
+                                    padding: "12px 12px 32px",
+                                    lineHeight: 1.7,
+                                    minHeight: "24px",
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
                                   {cell.valueDetail}
                                 </div>
                               ))}
@@ -424,7 +475,6 @@ function ResultPage({ sheet }) {
                       </React.Fragment>
                     );
                   })}
-                  
                 </div>
               </div>
               <div className="tera-compare__footer">
