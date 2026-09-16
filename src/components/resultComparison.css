@@ -80,19 +80,20 @@
   object-fit: contain;
   margin: 0;
 }
-.tera-compare__choose {
+.tera-compare button.tera-compare__choose {
   border: 0;
   border-radius: 999px;
-  background: var(--compare-blue);
-  color: white;
+  background: #0071e3;
+  color: #fff;
+  opacity: 1;
   font: inherit;
   font-size: 16px;
   padding: 12px 24px;
   margin-top: 24px;
   cursor: pointer;
 }
-.tera-compare__choose:hover {
-  background: #0077ed;
+.tera-compare button.tera-compare__choose:hover {
+  background: #005bb5;
 }
 .tera-compare__choose span {
   margin-left: 8px;
@@ -109,7 +110,7 @@
 .tera-compare__features,
 .tera-compare__spec {
   text-align: center;
-  padding: 32px 0px 0px;
+  padding: 32px 0 0;
   font-size: 17px;
   line-height: 1.75;
   min-width: 0;
@@ -120,6 +121,8 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  font-weight: 500;
+  font-size: 19px;
 }
 .tera-compare__features li {
   margin: 0 auto 24px;
@@ -132,7 +135,7 @@
 .sub_tera-compare__features,
 .sub_tera-compare__spec {
   text-align: center;
-  padding: 0px ;
+  padding: 0;
   font-size: 17px;
   line-height: 1.75;
   min-width: 0;
@@ -227,21 +230,9 @@
   line-height: 1.5;
   margin: 0 0 20px;
 }
-.tera-compare__features ul {
-  font-weight: 500;
-  font-size: 19px;
-}
 .tera-compare__missing {
   color: var(--compare-muted);
   font-size: 15px;
-}
-.tera-compare button.tera-compare__choose {
-  background: #0071e3;
-  color: #fff;
-  opacity: 1;
-}
-.tera-compare button.tera-compare__choose:hover {
-  background: #005bb5;
 }
 @media (max-width: 600px) {
   .tera-compare__features ul {

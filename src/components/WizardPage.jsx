@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Button, Col, Row } from "react-bootstrap";
-import { useNavigate } from "react-router";
-import LoadingPage from "./LoadingPage";
+import { useNavigate } from "react-router-dom";
 import PersonalPage from "./personalPage";
 import { IoHome, IoWarningOutline } from "react-icons/io5";
-import CheckPhase from '../components/assets/images/checkPhae.png';
-function WizardPage({ data }) {
+import CheckPhase from "../components/assets/images/checkPhae.png";
+function WizardPage({ question = [] }) {
   useEffect(() => {
     localStorage.removeItem("personal_data");
   }, []);
-  const question = data?.question || [];
+
   const [showPersonalPage, setShowPersonalPage] = useState(false);
   const navigate = useNavigate();
 
@@ -17,8 +16,12 @@ function WizardPage({ data }) {
 
   // 1. โหลดค่าเดิมจาก localStorage ถ้ามี (ป้องกันข้อมูลหายถ้ารีเฟรชหน้าเว็บ)
   const [answers, setAnswers] = useState(() => {
-    const saved = localStorage.getItem("wizard_answers");
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = JSON.parse(localStorage.getItem("wizard_answers") || "{}");
+      return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+    } catch {
+      return {};
+    }
   });
   const [select, setSelect] = useState();
   // 2. บันทึกลง localStorage อัตโนมัติทุกครั้งที่ answers เปลี่ยนแปลง
@@ -49,9 +52,9 @@ function WizardPage({ data }) {
     }));
   };
 
-  if (!data || question.length === 0) {
+  if (!question || question.length === 0) {
     return (
-      <LoadingPage className="p-5 text-center">กำลังโหลดข้อมูล...</LoadingPage>
+      <div className="p-5 text-center" role="status">ไม่พบข้อมูลคำถาม</div>
     );
   }
 
@@ -66,34 +69,20 @@ function WizardPage({ data }) {
 
   return (
     <div>
-      {/* <div className="wizard-header">
-        <div className="progress-wrapper">
-          {question.map((_, index) => (
-            <div
-              key={index}
-              className={`progress-item ${index <= step ? "active" : ""}`}
-            />
-          ))}
-        </div>
-
-        <p className="step-text">
+      <div className="wizard-step-summary">
+        <span>
           ขั้นตอนที่ {step + 1} จาก {question.length}
-        </p>
-      </div> */}
-     <div className="wizard-step-summary">
-  <span>
-    ขั้นตอนที่ {step + 1} จาก {question.length}
-  </span>
+        </span>
 
-  <div className="wizard-step-track">
-    <div
-      className="wizard-step-progress"
-      style={{
-        width: `${((step + 1) / question.length) * 100}%`,
-      }}
-    />
-  </div>
-</div>
+        <div className="wizard-step-track">
+          <div
+            className="wizard-step-progress"
+            style={{
+              width: `${((step + 1) / question.length) * 100}%`,
+            }}
+          />
+        </div>
+      </div>
 
       {/* Question */}
       <div className="question-card">
@@ -105,24 +94,24 @@ function WizardPage({ data }) {
         <Row className="g-3">
           {answers[0]?.value === "large" && step === 1 ? (
             <Col
-              key={currentQuestion?.options[1]?.id}
+              key={currentQuestion?.options?.[1]?.id}
               xs={12}
               sm={12}
-              lg={12 / currentQuestion?.options[1]?.length}
+              lg={12}
             >
               <>
                 {" "}
                 <div
                   className={`option-card h-100 ${
-                    select === currentQuestion?.options[1]?.id ? "active" : ""
+                    select === currentQuestion?.options?.[1]?.id ? "active" : ""
                   }`}
                   onClick={() =>
                     handleSelect(
                       currentQuestion?.id,
-                      currentQuestion?.options[1]?.id,
-                      currentQuestion?.options[1]?.value,
-                      currentQuestion?.options[1]?.title ||
-                        currentQuestion?.options[1]?.ans,
+                      currentQuestion?.options?.[1]?.id,
+                      currentQuestion?.options?.[1]?.value,
+                      currentQuestion?.options?.[1]?.title ||
+                        currentQuestion?.options?.[1]?.ans,
                     )
                   }
                 >
@@ -131,12 +120,12 @@ function WizardPage({ data }) {
                   </div>
 
                   <h4>
-                    {currentQuestion?.options[1]?.title ||
-                      currentQuestion?.options[1]?.ans}
+                    {currentQuestion?.options?.[1]?.title ||
+                      currentQuestion?.options?.[1]?.ans}
                   </h4>
                   <p>
-                    {currentQuestion?.options[1]?.subTitle ||
-                      currentQuestion?.options[1]?.sub_ans}
+                    {currentQuestion?.options?.[1]?.subTitle ||
+                      currentQuestion?.options?.[1]?.sub_ans}
                   </p>
                 </div>
               </>
@@ -180,32 +169,68 @@ function WizardPage({ data }) {
         </Row>
 
         {String(currentQuestion?.id) === "1" && (
-          <aside className="alert alert-warning mt-4 mb-0 d-flex gap-3 align-items-start" aria-labelledby="phase-help-title">
-            <IoWarningOutline size={26} className="flex-shrink-0 mt-1" aria-hidden="true" />
+          <aside
+            className="alert alert-warning mt-4 mb-0 d-flex gap-3 align-items-start"
+            aria-labelledby="phase-help-title"
+          >
+            <IoWarningOutline
+              size={26}
+              className="flex-shrink-0 mt-1"
+              aria-hidden="true"
+            />
             <div style={{ minWidth: 0, flex: 1 }}>
-              <h3 id="phase-help-title" className="h6 fw-bold mb-2">ไม่แน่ใจว่าบ้านใช้ไฟกี่เฟส?</h3>
-              <p className="mb-2">ดูข้อความระบุเฟสบนป้ายหน้ามิเตอร์ไฟฟ้า โดยไม่ต้องเปิดฝาครอบ</p>
+              <h3 id="phase-help-title" className="h6 fw-bold mb-2">
+                ไม่แน่ใจว่าบ้านใช้ไฟกี่เฟส?
+              </h3>
+              <p className="mb-2">
+                ดูข้อความระบุเฟสบนป้ายหน้ามิเตอร์ไฟฟ้า โดยไม่ต้องเปิดฝาครอบ
+              </p>
               <ul className="mb-2 ps-3">
-                <li><strong>1 เฟส:</strong> มองหาคำว่า “1 เฟส”, “1 Phase” หรือ “Single Phase”</li>
-                <li><strong>3 เฟส:</strong> มองหาคำว่า “3 เฟส”, “3 Phase” หรือ “Three Phase”</li>
+                <li>
+                  <strong>1 เฟส:</strong> มองหาคำว่า “1 เฟส”, “1 Phase” หรือ
+                  “Single Phase”
+                </li>
+                <li>
+                  <strong>3 เฟส:</strong> มองหาคำว่า “3 เฟส”, “3 Phase” หรือ
+                  “Three Phase”
+                </li>
               </ul>
               <details className="my-3">
-                <summary className="fw-semibold" style={{ cursor: "pointer", padding: "8px 0" }}>
+                <summary
+                  className="fw-semibold"
+                  style={{ cursor: "pointer", padding: "8px 0" }}
+                >
                   คลิกดูภาพวิธีเช็กเฟสไฟบ้าน
                 </summary>
-              <figure className="mt-2 mb-0">
-                <a href={CheckPhase} target="_blank" rel="noopener noreferrer" aria-label="เปิดภาพวิธีดูเฟสไฟบ้านขนาดเต็มในแท็บใหม่">
-                  <img
-                    src={CheckPhase}
-                    alt="ภาพประกอบวิธีดูเฟสไฟบ้านจากมิเตอร์ไฟฟ้า"
-                    className="d-block rounded border"
-                    style={{ width: "100%", maxWidth: "720px", height: "auto", objectFit: "contain" }}
-                  />
-                </a>
-                <figcaption className="small mt-2">กดที่ภาพเพื่อดูขนาดเต็ม</figcaption>
-              </figure>
+                <figure className="mt-2 mb-0">
+                  <a
+                    href={CheckPhase}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="เปิดภาพวิธีดูเฟสไฟบ้านขนาดเต็มในแท็บใหม่"
+                  >
+                    <img
+                      src={CheckPhase}
+                      alt="ภาพประกอบวิธีดูเฟสไฟบ้านจากมิเตอร์ไฟฟ้า"
+                      className="d-block rounded border"
+                      style={{
+                        width: "100%",
+                        maxWidth: "720px",
+                        height: "auto",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </a>
+                  <figcaption className="small mt-2">
+                    กดที่ภาพเพื่อดูขนาดเต็ม
+                  </figcaption>
+                </figure>
               </details>
-              <p className="small mb-0">อย่าใช้ขนาดบ้านหรือจำนวนเครื่องใช้ไฟฟ้าเป็นตัวตัดสิน หากอ่านป้ายไม่ชัด ให้สอบถามการไฟฟ้าหรือช่างไฟฟ้า และอย่าเปิดตู้หรือสัมผัสสายไฟเพื่อตรวจสอบเอง</p>
+              <p className="small mb-0">
+                อย่าใช้ขนาดบ้านหรือจำนวนเครื่องใช้ไฟฟ้าเป็นตัวตัดสิน
+                หากอ่านป้ายไม่ชัด ให้สอบถามการไฟฟ้าหรือช่างไฟฟ้า
+                และอย่าเปิดตู้หรือสัมผัสสายไฟเพื่อตรวจสอบเอง
+              </p>
             </div>
           </aside>
         )}
