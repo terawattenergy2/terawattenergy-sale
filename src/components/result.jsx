@@ -227,22 +227,22 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
     const targetSum = `${size},${phase},${type}`;
     const prices = Array.isArray(priceList) ? priceList : [];
 
-    const products = answer
-      .filter((item) => String(item.sum || "").trim() === targetSum)
-      .map((item) => {
-        const productName = String(item.ans_product ?? "").trim();
+    // const products = answer
+    //   .filter((item) => String(item.sum || "").trim() === targetSum)
+    //   .map((item) => {
+    //     const productName = String(item.ans_product ?? "").trim();
 
-        const matchedPrice = productName
-          ? prices.find(
-              (entry) => String(entry.product ?? "").trim() === productName,
-            )
-          : undefined;
+    //     const matchedPrice = productName
+    //       ? prices.find(
+    //           (entry) => String(entry.product ?? "").trim() === productName,
+    //         )
+    //       : undefined;
 
-        return {
-          ...item,
-          price: matchedPrice?.price ?? null,
-        };
-      });
+    //     return {
+    //       ...item,
+    //       price: matchedPrice?.price ?? null,
+    //     };
+    //   });
 
     const productsWithPrice = answer
       .filter((item) => String(item.sum || "").trim() === targetSum)
