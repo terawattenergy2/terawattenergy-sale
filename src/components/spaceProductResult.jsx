@@ -447,7 +447,7 @@ function SpaceProductResult({
       await waitForImages(pdfRef.current);
 
       const canvas = await html2canvas(pdfRef.current, {
-        scale: 1.2,
+        scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: false,
@@ -455,7 +455,7 @@ function SpaceProductResult({
         imageTimeout: 5000,
       });
 
-      const imageData = canvas.toDataURL("image/jpeg", 0.65);
+      const imageData = canvas.toDataURL("image/jpeg", 0.8);
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
