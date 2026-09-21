@@ -1,9 +1,16 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { Button, Image, Modal, Spinner } from "react-bootstrap";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNavigate } from "react-router-dom";
 import PdfPage from "./pdfPage";
+import { supabase } from "../supabase";
 
 // ค่าคงที่ถอดจากแท็บ "สูตรคิด" ไม่ได้ดึงสดจาก Google Sheets
 const ENERGY_ASSUMPTIONS = {
@@ -20,22 +27,74 @@ function calculateEnergySummary(options, isMicro) {
     ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
     : model.match(/(?:Hybrid|EC)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
   const inverterKw = powerMatch ? Number(powerMatch[1]) : null;
-  const production = inverterKw === null ? null : inverterKw * ENERGY_ASSUMPTIONS.equivalentSunHours;
-  const capacityMatch = String(options["2"] || "").match(/\(\s*(\d+(?:\.\d+)?)\s*kWh\s*\)/i);
+  const production =
+    inverterKw === null
+      ? null
+      : inverterKw * ENERGY_ASSUMPTIONS.equivalentSunHours;
+  const capacityMatch = String(options["2"] || "").match(
+    /\(\s*(\d+(?:\.\d+)?)\s*kWh\s*\)/i,
+  );
   const rawCount = String(options["3"] ?? "").trim();
   const count = /^\d+$/.test(rawCount) ? Number(rawCount) : null;
-  const batteryKwh = !isMicro && capacityMatch && count !== null
-    ? Number(capacityMatch[1]) * count : null;
-  const usableForEstimate = batteryKwh === null ? null : batteryKwh * ENERGY_ASSUMPTIONS.batteryEnergyFraction;
+  const batteryKwh =
+    !isMicro && capacityMatch && count !== null
+      ? Number(capacityMatch[1]) * count
+      : null;
+  const usableForEstimate =
+    batteryKwh === null
+      ? null
+      : batteryKwh * ENERGY_ASSUMPTIONS.batteryEnergyFraction;
   return {
     production,
-    savings: usableForEstimate === null ? null : usableForEstimate * ENERGY_ASSUMPTIONS.electricityRate,
-    airconHours: usableForEstimate === null ? null : usableForEstimate / ENERGY_ASSUMPTIONS.airconPowerKw,
+    savings:
+      usableForEstimate === null
+        ? null
+        : usableForEstimate * ENERGY_ASSUMPTIONS.electricityRate,
+    airconHours:
+      usableForEstimate === null
+        ? null
+        : usableForEstimate / ENERGY_ASSUMPTIONS.airconPowerKw,
   };
 }
 
-const formatEnergyValue = value => value === null || !Number.isFinite(value)
-  ? "—" : new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(value);
+const formatEnergyValue = (value) =>
+  value === null || !Number.isFinite(value)
+    ? "—"
+    : new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(
+        value,
+      );
+
+// Missing prices remain null so an incomplete configuration is not quoted as complete.
+function buildPriceSummary(items, priceList) {
+  const prices = Array.isArray(priceList) ? priceList : [];
+  const lines = items.map((item) => {
+    const match = prices.find(
+      (entry) => String(entry.product ?? "").trim() === String(item.title ?? "").trim()
+    );
+    const rawPrice = item.price ?? match?.price;
+    const parsedPrice = rawPrice == null || String(rawPrice).trim() === ""
+      ? NaN
+      : Number(rawPrice);
+    const unitPrice = Number.isFinite(parsedPrice) && parsedPrice >= 0
+      ? parsedPrice : null;
+    const quantity = Number(item.quantity);
+    const validQuantity = Number.isInteger(quantity) && quantity > 0;
+    return {
+      ...item,
+      unitPrice,
+      quantity: validQuantity ? quantity : null,
+      subtotal: unitPrice !== null && validQuantity ? unitPrice * quantity : null,
+    };
+  });
+  return {
+    lines,
+    knownTotal: lines.reduce((sum, item) => sum + (item.subtotal ?? 0), 0),
+    complete: lines.length > 0 && lines.every((item) => item.subtotal !== null),
+  };
+}
+
+const formatPrice = (value) =>
+  new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
 
 function SpaceProductResult({
   data,
@@ -44,7 +103,12 @@ function SpaceProductResult({
   inverterTypes,
   selectedInverter,
   handleSelect,
+  priceList
 }) {
+
+  console.log('priceList', priceList);
+  console.log('space', space);
+  
   const GOOGLE_SHEET_API_URL =
     "https://script.google.com/macros/s/AKfycbwmtR-OOjtXiT3dwEZ6rtGnHC6Zb58bpx_VLhAI3RQB1E_Z6Pfv-2A0HTBdybpjDRSZWA/exec";
   const detail = data?.detail;
@@ -366,7 +430,9 @@ function SpaceProductResult({
     try {
       setIsExporting(true);
       // ให้เบราว์เซอร์แสดง Loading ก่อนเริ่มงานสร้าง PDF
-      await new Promise((resolve) => window.requestAnimationFrame(() => window.setTimeout(resolve, 0)));
+      await new Promise((resolve) =>
+        window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
+      );
       try {
         await saveToGoogleSheet();
       } catch (sheetError) {
@@ -476,117 +542,66 @@ function SpaceProductResult({
     });
   };
 
-  const dataCus = [
-    {
-      title: "Hybrid",
-      id: 0,
-      phase_1: "1 Phase",
-      sizeInverter_1: [
-        {
-          id: 0,
-          title: "Sigen Hybrid 5.0 SP2",
-        },
-      ],
+  const [rawDataCus, setRawDataCus] = useState([]);
 
-      phase_2: "3 Phase",
-      sizeInverter_2: [
-        {
-          id: 0,
-          title: "Sigen Hybrid 10.0 SP2",
-        },
-      ],
-      bat: [
-        {
-          id: 0,
-          title: "BAT 10.0 (9.04kWh)",
-        },
-      ],
-    },
-    {
-      title: "SigenStor",
-      id: 0,
-      phase_1: [
-        {
-          id: 0,
-          title: "SigenStor EC 5.0 SP",
-        },
-        {
-          id: 1,
-          title: "SigenStor EC 10.0 SP",
-        },
-      ],
+  useEffect(() => {
+    let cancelled = false;
 
-      phase_2: [
-        {
-          id: 0,
-          title: "SigenStor EC 5.0 TP",
-        },
-        {
-          id: 1,
-          title: "SigenStor EC 10.0 TP",
-        },
-        {
-          id: 2,
-          title: "SigenStor EC 20.0 TP",
-        },
-        {
-          id: 3,
-          title: "SigenStor EC 25.0 TP",
-        },
-      ],
-      bat: [
-        {
-          id: 0,
-          title: "BAT 10.0 (9.04kWh)",
-        },
-      ],
-    },
-    {
-      title: "Neo",
-      id: 0,
-      phase_1: [
-        {
-          id: 0,
-          title: "SigenStor NEO EC 6.0 SP",
-        },
-        {
-          id: 1,
-          title: "SigenStor NEO EC 12.0 SP",
-        },
-      ],
+    async function loadDataCus() {
+      const { data: rows, error } = await supabase
+        .from("data_cus")
+        .select("*")
+        .order("id", { ascending: true });
 
-      phase_2: [
-        {
-          id: 0,
-          title: "SigenStor NEO EC 5.0 TP",
-        },
-        {
-          id: 1,
-          title: "SigenStor NEO EC 10.0 TP",
-        },
-        {
-          id: 2,
-          title: "SigenStor NEO EC 15.0 TP",
-        },
-      ],
-      bat: [
-        {
-          id: 0,
-          title: "BAT 6.0 (6.02kWh)",
-        },
-        {
-          id: 1,
-          title: "BAT 8.0 (6.02kWh)",
-        },
-      ],
-    },
-  ];
+      if (cancelled) return;
 
+      if (error) {
+        console.error("โหลด data_cus ไม่สำเร็จ:", error.message);
+        return;
+      }
 
+      setRawDataCus(rows ?? []);
+    }
+
+    loadDataCus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const dataCus = useMemo(() => {
+    const prices = Array.isArray(priceList) ? priceList : [];
+
+    const addPrices = (items) => {
+      if (!Array.isArray(items)) return [];
+
+      return items.map((item) => {
+        const title = String(item.title ?? "").trim();
+        const matchedPrice = title
+          ? prices.find(
+              (entry) => String(entry.product ?? "").trim() === title
+            )
+          : undefined;
+
+        return {
+          ...item,
+          price: matchedPrice?.price ?? null,
+        };
+      });
+    };
+
+    return rawDataCus.map((item) => ({
+      ...item,
+      sizeInverter_1: addPrices(item.sizeInverter_1),
+      sizeInverter_2: addPrices(item.sizeInverter_2),
+      bat: addPrices(item.bat),
+    }));
+  }, [rawDataCus, priceList]);
 
   const matchedData = dataCus.find(
     (item) =>
-      item.title?.trim().toLowerCase() === data?.short?.trim().toLowerCase(),
+      item.title?.trim().toLowerCase() === data?.short?.trim().toLowerCase()
   );
 
   const selectedPhase = selectedOptions["0"] || "1 Phase";
@@ -601,21 +616,12 @@ function SpaceProductResult({
 
     // หัวข้อขนาด Inverter
     if (itemId === "1") {
-      let inverterOptions = [];
+      const inverterOptions =
+        selectedPhase === "3 Phase"
+          ? matchedData?.sizeInverter_2
+          : matchedData?.sizeInverter_1;
 
-      if (matchedData?.title === "Hybrid") {
-        inverterOptions =
-          selectedPhase === "3 Phase"
-            ? matchedData?.sizeInverter_2
-            : matchedData?.sizeInverter_1;
-      } else {
-        inverterOptions =
-          selectedPhase === "3 Phase"
-            ? matchedData?.phase_2
-            : matchedData?.phase_1;
-      }
-
-      return (inverterOptions || []).map((option) => option.title);
+      return (inverterOptions ?? []).map((option) => option.title);
     }
 
     // หัวข้อ Battery
@@ -687,13 +693,10 @@ function SpaceProductResult({
 
   const batteryCount = String(selectedOptions["3"] ?? "");
   const hasExtraQuestion =
-    String(data?.id) === "1" &&
-    batteryCount !== "" &&
-    batteryCount !== "6";
+    String(data?.id) === "1" && batteryCount !== "" && batteryCount !== "6";
 
   const isExtraCompleted =
     !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
-
 
   // ตรวจสอบว่าเป็น SigenMicro
   const isMicro = String(data?.id) === "3";
@@ -712,6 +715,45 @@ function SpaceProductResult({
     ? isMicroCompleted
     : isMainCompleted && isExtraCompleted;
 
+  const selectedPriceItems = [];
+  if (isMicro) {
+    (selectedMicroSize?.detail ?? []).forEach((item) => {
+      selectedPriceItems.push({ title: item.title, quantity: item.count });
+    });
+  } else {
+    const inverterOptions = selectedPhase === "3 Phase"
+      ? matchedData?.sizeInverter_2 : matchedData?.sizeInverter_1;
+    const inverterOption = (inverterOptions ?? []).find(
+      (item) => item.title === selectedOptions["1"]
+    );
+    if (selectedOptions["1"]) {
+      selectedPriceItems.push({
+        title: selectedOptions["1"], quantity: 1, price: inverterOption?.price,
+      });
+    }
+    const batteryOption = (matchedData?.bat ?? []).find(
+      (item) => item.title === selectedOptions["2"]
+    );
+    if (selectedOptions["2"]) {
+      selectedPriceItems.push({
+        title: selectedOptions["2"],
+        quantity: selectedOptions["3"],
+        price: batteryOption?.price,
+      });
+    }
+    const gateway = selectedOptions["4"];
+    if (gateway && gateway !== "ไม่เพิ่มเติม" && gateway !== "ไม่ติดตั้ง") {
+      selectedPriceItems.push({ title: gateway, quantity: 1 });
+    }
+    const evOption = selectedOptions["5"];
+    if (hasExtraQuestion && evOption && evOption !== "ไม่ติดตั้ง") {
+      selectedPriceItems.push({ title: evOption, quantity: 1 });
+    }
+  }
+  const priceSummary = buildPriceSummary(selectedPriceItems, priceList);
+  const totalPrice = isFormCompleted && priceSummary.complete
+    ? priceSummary.knownTotal : null;
+
   return (
     <div className="space-product-result">
       <Modal
@@ -724,8 +766,12 @@ function SpaceProductResult({
         <Modal.Body className="text-center py-5 px-4">
           <Spinner animation="border" variant="primary" aria-hidden="true" />
           <div role="status" aria-live="polite">
-            <h3 id="pdf-loading-title" className="h5 mt-4 mb-2">กำลังสร้างไฟล์ PDF</h3>
-            <p className="text-secondary mb-0">กำลังเตรียมข้อมูลและรูปภาพ กรุณารอสักครู่</p>
+            <h3 id="pdf-loading-title" className="h5 mt-4 mb-2">
+              กำลังสร้างไฟล์ PDF
+            </h3>
+            <p className="text-secondary mb-0">
+              กำลังเตรียมข้อมูลและรูปภาพ กรุณารอสักครู่
+            </p>
           </div>
         </Modal.Body>
       </Modal>
@@ -968,55 +1014,71 @@ function SpaceProductResult({
                 );
               })}
               {hasExtraQuestion && isMainCompleted && (
-                  <div
-                    className="space-data row w-100 progressive-question"
-                    data-question-id={optionCus.id}
-                  >
-                    <div className="space-left col-6">
-                      <h5>{optionCus.title}</h5>
-                      <p>{optionCus.sub_title}</p>
-                    </div>
-
-                    <div className="space-right col-6">
-                      <select
-                        name={`space-${optionCus.id}`}
-                        value={selectedOptions[optionCus.id] || ""}
-                        onChange={(event) =>
-                          handleSelectOption(optionCus.id, event.target.value)
-                        }
-                      >
-                        <option value="" disabled>
-                          กรุณาเลือก
-                        </option>
-
-                        <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
-
-                        <option value="ติดตั้ง">{optionCus.option_2}</option>
-
-                        <option value="ติดตั้ง พร้อม License 25 KW">
-                          {optionCus.option_3}
-                        </option>
-                      </select>
-                    </div>
+                <div
+                  className="space-data row w-100 progressive-question"
+                  data-question-id={optionCus.id}
+                >
+                  <div className="space-left col-6">
+                    <h5>{optionCus.title}</h5>
+                    <p>{optionCus.sub_title}</p>
                   </div>
-                )}
+
+                  <div className="space-right col-6">
+                    <select
+                      name={`space-${optionCus.id}`}
+                      value={selectedOptions[optionCus.id] || ""}
+                      onChange={(event) =>
+                        handleSelectOption(optionCus.id, event.target.value)
+                      }
+                    >
+                      <option value="" disabled>
+                        กรุณาเลือก
+                      </option>
+
+                      <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
+
+                      <option value="ติดตั้ง">{optionCus.option_2}</option>
+
+                      <option value="ติดตั้ง พร้อม License 25 KW">
+                        {optionCus.option_3}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
         {(selectedOptions["1"] || selectedOptions[MICRO_SIZE_KEY]) && (
           <section className="mt-4 mb-4" aria-labelledby="energy-summary-title">
-            <h3 id="energy-summary-title" className="h5 mb-3">สรุปประโยชน์ของระบบ</h3>
+            <h3 id="energy-summary-title" className="h5 mb-3">
+              สรุปประโยชน์ของระบบ
+            </h3>
             <div className="row g-3">
               {[
-                { label: "ลดค่าไฟโดยประมาณจากแบตเตอรี่", unit: "บาท/รอบ", value: energySummary.savings },
-                { label: "ผลิตไฟได้โดยประมาณ", unit: "หน่วย/วัน", value: energySummary.production },
-                { label: "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่", unit: "ชม./รอบ", value: energySummary.airconHours },
+                {
+                  label: "ลดค่าไฟโดยประมาณจากแบตเตอรี่",
+                  unit: "บาท/รอบ",
+                  value: energySummary.savings,
+                },
+                {
+                  label: "ผลิตไฟได้โดยประมาณ",
+                  unit: "หน่วย/วัน",
+                  value: energySummary.production,
+                },
+                {
+                  label: "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่",
+                  unit: "ชม./รอบ",
+                  value: energySummary.airconHours,
+                },
               ].map(({ label, unit, value }) => (
                 <div className="col-12 col-md-4" key={label}>
                   <div className="border rounded-3 p-4 h-100 d-flex flex-column">
                     <h4 className="h6 mb-4">{label}</h4>
                     <div className="d-flex align-items-end gap-3 mt-auto">
-                      <strong className="fs-2" aria-live="polite">{formatEnergyValue(value)}</strong>
+                      <strong className="fs-2" aria-live="polite">
+                        {formatEnergyValue(value)}
+                      </strong>
                       <span className="text-nowrap">{unit}</span>
                     </div>
                   </div>
@@ -1024,36 +1086,78 @@ function SpaceProductResult({
               ))}
             </div>
             <p className="small text-secondary mt-3 mb-1">
-              ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน โดยสมมติขนาดแผงเพียงพอ;
-              ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+              ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
+              โดยสมมติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย
+              และแอร์ใช้กำลังไฟเฉลี่ย 1 kW ผลจริงขึ้นกับการติดตั้งและการใช้งาน
             </p>
             <p className="small text-secondary mb-0">
               ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ
-              
               {isMicro
                 ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
-                : energySummary.savings === null || energySummary.airconHours === null
+                : energySummary.savings === null ||
+                    energySummary.airconHours === null
                   ? " ยังไม่มีข้อมูลแบตเตอรี่ที่ใช้คำนวณได้ กรุณาตรวจสอบรุ่นและจำนวนแบตเตอรี่"
                   : ""}
             </p>
           </section>
         )}
-        {isFormCompleted && (
-          <div className="result-actions mt-3">
-            <Button variant="outline-secondary" onClick={handleRestart}>
-              Reset
-            </Button>
-
-            <Button
-              variant="outline-success"
-              onClick={handleExportPDF}
-              disabled={isExporting}
-            >
-              {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
-            </Button>
-          </div>
+        {priceSummary.lines.length > 0 && (
+          <section className="border rounded-3 p-4 mt-4" aria-labelledby="selected-price-title">
+            <h3 id="selected-price-title" className="h5 mb-3">สรุปราคาอุปกรณ์ที่เลือก</h3>
+            <div className="table-responsive">
+              <table className="table align-middle">
+                <thead>
+                  <tr><th>รายการ</th><th>จำนวน</th><th className="text-end">ราคา/หน่วย</th><th className="text-end">รวม (บาท)</th></tr>
+                </thead>
+                <tbody>
+                  {priceSummary.lines.map((item, index) => (
+                    <tr key={`${item.title}-${index}`}>
+                      <td>{item.title}</td>
+                      <td>{item.quantity ?? "รอเลือกจำนวน"}</td>
+                      <td className="text-end">{item.unitPrice === null ? "ไม่พบราคา" : formatPrice(item.unitPrice)}</td>
+                      <td className="text-end">{item.subtotal === null ? "—" : formatPrice(item.subtotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="d-flex justify-content-between gap-3" aria-live="polite">
+              <strong>{totalPrice !== null ? "รวมราคาอุปกรณ์" : "ยอดเฉพาะรายการที่มีราคาและจำนวนครบ"}</strong>
+              <strong>{formatPrice(priceSummary.knownTotal)} บาท</strong>
+            </div>
+            {!priceSummary.complete && (
+              <p className="text-danger small mt-2 mb-0">ยังคำนวณยอดทั้งหมดไม่ได้ กรุณาตรวจสอบรายการที่ไม่พบราคาหรือยังไม่ได้เลือกจำนวน</p>
+            )}
+            {!isFormCompleted && (
+              <p className="text-secondary small mt-2 mb-0">ยอดจะอัปเดตตามตัวเลือก กรุณาเลือกสเปกให้ครบ</p>
+            )}
+          </section>
         )}
+        {isFormCompleted && (
+          <>
+            <p className="small text-danger mt-3 mb-1">
+              กด Export เพื่อแสดงราคาโดยประมาณ
+              กด Export เพื่อดาวน์โหลดสรุปสเปกระบบ
+            </p>{" "}
+            <div className="result-actions mt-3">
+              <Button variant="outline-secondary" onClick={handleRestart}>
+                Reset
+              </Button>
+
+              <Button
+                variant="outline-success"
+                onClick={handleExportPDF}
+                disabled={isExporting}
+              >
+                {isExporting ? "กำลังสร้าง PDF..." : "Export PDF"}
+              </Button>
+            </div>
+          </>
+        )}
+
         <PdfPage
+          priceSummary={priceSummary}
+          totalPrice={totalPrice}
           energySummary={energySummary}
           pdfRef={pdfRef}
           data={data}

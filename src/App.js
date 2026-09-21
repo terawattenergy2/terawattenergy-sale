@@ -12,7 +12,12 @@ import { supabase } from "./supabase";
 function App() {
   const [mode, setMode] = useState("wizard");
   const [theme, setTheme] = useState("light");
-  const [data, setData] = useState({ answer: [], inverter: [], question: [], space: [] });
+  const [data, setData] = useState({
+    answer: [],
+    inverter: [],
+    question: [],
+    space: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -26,14 +31,20 @@ function App() {
         const results = await Promise.all([
           supabase.from("tm_answer").select("*"),
           supabase.from("tm_inverter_type").select("*"),
-          supabase.from("tm_question").select("*").order("id", { ascending: true }),
+          supabase
+            .from("tm_question")
+            .select("*")
+            .order("id", { ascending: true }),
           supabase.from("tm_space").select("*"),
+          supabase.from("price_list").select("*"),
         ]);
         for (const result of results) {
           if (result.error) throw result.error;
         }
-        const [answer, inverter, question, space] = results.map((result) => result.data ?? []);
-        if (active) setData({ answer, inverter, question, space });
+        const [answer, inverter, question, space, price_list] = results.map(
+          (result) => result.data ?? [],
+        );
+        if (active) setData({ answer, inverter, question, space, price_list });
       } catch (err) {
         if (active) setError(err.message || "โหลดข้อมูลไม่สำเร็จ");
       } finally {
@@ -41,19 +52,31 @@ function App() {
       }
     }
     loadData();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [retry]);
 
   return (
     <BrowserRouter>
       <div className={`main-page ${theme === "dark" ? "dark" : ""}`}>
-        <Header mode={mode} setMode={setMode} theme={theme} setTheme={setTheme} />
+        <Header
+          mode={mode}
+          setMode={setMode}
+          theme={theme}
+          setTheme={setTheme}
+        />
         {loading ? (
-          <div className="p-5 text-center" role="status">กำลังโหลดข้อมูล...</div>
+          <div className="p-5 text-center" role="status">
+            กำลังโหลดข้อมูล...
+          </div>
         ) : error ? (
           <div className="p-5 text-center" role="alert">
             <p className="text-danger">{error}</p>
-            <button className="btn btn-primary" onClick={() => setRetry((value) => value + 1)}>
+            <button
+              className="btn btn-primary"
+              onClick={() => setRetry((value) => value + 1)}
+            >
               ลองใหม่
             </button>
           </div>
@@ -61,8 +84,21 @@ function App() {
           <Routes>
             <Route path="/" element={<MainPage mode={mode} {...data} />} />
             <Route path="/advanced" element={<AdvancedPage {...data} />} />
-            <Route path="/wizard" element={<WizardPage question={data.question} />} />
-            <Route path="/result" element={<ResultPage inverter={data.inverter} answer={data.answer} space={data.space} />} />
+            <Route
+              path="/wizard"
+              element={<WizardPage question={data.question} />}
+            />
+            <Route
+              path="/result"
+              element={
+                <ResultPage
+                  inverter={data.inverter}
+                  answer={data.answer}
+                  space={data.space}
+                  priceList={data.price_list}
+                />
+              }
+            />
           </Routes>
         )}
       </div>

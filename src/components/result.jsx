@@ -106,6 +106,7 @@ function buildComparisonRows(products) {
     main: splitDetails(product.detail_product),
     sub: splitDetails(product.sub_detail_product),
   }));
+
   const count = Math.max(0, ...parsed.map((item) => item.main.length));
   return Array.from({ length: count }, (_, index) => {
     const representative = parsed.find((item) => item.main[index])?.main[index];
@@ -122,12 +123,14 @@ function buildComparisonRows(products) {
       })),
     };
   }).filter(Boolean);
+  
 }
 
 // Pass arrays loaded from Supabase. Leave props undefined while loading.
-function ResultPage({ inverter, answer, space, error = null }) {
+function ResultPage({ inverter, answer, space, priceList, error = null }) {
   const inverterTypes = Array.isArray(inverter) ? inverter : [];
-  const isLoading = !Array.isArray(inverter) || !Array.isArray(answer) || !Array.isArray(space);
+  const isLoading =
+    !Array.isArray(inverter) || !Array.isArray(answer) || !Array.isArray(space);
   // 🌟 States
   const spaceSugRef = useRef(null);
   const customSpaceRef = useRef(null);
@@ -137,6 +140,7 @@ function ResultPage({ inverter, answer, space, error = null }) {
   const [spaceSug, setSpaceSug] = useState();
   const [spaceSugOpen, setSpaceSugOpen] = useState(false);
   const navigate = useNavigate();
+
   const handleRestart = () => {
     navigate("/");
   };
@@ -190,6 +194,7 @@ function ResultPage({ inverter, answer, space, error = null }) {
 
     return () => window.clearTimeout(scrollTimer);
   }, [spaceSugOpen, spaceSug, isCustom]);
+
   useEffect(() => {
     if (!Array.isArray(answer)) {
       setMatchedProducts([]);
@@ -197,8 +202,10 @@ function ResultPage({ inverter, answer, space, error = null }) {
     }
 
     let savedAnswers = {};
+
     try {
-      savedAnswers = JSON.parse(localStorage.getItem("wizard_answers") || "{}") || {};
+      savedAnswers =
+        JSON.parse(localStorage.getItem("wizard_answers") || "{}") || {};
     } catch (error) {
       console.error("Unable to read wizard answers:", error);
     }
@@ -206,7 +213,9 @@ function ResultPage({ inverter, answer, space, error = null }) {
     const size = String(savedAnswers["0"]?.value || "").trim();
     const rawPhase = String(savedAnswers["1"]?.value || "").trim();
     const phase = rawPhase
-      ? rawPhase.includes("phase") ? rawPhase : `${rawPhase}phase`
+      ? rawPhase.includes("phase")
+        ? rawPhase
+        : `${rawPhase}phase`
       : "";
     const type = String(savedAnswers["2"]?.value || "").trim();
 
@@ -216,8 +225,42 @@ function ResultPage({ inverter, answer, space, error = null }) {
     }
 
     const targetSum = `${size},${phase},${type}`;
-    setMatchedProducts(answer.filter((item) => String(item.sum || "").trim() === targetSum));
-  }, [answer]);
+    const prices = Array.isArray(priceList) ? priceList : [];
+
+    const products = answer
+      .filter((item) => String(item.sum || "").trim() === targetSum)
+      .map((item) => {
+        const productName = String(item.ans_product ?? "").trim();
+
+        const matchedPrice = productName
+          ? prices.find(
+              (entry) => String(entry.product ?? "").trim() === productName,
+            )
+          : undefined;
+
+        return {
+          ...item,
+          price: matchedPrice?.price ?? null,
+        };
+      });
+
+    const productsWithPrice = answer
+      .filter((item) => String(item.sum || "").trim() === targetSum)
+      .map((item) => {
+        const name = String(item.ans_product ?? "").trim();
+
+        const priceItem = (priceList ?? []).find(
+          (p) => name !== "" && String(p.product ?? "").trim() === name,
+        );
+
+        return {
+          ...item,
+          price: priceItem?.price ?? null,
+        };
+      });
+
+    setMatchedProducts(productsWithPrice);
+  }, [answer, priceList]);
 
   const inverterSug =
     matchedProducts.length > 0 ? matchedProducts[0].ans_product : "SigenStor";
@@ -260,7 +303,11 @@ function ResultPage({ inverter, answer, space, error = null }) {
   };
 
   if (error) {
-    return <div role="alert" className="p-4 text-center">โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</div>;
+    return (
+      <div role="alert" className="p-4 text-center">
+        โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง
+      </div>
+    );
   }
 
   if (isLoading) {
@@ -489,6 +536,7 @@ function ResultPage({ inverter, answer, space, error = null }) {
               inverterTypes={inverterTypes}
               selectedInverter={selectedInverter}
               handleSelect={handleSelect}
+              priceList={priceList}
             />
           </div>
         )}
