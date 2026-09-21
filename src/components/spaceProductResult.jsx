@@ -106,8 +106,6 @@ function SpaceProductResult({
   priceList
 }) {
 
-  console.log('priceList', priceList);
-  console.log('space', space);
   
   const GOOGLE_SHEET_API_URL =
     "https://script.google.com/macros/s/AKfycbwmtR-OOjtXiT3dwEZ6rtGnHC6Zb58bpx_VLhAI3RQB1E_Z6Pfv-2A0HTBdybpjDRSZWA/exec";
