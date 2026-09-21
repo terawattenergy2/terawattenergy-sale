@@ -35,13 +35,13 @@ export default function SelectedProductDetails({
     (result[title] ||= []).push(text);
     return result;
   }, {});
-  const addOns = [1, 2]
-    .map((number) => ({
-      number,
-      name: product[`ans_add_on_${number}`],
-      image: product[`img_add_${number}`],
-    }))
-    .filter((item) => item.name);
+  // const addOns = [1, 2]
+  //   .map((number) => ({
+  //     number,
+  //     name: product[`ans_add_on_${number}`],
+  //     image: product[`img_add_${number}`],
+  //   }))
+  //   .filter((item) => item.name);
 
   return (
     <section className="tera-selected" aria-label="รายละเอียดรุ่นที่เลือก">
