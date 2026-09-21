@@ -86,9 +86,14 @@ function buildPriceSummary(items, priceList) {
       subtotal: unitPrice !== null && validQuantity ? unitPrice * quantity : null,
     };
   });
+  const knownTotal = lines.reduce((sum, item) => sum + (item.subtotal ?? 0), 0);
+  const markupAmount = Math.round((knownTotal * 0.1 + Number.EPSILON) * 100) / 100;
+  const totalWithMarkup = Math.round((knownTotal + markupAmount + Number.EPSILON) * 100) / 100;
   return {
     lines,
-    knownTotal: lines.reduce((sum, item) => sum + (item.subtotal ?? 0), 0),
+    knownTotal,
+    markupAmount,
+    totalWithMarkup,
     complete: lines.length > 0 && lines.every((item) => item.subtotal !== null),
   };
 }
@@ -107,8 +112,6 @@ function SpaceProductResult({
 }) {
 
   
-  const GOOGLE_SHEET_API_URL =
-    "https://script.google.com/macros/s/AKfycbwmtR-OOjtXiT3dwEZ6rtGnHC6Zb58bpx_VLhAI3RQB1E_Z6Pfv-2A0HTBdybpjDRSZWA/exec";
   const detail = data?.detail;
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isExporting, setIsExporting] = useState(false);
@@ -370,6 +373,11 @@ function SpaceProductResult({
     option_1: "ไม่ติดตั้ง",
     option_2: "ติดตั้ง",
     option_3: "ติดตั้ง พร้อม License 25 KW",
+    prices: {
+      "ไม่ติดตั้ง": 0,
+      "ติดตั้ง": 74200,
+      "ติดตั้ง พร้อม License 25 KW": 92200,
+    },
   };
 
   const handleSelectOption = (itemId, value) => {
@@ -431,11 +439,7 @@ function SpaceProductResult({
       await new Promise((resolve) =>
         window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
       );
-      try {
-        await saveToGoogleSheet();
-      } catch (sheetError) {
-        console.error("Google Sheet error:", sheetError);
-      }
+      await saveToSupabase();
 
       if (document.fonts?.ready) {
         await document.fonts.ready;
@@ -443,7 +447,7 @@ function SpaceProductResult({
       await waitForImages(pdfRef.current);
 
       const canvas = await html2canvas(pdfRef.current, {
-        scale: 2,
+        scale: 1.2,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: false,
@@ -451,11 +455,12 @@ function SpaceProductResult({
         imageTimeout: 5000,
       });
 
-      const imageData = canvas.toDataURL("image/png");
+      const imageData = canvas.toDataURL("image/jpeg", 0.65);
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
+        compress: true,
       });
 
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -471,16 +476,15 @@ function SpaceProductResult({
       const renderHeight = canvas.height * scaleRatio;
       const positionX = (pageWidth - renderWidth) / 2;
 
-      pdf.addImage(
+      pdf.addImage({
         imageData,
-        "PNG",
-        positionX,
-        margin,
-        renderWidth,
-        renderHeight,
-        undefined,
-        "FAST",
-      );
+        format: "JPEG",
+        x: positionX,
+        y: margin,
+        width: renderWidth,
+        height: renderHeight,
+        compression: "FAST",
+      });
 
       const safeName = (fullName || "customer").replace(/[/\\?%*:|"<>]/g, "-");
       pdf.save(`system-spec-${safeName}.pdf`);
@@ -505,10 +509,10 @@ function SpaceProductResult({
     .filter(Boolean)
     .join(" ");
 
-  const saveToGoogleSheet = async () => {
+  const saveToSupabase = async () => {
     const payload = {
-      name: personalData.firstName || "",
-      username: personalData.lastName || "",
+      first_name: personalData.firstName || "",
+      last_name: personalData.lastName || "",
       email: personalData.email || "",
       phone: personalData.phone || "",
       suggest_product: data?.label || "",
@@ -530,15 +534,21 @@ function SpaceProductResult({
         : "",
     };
 
-    await fetch(GOOGLE_SHEET_API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payload),
+    const { error: saveError } = await supabase
+    .from("customer_quotes")
+    .insert({
+      ...payload,
+      selected_options: selectedOptions,
+      price_summary: priceSummary,
+      total_price: totalPrice, // <-- ตัวแปร totalPrice อาจมีค่าเป็น null / NaN
+      markup_percent: 10,
+      vat_included: false,
     });
-  };
+
+  if (saveError) {
+    throw new Error(`บันทึกข้อมูลลง Supabase ไม่สำเร็จ: ${saveError.message}`);
+  }
+};
 
   const [rawDataCus, setRawDataCus] = useState([]);
 
@@ -744,13 +754,17 @@ function SpaceProductResult({
       selectedPriceItems.push({ title: gateway, quantity: 1 });
     }
     const evOption = selectedOptions["5"];
-    if (hasExtraQuestion && evOption && evOption !== "ไม่ติดตั้ง") {
-      selectedPriceItems.push({ title: evOption, quantity: 1 });
+    if (hasExtraQuestion && evOption) {
+      selectedPriceItems.push({
+        title: `${optionCus.title}: ${evOption}`,
+        quantity: 1,
+        price: optionCus.prices[evOption],
+      });
     }
   }
   const priceSummary = buildPriceSummary(selectedPriceItems, priceList);
   const totalPrice = isFormCompleted && priceSummary.complete
-    ? priceSummary.knownTotal : null;
+    ? priceSummary.totalWithMarkup : null;
 
   return (
     <div className="space-product-result">
@@ -1119,9 +1133,17 @@ function SpaceProductResult({
                 </tbody>
               </table>
             </div>
+            <div className="d-flex justify-content-between gap-3 mb-2">
+              <span>ยอดก่อนบวกเพิ่ม</span>
+              <span>{formatPrice(priceSummary.knownTotal)} บาท</span>
+            </div>
+            <div className="d-flex justify-content-between gap-3 mb-2">
+              <span>บวกเพิ่ม 10%</span>
+              <span>{formatPrice(priceSummary.markupAmount)} บาท</span>
+            </div>
             <div className="d-flex justify-content-between gap-3" aria-live="polite">
-              <strong>{totalPrice !== null ? "รวมราคาอุปกรณ์" : "ยอดเฉพาะรายการที่มีราคาและจำนวนครบ"}</strong>
-              <strong>{formatPrice(priceSummary.knownTotal)} บาท</strong>
+              <strong>{totalPrice !== null ? "ยอดรวมหลังบวกเพิ่ม 10%" : "ยอดรายการที่คำนวณได้ หลังบวกเพิ่ม 10%"}</strong>
+              <strong>{formatPrice(priceSummary.totalWithMarkup)} บาท</strong>
             </div>
             {!priceSummary.complete && (
               <p className="text-danger small mt-2 mb-0">ยังคำนวณยอดทั้งหมดไม่ได้ กรุณาตรวจสอบรายการที่ไม่พบราคาหรือยังไม่ได้เลือกจำนวน</p>

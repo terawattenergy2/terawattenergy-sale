@@ -3,6 +3,7 @@ import imgLogo from "../components/assets/images/LOGO-TE.png";
 
 function PdfPage({
   pdfRef,
+  totalPrice,
   energySummary,
   data,
   getDriveImageUrl,
@@ -22,6 +23,11 @@ function PdfPage({
     typeof value === "number" && Number.isFinite(value)
       ? new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(value)
       : "—";
+
+  const hasTotalPrice = typeof totalPrice === "number" && Number.isFinite(totalPrice);
+  const formattedTotalPrice = hasTotalPrice
+    ? new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPrice)
+    : "—";
 
   const microProducts = selectedMicroSize?.detail || [];
 
@@ -121,7 +127,7 @@ function PdfPage({
                       width: "auto",
                       height: "auto",
                       maxWidth: "100%",
-                      maxHeight: "200px",
+                      maxHeight: "125px",
                       objectFit: "contain",
                     }}
                   />
@@ -270,6 +276,33 @@ function PdfPage({
               </p>
             </section>
           )}
+
+          <section
+            aria-label="ราคาโดยประมาณ"
+            style={{
+              marginTop: "20px",
+              padding: "18px 22px",
+              backgroundColor: "#edf7f2",
+              border: "1px solid #cde5d8",
+              borderRadius: "12px",
+              breakInside: "avoid",
+              pageBreakInside: "avoid",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#163e2d" }}>ราคาโดยประมาณ</h3>
+              <div style={{ color: "#176342", whiteSpace: "nowrap" }}>
+                <strong style={{ fontSize: "28px" }}>{formattedTotalPrice}</strong>
+                {hasTotalPrice && <span style={{ marginLeft: "8px", fontSize: "14px" }}>บาท</span>}
+              </div>
+            </div>
+            {!hasTotalPrice && (
+              <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#596579" }}>ข้อมูลราคายังไม่ครบ กรุณายืนยันราคากับเจ้าหน้าที่</p>
+            )}
+            <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#52695e" }}>
+              ราคายังไม่รวมภาษีมูลค่าเพิ่ม 7%
+            </p>
+          </section>
 
           <div className="pdf-footer">
             วันที่สร้างเอกสาร:{" "}
