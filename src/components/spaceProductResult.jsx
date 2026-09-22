@@ -23,12 +23,9 @@ const ENERGY_ASSUMPTIONS = {
 function calculateEnergySummary(options, isMicro) {
   const model = String(isMicro ? options.microSize || "" : options["1"] || "");
   // อ่านเลขกำลังเฉพาะรูปแบบชื่อรุ่นที่ใช้ในตัวเลือก ไม่อ่าน SP2 เป็นกำลังไฟ
-  // const powerMatch = isMicro
-  //   ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
-  //   : model.match(/(?:Hybrid|EC)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
-const powerMatch = isMicro
-  ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
-  : model.match(/(?:Hybrid|EC|NEO)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
+  const powerMatch = isMicro
+    ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
+    : model.match(/(?:Hybrid|EC|NEO)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
 
   const inverterKw = powerMatch ? Number(powerMatch[1]) : null;
   const production =
@@ -68,7 +65,6 @@ const formatEnergyValue = (value) =>
         value,
       );
 function buildPriceSummary(items, priceList) {
-  
   const prices = Array.isArray(priceList) ? priceList : [];
 
   const toNumber = (value) => {
@@ -395,11 +391,11 @@ function SpaceProductResult({
     },
     [data?.id],
   );
-  const [currentStep, setCurrentStep] = useState(0);
+  // const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
     setSelectedOptions({});
-    setCurrentStep(0);
+    // setCurrentStep(0);
   }, [data?.id, data?.short]);
 
   const navigate = useNavigate();
@@ -421,12 +417,40 @@ function SpaceProductResult({
     },
     end_calculate: false,
   };
+  const selectBat = selectedOptions["2"];
+  const noBattery = selectBat === "ไม่รับแบตเตอรี่";
+
+  // 4 = Home Energy Gateway
+  // const skippedIds = noBattery ? ["4"] : [];
+const skippedIds = noBattery ? ["3", "4"] : [];
+
+  const activeSpace = (space || []).filter(
+    (item) => !skippedIds.includes(String(item.id)),
+  );
+
+  const hasAnswer = (value) =>
+    value !== undefined && value !== null && value !== "";
+
+  const firstUnansweredIndex = activeSpace.findIndex(
+    (item) => !hasAnswer(selectedOptions[item.id]),
+  );
+
+  // แสดงถึงคำถามแรกที่ยังไม่ได้ตอบ
+  const visibleSpace =
+    firstUnansweredIndex === -1
+      ? activeSpace
+      : activeSpace.slice(0, firstUnansweredIndex + 1);
+
+  const isMainCompleted =
+    activeSpace.length > 0 &&
+    activeSpace.every((item) => hasAnswer(selectedOptions[item.id]));
 
   const handleSelectOption = (itemId, value) => {
+
     const currentIndex = space?.findIndex(
       (item) => String(item.id) === String(itemId),
     );
-
+    // setSelectBat(value)
     setSelectedOptions((previous) => {
       const updatedOptions = {
         ...previous,
@@ -451,13 +475,9 @@ function SpaceProductResult({
       return updatedOptions;
     });
 
-    if (currentIndex >= 0) {
-      setCurrentStep(currentIndex + 1);
-    }
 
     scrollToNextQuestion(itemId);
   };
-
   const waitForImages = async (element) => {
     const images = Array.from(element.querySelectorAll("img"));
     await Promise.all(
@@ -728,21 +748,10 @@ function SpaceProductResult({
     (option) => option.title === selectedOptions[MICRO_SIZE_KEY],
   );
 
-  const visibleSpace = space?.slice(0, currentStep + 1) || [];
-
-  const hasAnswer = (value) => {
-    return value !== undefined && value !== null && value !== "";
-  };
-
-  const isMainCompleted =
-    space?.length > 0 &&
-    currentStep >= space.length &&
-    space.every((item) => hasAnswer(selectedOptions[item.id]));
-
   const batteryCount = String(selectedOptions["3"] ?? "");
-  const hasExtraQuestion =
-    String(data?.id) === "1" && batteryCount !== "" && batteryCount !== "6";
-
+const hasExtraQuestion =
+  String(data?.id) === "1" &&
+  (noBattery || (batteryCount !== "" && batteryCount !== "6"));
   // ตรวจสอบว่าเป็น SigenMicro
   const isMicro = String(data?.id) === "3";
 
@@ -987,14 +996,11 @@ function SpaceProductResult({
               {visibleSpace.map((item, index) => {
                 // ข้อแรกแสดงทันที
                 // ข้อถัดไปจะแสดงเมื่อข้อก่อนหน้าทั้งหมดมีคำตอบแล้ว
-                
-                const canShow =
-                  index === 0 ||
-                  space
-                    .slice(0, index)
-                    .every((previousItem) =>
-                      hasAnswer(selectedOptions[previousItem.id]),
-                    );
+                const canShow = activeSpace
+                  .slice(0, index)
+                  .every((previousItem) =>
+                    hasAnswer(selectedOptions[previousItem.id]),
+                  );
 
                 if (!canShow) return null;
 
@@ -1008,6 +1014,7 @@ function SpaceProductResult({
                   String(item?.id) === "3" ||
                   String(item?.id) === "4" ||
                   String(item?.id) === "5";
+
                 return (
                   <div
                     className="space-data row w-100 progressive-question"
@@ -1043,9 +1050,9 @@ function SpaceProductResult({
                               ))}
                             </select>
 
-                            {String(data?.id) === "1" &&
-                              String(item?.id) === "3" &&
-                              String(selectedValue) === "6" && (
+                            {String(data?.id) === 1 &&
+                              String(item?.id) === 3 &&
+                              String(selectedValue) === 6 && (
                                 <p className="text-danger mt-2 mb-0">
                                   หากติดแบต 6 ก้อน ไม่สามารถติด EVDC ได้
                                 </p>
@@ -1286,8 +1293,7 @@ function SpaceProductResult({
               </p>
             </div>
           ))} */}
-         
-          
+
         {isFormCompleted && (
           <>
             <p className="small text-danger mt-3 mb-1">
