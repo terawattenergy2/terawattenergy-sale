@@ -35,7 +35,10 @@ function App() {
             .from("tm_question")
             .select("*")
             .order("id", { ascending: true }),
-          supabase.from("tm_space").select("*"),
+          supabase
+            .from("tm_space")
+            .select("*")
+            .order("id", { ascending: true }),
           supabase.from("price_list").select("*"),
         ]);
         for (const result of results) {
@@ -99,6 +102,7 @@ function App() {
                 />
               }
             />
+            {console.log("dataMain", data)}
           </Routes>
         )}
       </div>

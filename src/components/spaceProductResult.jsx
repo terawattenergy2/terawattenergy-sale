@@ -366,6 +366,7 @@ function SpaceProductResult({
       ],
     },
   ];
+console.log('space', space);
 
   const getOptions = useCallback(
     (item) => {
@@ -982,6 +983,8 @@ function SpaceProductResult({
               {visibleSpace.map((item, index) => {
                 // ข้อแรกแสดงทันที
                 // ข้อถัดไปจะแสดงเมื่อข้อก่อนหน้าทั้งหมดมีคำตอบแล้ว
+                console.log('index', index);
+                
                 const canShow =
                   index === 0 ||
                   space
