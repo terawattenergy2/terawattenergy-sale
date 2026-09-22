@@ -183,9 +183,9 @@ function WizardPage({ question = [] }) {
                 ไม่แน่ใจว่าบ้านใช้ไฟกี่เฟส?
               </h3>
               <p className="mb-2">
-                ดูข้อความระบุเฟสบนป้ายหน้ามิเตอร์ไฟฟ้า โดยไม่ต้องเปิดฝาครอบ
+                
               </p>
-              <ul className="mb-2 ps-3">
+              {/* <ul className="mb-2 ps-3">
                 <li>
                   <strong>1 เฟส:</strong> มองหาคำว่า “1 เฟส”, “1 Phase” หรือ
                   “Single Phase”
@@ -194,7 +194,7 @@ function WizardPage({ question = [] }) {
                   <strong>3 เฟส:</strong> มองหาคำว่า “3 เฟส”, “3 Phase” หรือ
                   “Three Phase”
                 </li>
-              </ul>
+              </ul> */}
               <details className="my-3">
                 <summary
                   className="fw-semibold"
@@ -214,8 +214,8 @@ function WizardPage({ question = [] }) {
                       alt="ภาพประกอบวิธีดูเฟสไฟบ้านจากมิเตอร์ไฟฟ้า"
                       className="d-block rounded border"
                       style={{
-                        width: "100%",
-                        maxWidth: "720px",
+                        width: "50%",
+                        maxWidth: "240px",
                         height: "auto",
                         objectFit: "contain",
                       }}
@@ -227,9 +227,7 @@ function WizardPage({ question = [] }) {
                 </figure>
               </details>
               <p className="small mb-0">
-                อย่าใช้ขนาดบ้านหรือจำนวนเครื่องใช้ไฟฟ้าเป็นตัวตัดสิน
-                หากอ่านป้ายไม่ชัด ให้สอบถามการไฟฟ้าหรือช่างไฟฟ้า
-                และอย่าเปิดตู้หรือสัมผัสสายไฟเพื่อตรวจสอบเอง
+              หากไม่สามารถสังเกตได้ แนะนำให้สอบถามช่างไฟฟ้า หรือการไฟฟ้าในเขตพื้นที่ของท่าน ไม่ควรเปิดตู้หรือสัมผัสสายไฟโดยตรง
               </p>
             </div>
           </aside>

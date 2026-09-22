@@ -2,6 +2,8 @@ import React from "react";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
 
 function PdfPage({
+  formatPrice,
+  priceSummary,
   pdfRef,
   totalPrice,
   energySummary,
@@ -21,12 +23,18 @@ function PdfPage({
 }) {
   const formatEnergyValue = (value) =>
     typeof value === "number" && Number.isFinite(value)
-      ? new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(value)
+      ? new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(
+          value,
+        )
       : "—";
 
-  const hasTotalPrice = typeof totalPrice === "number" && Number.isFinite(totalPrice);
+  const hasTotalPrice =
+    typeof totalPrice === "number" && Number.isFinite(totalPrice);
   const formattedTotalPrice = hasTotalPrice
-    ? new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPrice)
+    ? new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(totalPrice)
     : "—";
 
   const microProducts = selectedMicroSize?.detail || [];
@@ -208,9 +216,7 @@ function PdfPage({
                 <div className="pdf-spec-title">
                   <strong>{optionCus.title}</strong>
 
-                  {optionCus.sub_title && (
-                    <small>{optionCus.sub_title}</small>
-                  )}
+                  {optionCus.sub_title && <small>{optionCus.sub_title}</small>}
                 </div>
 
                 <div className="pdf-spec-value">
@@ -243,40 +249,217 @@ function PdfPage({
             </>
           )}
 
-          {energySummary && (selectedOptions?.["1"] || selectedOptions?.[microSizeKey]) && (
-            <section style={{ marginTop: "20px", color: "#1d2939", breakInside: "avoid" }}>
-              <h3 className="pdf-section-title">สรุปประโยชน์ของระบบ</h3>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", lineHeight: 1.5 }}>
-                <tbody>
-                  {[
-                    { label: "ลดค่าไฟโดยประมาณจากแบตเตอรี่", unit: "บาท/รอบ", value: energySummary.savings },
-                    { label: "ผลิตไฟได้โดยประมาณ", unit: "หน่วย/วัน", value: energySummary.production },
-                    { label: "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่", unit: "ชม./รอบ", value: energySummary.airconHours },
-                  ].map(({ label, unit, value }) => (
-                    <tr key={label}>
-                      <th scope="row" style={{ padding: "10px", textAlign: "left", fontWeight: 500, borderBottom: "1px solid #dce3eb", width: "68%" }}>{label}</th>
-                      <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid #dce3eb", whiteSpace: "nowrap" }}>
-                        <strong style={{ fontSize: "18px" }}>{formatEnergyValue(value)}</strong>{" "}{unit}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p style={{ fontSize: "11px", lineHeight: 1.6, color: "#596579", margin: "10px 0 4px" }}>
-                ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน โดยสมมติขนาดแผงเพียงพอ;
-                ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW ผลจริงขึ้นกับการติดตั้งและการใช้งาน
-              </p>
-              <p style={{ fontSize: "11px", lineHeight: 1.6, color: "#596579", margin: 0 }}>
-                ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ
-                {isMicro
-                  ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
-                  : energySummary.savings == null || energySummary.airconHours == null
-                    ? " ยังไม่มีข้อมูลแบตเตอรี่ที่ใช้คำนวณได้ กรุณาตรวจสอบรุ่นและจำนวนแบตเตอรี่"
-                    : ""}
-              </p>
+          {energySummary &&
+            (selectedOptions?.["1"] || selectedOptions?.[microSizeKey]) && (
+              <section
+                style={{
+                  marginTop: "20px",
+                  color: "#1d2939",
+                  breakInside: "avoid",
+                }}
+              >
+                <h3 className="pdf-section-title">สรุปประโยชน์ของระบบ</h3>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "13px",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <tbody>
+                    {[
+                      {
+                        label: "ลดค่าไฟโดยประมาณจากแบตเตอรี่",
+                        unit: "บาท/รอบ",
+                        value: energySummary.savings,
+                      },
+                      {
+                        label: "ผลิตไฟได้โดยประมาณ",
+                        unit: "หน่วย/วัน",
+                        value: energySummary.production,
+                      },
+                      {
+                        label:
+                          "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่",
+                        unit: "ชม./รอบ",
+                        value: energySummary.airconHours,
+                      },
+                    ].map(({ label, unit, value }) => (
+                      <tr key={label}>
+                        <th
+                          scope="row"
+                          style={{
+                            padding: "10px",
+                            textAlign: "left",
+                            fontWeight: 500,
+                            borderBottom: "1px solid #dce3eb",
+                            width: "68%",
+                          }}
+                        >
+                          {label}
+                        </th>
+                        <td
+                          style={{
+                            padding: "10px",
+                            textAlign: "right",
+                            borderBottom: "1px solid #dce3eb",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <strong style={{ fontSize: "18px" }}>
+                            {formatEnergyValue(value)}
+                          </strong>{" "}
+                          {unit}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p
+                  style={{
+                    fontSize: "11px",
+                    lineHeight: 1.6,
+                    color: "#596579",
+                    margin: "10px 0 4px",
+                  }}
+                >
+                  ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
+                  โดยสมมติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย
+                  และแอร์ใช้กำลังไฟเฉลี่ย 1 kW
+                  ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+                </p>
+                <p
+                  style={{
+                    fontSize: "11px",
+                    lineHeight: 1.6,
+                    color: "#596579",
+                    margin: 0,
+                  }}
+                >
+                  ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ
+                  {isMicro
+                    ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
+                    : energySummary.savings == null ||
+                        energySummary.airconHours == null
+                      ? " ยังไม่มีข้อมูลแบตเตอรี่ที่ใช้คำนวณได้ กรุณาตรวจสอบรุ่นและจำนวนแบตเตอรี่"
+                      : ""}
+                </p>
+              </section>
+            )}
+          {priceSummary?.lines?.some((item) => item.text || item.end_text) && (
+            <section
+              style={{
+                marginTop: "20px",
+                padding: "20px 24px",
+                backgroundColor: "#f4f8f6",
+                border: "1px solid #d9e7df",
+                borderLeft: "4px solid #287653",
+                borderRadius: "12px",
+                breakInside: "avoid",
+                pageBreakInside: "avoid",
+              }}
+            >
+              <div
+                style={{
+                  marginBottom: "14px",
+                  paddingBottom: "12px",
+                  borderBottom: "1px solid #d9e7df",
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 5px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "1.5px",
+                    color: "#56806b",
+                  }}
+                >
+                  YOUR ENERGY SOLUTION
+                </p>
+
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    lineHeight: 1.5,
+                    color: "#163e2d",
+                  }}
+                >
+                  สรุประบบที่แนะนำสำหรับคุณ
+                </h3>
+              </div>
+
+              {priceSummary.lines
+                .filter((item) => item.text || item.end_text)
+                .map((item, index) => (
+                  <div
+                    key={`${item.title}-${index}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: "10px",
+                      marginTop: index === 0 ? 0 : "10px",
+                      breakInside: "avoid",
+                      pageBreakInside: "avoid",
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        flexShrink: 0,
+                        color: "#287653",
+                        fontSize: "16px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      •
+                    </span>
+
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "15px",
+                        lineHeight: 1.85,
+                        color: "#34483d",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {item.text}{" "}
+                      {item.status === true && item.quantity != null && (
+                        <strong style={{ color: "#176342", fontSize: "17px" }}>
+                          {item.quantity}{" "}
+                        </strong>
+                      )}
+                      {item.status === false &&
+                        item.title === "SigenMicro 1000" && (
+                          <strong
+                            style={{ color: "#176342", fontSize: "17px" }}
+                          >
+                            {item.quantity}{" "}
+                          </strong>
+                        )}
+                      {item.end_text}{" "}
+                      {item.status === true &&
+                        typeof item.endCalculateTotal === "number" &&
+                        Number.isFinite(item.endCalculateTotal) && (
+                          <strong
+                            style={{
+                              color: "#176342",
+                              fontSize: "17px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formatEnergyValue(item.endCalculateTotal)} kW
+                          </strong>
+                        )}
+                    </p>
+                  </div>
+                ))}
             </section>
           )}
-
           <section
             aria-label="ราคาโดยประมาณ"
             style={{
@@ -289,17 +472,45 @@ function PdfPage({
               pageBreakInside: "avoid",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#163e2d" }}>ราคาโดยประมาณ</h3>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: "16px",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#163e2d" }}>
+                ราคาโดยประมาณ
+              </h3>
               <div style={{ color: "#176342", whiteSpace: "nowrap" }}>
-                <strong style={{ fontSize: "28px" }}>{formattedTotalPrice}</strong>
-                {hasTotalPrice && <span style={{ marginLeft: "8px", fontSize: "14px" }}>บาท</span>}
+                <strong style={{ fontSize: "28px" }}>
+                  {hasTotalPrice ? (
+                    <span>
+                      {formatPrice(priceSummary.totalWithMarkup).replace(
+                        /\d(?=(?:\D*\d){0,3}\D*$)/g,
+                        "X",
+                      )}{" "}
+                      บาท{" "}
+                    </span>
+                  ) : null}{" "}
+                </strong>
               </div>
             </div>
             {!hasTotalPrice && (
-              <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#596579" }}>ข้อมูลราคายังไม่ครบ กรุณายืนยันราคากับเจ้าหน้าที่</p>
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  fontSize: "12px",
+                  color: "#596579",
+                }}
+              >
+                ข้อมูลราคายังไม่ครบ กรุณายืนยันราคากับเจ้าหน้าที่
+              </p>
             )}
-            <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#52695e" }}>
+            <p
+              style={{ margin: "8px 0 0", fontSize: "12px", color: "#52695e" }}
+            >
               ราคายังไม่รวมภาษีมูลค่าเพิ่ม 7%
             </p>
           </section>

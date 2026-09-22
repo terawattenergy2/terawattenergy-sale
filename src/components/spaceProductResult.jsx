@@ -63,32 +63,70 @@ const formatEnergyValue = (value) =>
     : new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(
         value,
       );
-
-// Missing prices remain null so an incomplete configuration is not quoted as complete.
 function buildPriceSummary(items, priceList) {
   const prices = Array.isArray(priceList) ? priceList : [];
+
+  const toNumber = (value) => {
+    if (
+      (typeof value !== "number" && typeof value !== "string") ||
+      String(value).trim() === ""
+    ) {
+      return null;
+    }
+
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  };
+
   const lines = items.map((item) => {
-    const match = prices.find(
-      (entry) => String(entry.product ?? "").trim() === String(item.title ?? "").trim()
-    );
-    const rawPrice = item.price ?? match?.price;
-    const parsedPrice = rawPrice == null || String(rawPrice).trim() === ""
-      ? NaN
-      : Number(rawPrice);
-    const unitPrice = Number.isFinite(parsedPrice) && parsedPrice >= 0
-      ? parsedPrice : null;
-    const quantity = Number(item.quantity);
-    const validQuantity = Number.isInteger(quantity) && quantity > 0;
+    const title = String(item.title ?? "").trim();
+    const match = title
+      ? prices.find((entry) => String(entry.product ?? "").trim() === title)
+      : undefined;
+
+    const parsedPrice = toNumber(item.price ?? match?.price);
+    const unitPrice =
+      parsedPrice !== null && parsedPrice >= 0 ? parsedPrice : null;
+
+    const parsedQuantity = toNumber(item.quantity);
+    const quantity =
+      Number.isInteger(parsedQuantity) && parsedQuantity > 0
+        ? parsedQuantity
+        : null;
+
+    const status = match?.status ?? item.status ?? null;
+    const rawEndCalculate = item.end_calculate ?? match?.end_calculate;
+
+    // ใช้ค่าตัวเลขสำหรับคำนวณ โดย false จะได้ null
+    const endCalculate = toNumber(rawEndCalculate);
+
     return {
       ...item,
+      text: match?.text ?? item.text ?? null,
+      end_text: match?.end_text ?? item.end_text ?? null,
+      status,
+      end_calculate: rawEndCalculate === false ? false : endCalculate,
+      // คำนวณเฉพาะ status ที่เป็น boolean
+      endCalculateTotal:
+        status === true && endCalculate !== null && quantity !== null
+          ? endCalculate * quantity
+          : null,
+
       unitPrice,
-      quantity: validQuantity ? quantity : null,
-      subtotal: unitPrice !== null && validQuantity ? unitPrice * quantity : null,
+      quantity,
+      subtotal:
+        unitPrice !== null && quantity !== null ? unitPrice * quantity : null,
     };
   });
+
   const knownTotal = lines.reduce((sum, item) => sum + (item.subtotal ?? 0), 0);
-  const markupAmount = Math.round((knownTotal * 0.1 + Number.EPSILON) * 100) / 100;
-  const totalWithMarkup = Math.round((knownTotal + markupAmount + Number.EPSILON) * 100) / 100;
+
+  const markupAmount =
+    Math.round((knownTotal * 0.1 + Number.EPSILON) * 100) / 100;
+
+  const totalWithMarkup =
+    Math.round((knownTotal + markupAmount + Number.EPSILON) * 100) / 100;
+
   return {
     lines,
     knownTotal,
@@ -108,10 +146,8 @@ function SpaceProductResult({
   inverterTypes,
   selectedInverter,
   handleSelect,
-  priceList
+  priceList,
 }) {
-
-  
   const detail = data?.detail;
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isExporting, setIsExporting] = useState(false);
@@ -374,10 +410,11 @@ function SpaceProductResult({
     option_2: "ติดตั้ง",
     option_3: "ติดตั้ง พร้อม License 25 KW",
     prices: {
-      "ไม่ติดตั้ง": 0,
-      "ติดตั้ง": 74200,
+      ไม่ติดตั้ง: 0,
+      ติดตั้ง: 74200,
       "ติดตั้ง พร้อม License 25 KW": 92200,
     },
+    end_calculate: false,
   };
 
   const handleSelectOption = (itemId, value) => {
@@ -534,9 +571,7 @@ function SpaceProductResult({
         : "",
     };
 
-    const { error: saveError } = await supabase
-    .from("customer_quotes")
-    .insert({
+    const { error: saveError } = await supabase.from("customer_quotes").insert({
       ...payload,
       selected_options: selectedOptions,
       price_summary: priceSummary,
@@ -545,10 +580,12 @@ function SpaceProductResult({
       vat_included: false,
     });
 
-  if (saveError) {
-    throw new Error(`บันทึกข้อมูลลง Supabase ไม่สำเร็จ: ${saveError.message}`);
-  }
-};
+    if (saveError) {
+      throw new Error(
+        `บันทึกข้อมูลลง Supabase ไม่สำเร็จ: ${saveError.message}`,
+      );
+    }
+  };
 
   const [rawDataCus, setRawDataCus] = useState([]);
 
@@ -587,9 +624,7 @@ function SpaceProductResult({
       return items.map((item) => {
         const title = String(item.title ?? "").trim();
         const matchedPrice = title
-          ? prices.find(
-              (entry) => String(entry.product ?? "").trim() === title
-            )
+          ? prices.find((entry) => String(entry.product ?? "").trim() === title)
           : undefined;
 
         return {
@@ -609,7 +644,7 @@ function SpaceProductResult({
 
   const matchedData = dataCus.find(
     (item) =>
-      item.title?.trim().toLowerCase() === data?.short?.trim().toLowerCase()
+      item.title?.trim().toLowerCase() === data?.short?.trim().toLowerCase(),
   );
 
   const selectedPhase = selectedOptions["0"] || "1 Phase";
@@ -703,44 +738,46 @@ function SpaceProductResult({
   const hasExtraQuestion =
     String(data?.id) === "1" && batteryCount !== "" && batteryCount !== "6";
 
-  const isExtraCompleted =
-    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
-
   // ตรวจสอบว่าเป็น SigenMicro
   const isMicro = String(data?.id) === "3";
 
   // คำนวณจาก state ทุก render จึงอัปเดตทันทีเมื่อเปลี่ยนตัวเลือก
   const energySummary = calculateEnergySummary(selectedOptions, isMicro);
-
+  const selectedPriceItems = [];
   // Micro ต้องเลือกทั้งเฟสและขนาด
   const isMicroCompleted =
     hasAnswer(selectedOptions["0"]) &&
     hasAnswer(selectedOptions[MICRO_SIZE_KEY]) &&
     Boolean(selectedMicroSize);
+  const isExtraCompleted =
+    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
 
   // เลือกวิธีตรวจตามประเภท Inverter
   const isFormCompleted = isMicro
     ? isMicroCompleted
     : isMainCompleted && isExtraCompleted;
 
-  const selectedPriceItems = [];
   if (isMicro) {
     (selectedMicroSize?.detail ?? []).forEach((item) => {
       selectedPriceItems.push({ title: item.title, quantity: item.count });
     });
   } else {
-    const inverterOptions = selectedPhase === "3 Phase"
-      ? matchedData?.sizeInverter_2 : matchedData?.sizeInverter_1;
+    const inverterOptions =
+      selectedPhase === "3 Phase"
+        ? matchedData?.sizeInverter_2
+        : matchedData?.sizeInverter_1;
     const inverterOption = (inverterOptions ?? []).find(
-      (item) => item.title === selectedOptions["1"]
+      (item) => item.title === selectedOptions["1"],
     );
     if (selectedOptions["1"]) {
       selectedPriceItems.push({
-        title: selectedOptions["1"], quantity: 1, price: inverterOption?.price,
+        title: selectedOptions["1"],
+        quantity: 1,
+        price: inverterOption?.price,
       });
     }
     const batteryOption = (matchedData?.bat ?? []).find(
-      (item) => item.title === selectedOptions["2"]
+      (item) => item.title === selectedOptions["2"],
     );
     if (selectedOptions["2"]) {
       selectedPriceItems.push({
@@ -753,18 +790,24 @@ function SpaceProductResult({
     if (gateway && gateway !== "ไม่เพิ่มเติม" && gateway !== "ไม่ติดตั้ง") {
       selectedPriceItems.push({ title: gateway, quantity: 1 });
     }
+
     const evOption = selectedOptions["5"];
+
     if (hasExtraQuestion && evOption) {
       selectedPriceItems.push({
         title: `${optionCus.title}: ${evOption}`,
         quantity: 1,
         price: optionCus.prices[evOption],
+        status: false,
       });
     }
   }
+
   const priceSummary = buildPriceSummary(selectedPriceItems, priceList);
-  const totalPrice = isFormCompleted && priceSummary.complete
-    ? priceSummary.totalWithMarkup : null;
+  const totalPrice =
+    isFormCompleted && priceSummary.complete
+      ? priceSummary.totalWithMarkup
+      : null;
 
   return (
     <div className="space-product-result">
@@ -1113,21 +1156,39 @@ function SpaceProductResult({
             </p>
           </section>
         )}
-        {priceSummary.lines.length > 0 && (
-          <section className="border rounded-3 p-4 mt-4" aria-labelledby="selected-price-title">
-            <h3 id="selected-price-title" className="h5 mb-3">สรุปราคาอุปกรณ์ที่เลือก</h3>
+        {/* {priceSummary.lines.length > 0 && (
+          <section
+            className="border rounded-3 p-4 mt-4"
+            aria-labelledby="selected-price-title"
+          >
+            <h3 id="selected-price-title" className="h5 mb-3">
+              สรุปราคาอุปกรณ์ที่เลือก
+            </h3>
             <div className="table-responsive">
               <table className="table align-middle">
                 <thead>
-                  <tr><th>รายการ</th><th>จำนวน</th><th className="text-end">ราคา/หน่วย</th><th className="text-end">รวม (บาท)</th></tr>
+                  <tr>
+                    <th>รายการ</th>
+                    <th>จำนวน</th>
+                    <th className="text-end">ราคา/หน่วย</th>
+                    <th className="text-end">รวม (บาท)</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {priceSummary.lines.map((item, index) => (
                     <tr key={`${item.title}-${index}`}>
                       <td>{item.title}</td>
                       <td>{item.quantity ?? "รอเลือกจำนวน"}</td>
-                      <td className="text-end">{item.unitPrice === null ? "ไม่พบราคา" : formatPrice(item.unitPrice)}</td>
-                      <td className="text-end">{item.subtotal === null ? "—" : formatPrice(item.subtotal)}</td>
+                      <td className="text-end">
+                        {item.unitPrice === null
+                          ? "ไม่พบราคา"
+                          : formatPrice(item.unitPrice)}
+                      </td>
+                      <td className="text-end">
+                        {item.subtotal === null
+                          ? "—"
+                          : formatPrice(item.subtotal)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1141,23 +1202,91 @@ function SpaceProductResult({
               <span>บวกเพิ่ม 10%</span>
               <span>{formatPrice(priceSummary.markupAmount)} บาท</span>
             </div>
-            <div className="d-flex justify-content-between gap-3" aria-live="polite">
-              <strong>{totalPrice !== null ? "ยอดรวมหลังบวกเพิ่ม 10%" : "ยอดรายการที่คำนวณได้ หลังบวกเพิ่ม 10%"}</strong>
+            <div
+              className="d-flex justify-content-between gap-3"
+              aria-live="polite"
+            >
+              <strong>
+                {totalPrice !== null
+                  ? "ยอดรวมหลังบวกเพิ่ม 10%"
+                  : "ยอดรายการที่คำนวณได้ หลังบวกเพิ่ม 10%"}
+              </strong>
               <strong>{formatPrice(priceSummary.totalWithMarkup)} บาท</strong>
             </div>
-            {!priceSummary.complete && (
-              <p className="text-danger small mt-2 mb-0">ยังคำนวณยอดทั้งหมดไม่ได้ กรุณาตรวจสอบรายการที่ไม่พบราคาหรือยังไม่ได้เลือกจำนวน</p>
-            )}
+   
             {!isFormCompleted && (
-              <p className="text-secondary small mt-2 mb-0">ยอดจะอัปเดตตามตัวเลือก กรุณาเลือกสเปกให้ครบ</p>
+              <p className="text-secondary small mt-2 mb-0">
+                ยอดจะอัปเดตตามตัวเลือก กรุณาเลือกสเปกให้ครบ
+              </p>
             )}
           </section>
-        )}
+        )} 
+
+        {priceSummary.lines
+          .filter((item) => item.text || item.end_text)
+          .map((item, index) => (
+            <div
+              key={`${item.title}-${index}`}
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "10px",
+                marginTop: index === 0 ? 0 : "10px",
+                breakInside: "avoid",
+                pageBreakInside: "avoid",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  flexShrink: 0,
+                  color: "#287653",
+                  fontSize: "16px",
+                  fontWeight: 700,
+                }}
+              >
+                •
+              </span>
+
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "15px",
+                  lineHeight: 1.85,
+                  color: "#34483d",
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {item.text}{" "}
+                { item.quantity != null && (
+                  <strong style={{ color: "#176342", fontSize: "17px" }}>
+                    {item.quantity}{" "}
+                  </strong>
+                )}
+                {item.end_text}{" "}
+                {item.status === true &&
+                  typeof item.endCalculateTotal === "number" &&
+                  Number.isFinite(item.endCalculateTotal) && (
+                    <strong
+                      style={{
+                        color: "#176342",
+                        fontSize: "17px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {formatEnergyValue(item.endCalculateTotal)} kW
+                    </strong>
+                  )}
+              </p>
+            </div>
+          ))}
+          */}
+          
         {isFormCompleted && (
           <>
             <p className="small text-danger mt-3 mb-1">
               กด Export เพื่อแสดงราคาโดยประมาณ
-              กด Export เพื่อดาวน์โหลดสรุปสเปกระบบ
+              และสรุปสเปกอินเวอร์ดตอร์ที่ท่านเลือก
             </p>{" "}
             <div className="result-actions mt-3">
               <Button variant="outline-secondary" onClick={handleRestart}>
@@ -1176,6 +1305,7 @@ function SpaceProductResult({
         )}
 
         <PdfPage
+          formatPrice={formatPrice}
           priceSummary={priceSummary}
           totalPrice={totalPrice}
           energySummary={energySummary}
