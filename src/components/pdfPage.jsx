@@ -30,12 +30,12 @@ function PdfPage({
 
   const hasTotalPrice =
     typeof totalPrice === "number" && Number.isFinite(totalPrice);
-  const formattedTotalPrice = hasTotalPrice
-    ? new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(totalPrice)
-    : "—";
+  // const formattedTotalPrice = hasTotalPrice
+  //   ? new Intl.NumberFormat("en-US", {
+  //       minimumFractionDigits: 2,
+  //       maximumFractionDigits: 2,
+  //     }).format(totalPrice)
+  //   : "—";
 
   const microProducts = selectedMicroSize?.detail || [];
 
