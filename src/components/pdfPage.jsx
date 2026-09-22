@@ -1,5 +1,6 @@
 import React from "react";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
+import imgLine from "../components/assets/images/LineOA.png";
 
 function PdfPage({
   formatPrice,
@@ -594,14 +595,50 @@ function PdfPage({
             </p>
           </section>
 
-          <div className="pdf-footer">
-            วันที่สร้างเอกสาร:{" "}
-            {new Date().toLocaleDateString("th-TH", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </div>
+          {/* Footer ติดต่อและวันที่ในแถบเดียว */}
+          <footer
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginTop: "10px",
+              paddingTop: "7px",
+              borderTop: "1px solid #dce7e0",
+              color: "#52695e",
+              breakInside: "avoid",
+              pageBreakInside: "avoid",
+            }}
+          >
+            <img
+              src={imgLine}
+              alt="LINE สำหรับติดต่อสั่งซื้อ"
+              style={{
+                display: "block",
+                width: "44px",
+                height: "auto",
+                flexShrink: 0,
+                objectFit: "contain",
+              }}
+            />
+            <div style={{ flex: 1, fontSize: "11px", lineHeight: 1.5 }}>
+              <strong style={{ color: "#176342" }}>
+                สนใจสั่งซื้อสินค้า สแกนเลย
+              </strong>
+            </div>
+            <span
+              style={{
+                fontSize: "9px",
+                color: "#7b8794",
+                whiteSpace: "nowrap",
+              }}
+            >
+              วันที่สร้างเอกสาร: {new Date().toLocaleDateString("th-TH", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
+          </footer>
         </div>
       </div>
     </div>

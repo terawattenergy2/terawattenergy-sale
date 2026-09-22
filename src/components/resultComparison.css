@@ -142,7 +142,6 @@
   overflow-wrap: break-word;
 }
 
-
 .tera-compare__footer {
   text-align: center;
   border-top: 1px solid var(--compare-line);
@@ -237,5 +236,126 @@
 @media (max-width: 600px) {
   .tera-compare__features ul {
     font-size: 16px;
+  }
+}
+
+/* Original comparison layout, compact only on phones. */
+@media (max-width: 600px) {
+  #product-comparison {
+    padding: 14px;
+    min-width: 0;
+  }
+  @media (max-width: 600px) {
+  #product-comparison > h2 {
+    padding: 8px 12px 0;
+    margin-bottom: 12px;
+    font-size: 19px;
+    line-height: 1.55;
+  }
+
+  #product-comparison > p {
+    padding: 0 12px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+}
+  .tera-compare {
+    padding: 12px 0;
+    margin-top: 12px;
+    border-radius: 12px;
+  }
+  .tera-compare__intro {
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 0 8px;
+    margin-bottom: 16px;
+  }
+  .tera-compare__scroll {
+    padding: 0 4px 10px;
+  }
+  .tera-compare__grid {
+    grid-template-columns: repeat(var(--product-count), minmax(150px, 1fr));
+    min-width: calc(
+      var(--product-count) * 150px + (var(--product-count) - 1) * 12px
+    );
+    column-gap: 12px;
+  }
+  .tera-compare__hero {
+    grid-template-rows: auto minmax(52px, auto) 130px auto;
+    padding: 6px 0 18px;
+  }
+  .tera-compare__eyebrow {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .tera-compare .tera-compare__hero h3 {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .tera-compare__image {
+    height: 130px;
+    padding: 10px 6px;
+  }
+  .tera-compare .tera-compare__image img {
+    max-height: 110px;
+    max-width: 140px;
+    object-fit: contain;
+  }
+  .tera-compare button.tera-compare__choose {
+    font-size: 13px;
+    padding: 8px 14px;
+    min-height: 44px;
+    margin-top: 8px;
+  }
+  .tera-compare .tera-compare__category {
+    font-size: 16px;
+    gap: 8px;
+    padding: 18px 0 10px;
+  }
+  .tera-compare__icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    font-size: 19px;
+    border-radius: 8px;
+  }
+  .tera-compare__category-grid {
+    padding: 14px 0 !important;
+  }
+  .tera-compare__model {
+    font-size: 11px;
+    margin: 0 0 12px !important;
+    padding: 0 6px !important;
+  }
+  .tera-compare__detail-icon {
+    min-height: 18px !important;
+    padding: 0 6px 5px !important;
+  }
+  .tera-compare__detail-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .tera-compare__detail-label {
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+    padding: 0 6px !important;
+  }
+  .tera-compare__detail-sub {
+    font-size: 12px;
+    padding: 6px 6px 16px !important;
+    line-height: 1.6 !important;
+  }
+  .tera-compare__footer {
+    margin: 0 4px;
+    padding: 16px 6px 0;
+    font-size: 13px;
+  }
+  .tera-compare__footer p {
+    margin-bottom: 4px;
+  }
+  .tera-compare__custom {
+    min-height: 44px;
+    font-size: 13px;
   }
 }

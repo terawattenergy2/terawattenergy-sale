@@ -378,6 +378,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                           {section.title}
                         </h3>
                         <div
+                          className="tera-compare__category-grid"
                           style={{
                             gridColumn: "1 / -1",
                             display: "grid",
@@ -407,6 +408,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                                 return (
                                   <div
                                     key={`icon-${index}`}
+                                    className="tera-compare__detail-icon"
                                     aria-hidden="true"
                                     style={{
                                       minHeight: "24px",
@@ -427,6 +429,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                               {row.cells.map((cell, index) => (
                                 <div
                                   key={`label-${index}`}
+                                  className="tera-compare__detail-label"
                                   style={{
                                     fontSize: "18px",
                                     fontWeight: 600,
@@ -441,7 +444,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                               {row.cells.map((cell, index) => (
                                 <div
                                   key={`sub-${index}`}
-                                  className="text-secondary smallest"
+                                  className="text-secondary smallest tera-compare__detail-sub"
                                   style={{
                                     padding: "12px 12px 32px",
                                     lineHeight: 1.7,

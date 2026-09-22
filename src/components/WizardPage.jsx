@@ -167,10 +167,10 @@ function WizardPage({ question = [] }) {
             </>
           )}
         </Row>
-
+        
         {String(currentQuestion?.id) === "1" && (
           <aside
-            className="alert alert-warning mt-4 mb-0 d-flex gap-3 align-items-start"
+            className="alert alert-primary border-0 mt-4 mb-0 d-flex gap-3 align-items-start"
             aria-labelledby="phase-help-title"
           >
             <IoWarningOutline
@@ -185,16 +185,7 @@ function WizardPage({ question = [] }) {
               <p className="mb-2">
                 
               </p>
-              {/* <ul className="mb-2 ps-3">
-                <li>
-                  <strong>1 เฟส:</strong> มองหาคำว่า “1 เฟส”, “1 Phase” หรือ
-                  “Single Phase”
-                </li>
-                <li>
-                  <strong>3 เฟส:</strong> มองหาคำว่า “3 เฟส”, “3 Phase” หรือ
-                  “Three Phase”
-                </li>
-              </ul> */}
+             
               <details className="my-3">
                 <summary
                   className="fw-semibold"
