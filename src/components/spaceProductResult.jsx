@@ -95,7 +95,7 @@ function buildPriceSummary(items, priceList) {
         ? parsedQuantity
         : null;
 
-    const status = match?.status ?? item.status ?? null;
+    const status = item.status ?? match?.status ?? null;
     const rawEndCalculate = item.end_calculate ?? match?.end_calculate;
 
     // ใช้ค่าตัวเลขสำหรับคำนวณ โดย false จะได้ null
@@ -166,7 +166,7 @@ function SpaceProductResult({
           options: [
             {
               id: 0,
-              title: "3 kw (Single Phase)",
+              title: "3 kWh (Single Phase)",
               detail: [
                 {
                   id: 0,
@@ -214,7 +214,7 @@ function SpaceProductResult({
             },
             {
               id: 1,
-              title: "5 kw (Single Phase)",
+              title: "5 kWh (Single Phase)",
               detail: [
                 {
                   id: 0,
@@ -268,7 +268,7 @@ function SpaceProductResult({
           options: [
             {
               id: 0,
-              title: "9 kw (Three Phase)",
+              title: "9 kWh (Three Phase)",
               detail: [
                 {
                   id: 0,
@@ -316,7 +316,7 @@ function SpaceProductResult({
             },
             {
               id: 1,
-              title: "15 kw (Three Phase)",
+              title: "15 kWh (Three Phase)",
               detail: [
                 {
                   id: 0,
@@ -402,30 +402,21 @@ function SpaceProductResult({
   const handleRestart = () => {
     navigate("/");
   };
-  const optionCus = {
-    id: "5",
-    title: "ชุดชาร์จ EV แบบ DC",
-    sub_title: "รุ่น 12 kW ( สามารถอัพเกรด เป็นรุ่น 25Kw ได้)",
-    type: "stor",
-    option_1: "ไม่ติดตั้ง",
-    option_2: "ติดตั้ง",
-    option_3: "ติดตั้ง พร้อม License 25 KW",
-    prices: {
-      ไม่ติดตั้ง: 0,
-      ติดตั้ง: 74200,
-      "ติดตั้ง พร้อม License 25 KW": 92200,
-    },
-    end_calculate: false,
-  };
   const selectBat = selectedOptions["2"];
   const noBattery = selectBat === "ไม่รับแบตเตอรี่";
 
   // 4 = Home Energy Gateway
   // const skippedIds = noBattery ? ["4"] : [];
-const skippedIds = noBattery ? ["3", "4"] : [];
+  const skippedIds = noBattery ? ["3", "4"] : [];
 
+  const isSigenStor = String(data?.id) === "1";
+  const batteryCount = String(selectedOptions["3"] ?? "");
+  const canSelectEv =
+    isSigenStor && (noBattery || (batteryCount !== "" && batteryCount !== "6"));
   const activeSpace = (space || []).filter(
-    (item) => !skippedIds.includes(String(item.id)),
+    (item) =>
+      !skippedIds.includes(String(item.id)) &&
+      (String(item.id) !== "5" || canSelectEv),
   );
 
   const hasAnswer = (value) =>
@@ -446,7 +437,6 @@ const skippedIds = noBattery ? ["3", "4"] : [];
     activeSpace.every((item) => hasAnswer(selectedOptions[item.id]));
 
   const handleSelectOption = (itemId, value) => {
-
     const currentIndex = space?.findIndex(
       (item) => String(item.id) === String(itemId),
     );
@@ -461,10 +451,6 @@ const skippedIds = noBattery ? ["3", "4"] : [];
         space.slice(currentIndex + 1).forEach((nextItem) => {
           delete updatedOptions[nextItem.id];
         });
-
-        if (optionCus?.id !== undefined) {
-          delete updatedOptions[optionCus.id];
-        }
       }
 
       // ถ้า Micro เปลี่ยน Phase ให้ล้างขนาดที่เคยเลือก
@@ -474,7 +460,6 @@ const skippedIds = noBattery ? ["3", "4"] : [];
 
       return updatedOptions;
     });
-
 
     scrollToNextQuestion(itemId);
   };
@@ -493,70 +478,82 @@ const skippedIds = noBattery ? ["3", "4"] : [];
     );
   };
 
-  const handleExportPDF = async () => {
-    if (!pdfRef.current) return;
-    try {
-      setIsExporting(true);
-      // ให้เบราว์เซอร์แสดง Loading ก่อนเริ่มงานสร้าง PDF
-      await new Promise((resolve) =>
-        window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
-      );
-      await saveToSupabase();
+ const handleExportPDF = async () => {
+  if (!pdfRef.current || isExporting) return;
 
-      if (document.fonts?.ready) {
-        await document.fonts.ready;
-      }
-      await waitForImages(pdfRef.current);
+  try {
+    setIsExporting(true);
 
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        imageTimeout: 5000,
-      });
+    await new Promise((resolve) =>
+      window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
+    );
 
-      const imageData = canvas.toDataURL("image/jpeg", 0.8);
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-        compress: true,
-      });
+    await saveToSupabase();
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 7;
-      const maxWidth = pageWidth - margin * 2;
-      const maxHeight = pageHeight - margin * 2;
-      const scaleRatio = Math.min(
-        maxWidth / canvas.width,
-        maxHeight / canvas.height,
-      );
-      const renderWidth = canvas.width * scaleRatio;
-      const renderHeight = canvas.height * scaleRatio;
-      const positionX = (pageWidth - renderWidth) / 2;
-
-      pdf.addImage({
-        imageData,
-        format: "JPEG",
-        x: positionX,
-        y: margin,
-        width: renderWidth,
-        height: renderHeight,
-        compression: "FAST",
-      });
-
-      const safeName = (fullName || "customer").replace(/[/\\?%*:|"<>]/g, "-");
-      pdf.save(`system-spec-${safeName}.pdf`);
-    } catch (error) {
-      console.error("Export PDF error:", error);
-      alert(`ไม่สามารถ Export PDF ได้: ${error.message || "เกิดข้อผิดพลาด"}`);
-    } finally {
-      setIsExporting(false);
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
     }
-  };
+
+    await waitForImages(pdfRef.current);
+
+    const canvas = await html2canvas(pdfRef.current, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      imageTimeout: 5000,
+    });
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 5;
+
+    const availableWidth = pageWidth - margin * 2;
+    const availableHeight = pageHeight - margin * 2;
+
+    // รักษาสัดส่วนภาพ และให้เนื้อหาทั้งหมดอยู่ในหน้าเดียว
+    const scale = Math.min(
+      availableWidth / canvas.width,
+      availableHeight / canvas.height,
+    );
+
+    const renderWidth = canvas.width * scale;
+    const renderHeight = canvas.height * scale;
+
+    // เพิ่มภาพเพียงครั้งเดียว
+    pdf.addImage({
+      imageData: canvas.toDataURL("image/jpeg", 0.95),
+      format: "JPEG",
+      x: (pageWidth - renderWidth) / 2,
+      y: margin,
+      width: renderWidth,
+      height: renderHeight,
+      compression: "FAST",
+    });
+
+    const safeName = (fullName || "customer").replace(
+      /[/\\?%*:|"<>]/g,
+      "-",
+    );
+
+    pdf.save(`system-spec-${safeName}.pdf`);
+  } catch (error) {
+    console.error("Export PDF error:", error);
+    alert(
+      `ไม่สามารถ Export PDF ได้: ${error.message || "เกิดข้อผิดพลาด"}`,
+    );
+  } finally {
+    setIsExporting(false);
+  }
+};
 
   const [personalData] = useState(() => {
     try {
@@ -675,6 +672,8 @@ const skippedIds = noBattery ? ["3", "4"] : [];
   const selectedPhase = selectedOptions["0"] || "1 Phase";
 
   const getMatchedOptions = (item) => {
+    console.log("item", item);
+
     const itemId = String(item?.id);
 
     // หัวข้อ Phase
@@ -748,10 +747,6 @@ const skippedIds = noBattery ? ["3", "4"] : [];
     (option) => option.title === selectedOptions[MICRO_SIZE_KEY],
   );
 
-  const batteryCount = String(selectedOptions["3"] ?? "");
-const hasExtraQuestion =
-  String(data?.id) === "1" &&
-  (noBattery || (batteryCount !== "" && batteryCount !== "6"));
   // ตรวจสอบว่าเป็น SigenMicro
   const isMicro = String(data?.id) === "3";
 
@@ -763,13 +758,8 @@ const hasExtraQuestion =
     hasAnswer(selectedOptions["0"]) &&
     hasAnswer(selectedOptions[MICRO_SIZE_KEY]) &&
     Boolean(selectedMicroSize);
-  const isExtraCompleted =
-    !hasExtraQuestion || hasAnswer(selectedOptions[optionCus?.id]);
-
   // เลือกวิธีตรวจตามประเภท Inverter
-  const isFormCompleted = isMicro
-    ? isMicroCompleted
-    : isMainCompleted && isExtraCompleted;
+  const isFormCompleted = isMicro ? isMicroCompleted : isMainCompleted;
 
   if (isMicro) {
     (selectedMicroSize?.detail ?? []).forEach((item) => {
@@ -805,13 +795,13 @@ const hasExtraQuestion =
       selectedPriceItems.push({ title: gateway, quantity: 1 });
     }
 
+    const evQuestion = activeSpace.find((item) => String(item.id) === "5");
     const evOption = selectedOptions["5"];
-
-    if (hasExtraQuestion && evOption) {
+    if (evQuestion && evOption && evOption !== "ไม่ติดตั้ง") {
       selectedPriceItems.push({
-        title: `${optionCus.title}: ${evOption}`,
+        title: `${evQuestion.title}: ${evOption}`,
         quantity: 1,
-        price: optionCus.prices[evOption],
+        price: evQuestion.prices?.[evOption],
         status: false,
       });
     }
@@ -1025,6 +1015,7 @@ const hasExtraQuestion =
                       <h5>{item.title}</h5>
                       <p>{item.sub_title}</p>
                     </div>
+
                     {isSelectQuestion ? (
                       <div className="space-right col-6">
                         <>
@@ -1081,39 +1072,6 @@ const hasExtraQuestion =
                   </div>
                 );
               })}
-              {hasExtraQuestion && isMainCompleted && (
-                <div
-                  className="space-data row w-100 progressive-question"
-                  data-question-id={optionCus.id}
-                >
-                  <div className="space-left col-6">
-                    <h5>{optionCus.title}</h5>
-                    <p>{optionCus.sub_title}</p>
-                  </div>
-
-                  <div className="space-right col-6">
-                    <select
-                      name={`space-${optionCus.id}`}
-                      value={selectedOptions[optionCus.id] || ""}
-                      onChange={(event) =>
-                        handleSelectOption(optionCus.id, event.target.value)
-                      }
-                    >
-                      <option value="" disabled>
-                        กรุณาเลือก
-                      </option>
-
-                      <option value="ไม่ติดตั้ง">{optionCus.option_1}</option>
-
-                      <option value="ติดตั้ง">{optionCus.option_2}</option>
-
-                      <option value="ติดตั้ง พร้อม License 25 KW">
-                        {optionCus.option_3}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1156,7 +1114,7 @@ const hasExtraQuestion =
             <p className="small text-secondary mt-3 mb-1">
               ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
               โดยสมมติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย
-              และแอร์ใช้กำลังไฟเฉลี่ย 1 kW ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+              และแอร์ใช้กำลังไฟเฉลี่ย 1 kWh ผลจริงขึ้นกับการติดตั้งและการใช้งาน
             </p>
             <p className="small text-secondary mb-0">
               ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ
@@ -1223,7 +1181,10 @@ const hasExtraQuestion =
                 {totalPrice !== null
                   ? "ยอดรวมหลังบวกเพิ่ม 10%"
                   : "ยอดรายการที่คำนวณได้ หลังบวกเพิ่ม 10%"}
-              </strong>
+              </strong>{formatPrice(priceSummary.totalWithMarkup).replace(
+                        /\d(?=(?:\D*\d){0,3}\D*$)/g,
+                        "X",
+                      )}
               <strong>{formatPrice(priceSummary.totalWithMarkup)} บาท</strong>
             </div>
    
@@ -1287,7 +1248,7 @@ const hasExtraQuestion =
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {formatEnergyValue(item.endCalculateTotal)} kW
+                      {formatEnergyValue(item.endCalculateTotal)} kWh
                     </strong>
                   )}
               </p>
@@ -1315,6 +1276,7 @@ const hasExtraQuestion =
             </div>
           </>
         )}
+        {console.log("priceSummary", priceSummary)}
 
         <PdfPage
           formatPrice={formatPrice}
@@ -1324,12 +1286,11 @@ const hasExtraQuestion =
           pdfRef={pdfRef}
           data={data}
           getDriveImageUrl={getDriveImageUrl}
-          space={space}
+          space={activeSpace}
           fullName={fullName}
           personalData={personalData}
           detail={detail}
           selectedOptions={selectedOptions}
-          optionCus={optionCus}
           isMicro={isMicro}
           microSizeKey={MICRO_SIZE_KEY}
           selectedMicroSize={selectedMicroSize}

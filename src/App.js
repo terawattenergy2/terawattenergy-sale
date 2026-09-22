@@ -8,6 +8,7 @@ import ResultPage from "./components/result";
 import MainPage from "./components/mainPage";
 import Header from "./components/header";
 import { supabase } from "./supabase";
+// import LoginPage from "./components/LoginPage";
 
 function App() {
   const [mode, setMode] = useState("wizard");
@@ -85,6 +86,7 @@ function App() {
           </div>
         ) : (
           <Routes>
+            {/* <Route path="/" element={<LoginPage />} /> */}
             <Route path="/" element={<MainPage mode={mode} {...data} />} />
             <Route path="/advanced" element={<AdvancedPage {...data} />} />
             <Route

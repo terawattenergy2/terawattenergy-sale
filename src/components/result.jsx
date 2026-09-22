@@ -276,7 +276,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
   const desSug =
     matchedProducts.length > 0
       ? `สินค้าแนะนำ: ${matchedProducts.map((p) => p.ans_product).join(", ")}`
-      : "3 เฟส · อินเวอร์เตอร์ 10 kW · แบตเตอรี่รวม 30.1 kWh · Self-consumption โดยประมาณ 75%";
+      : "3 เฟส · อินเวอร์เตอร์ 10 kWh · แบตเตอรี่รวม 30.1 kWh · Self-consumption โดยประมาณ 75%";
 
   const handleSelect = (value) => {
     setSelectedInverter(value);

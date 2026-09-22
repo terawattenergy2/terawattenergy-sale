@@ -14,7 +14,6 @@ function PdfPage({
   personalData,
   detail,
   selectedOptions,
-  optionCus,
 
   // ข้อมูลสำหรับ SigenMicro
   isMicro = false,
@@ -41,39 +40,110 @@ function PdfPage({
 
   return (
     <div className="pdf-export-wrapper">
+      <style>{`
+        .pdf-compact-page {
+          isolation: isolate;
+          transform: none !important;
+          zoom: 1 !important;
+        }
+        .pdf-compact-page .pdf-header { margin: 0 0 10px !important; padding: 0 0 8px !important; }
+        .pdf-compact-page .pdf-header h2 { font-size: 24px !important; margin: 0 0 4px !important; }
+        .pdf-compact-page .pdf-header p { margin: 0 !important; }
+        .pdf-compact-page .pdf-customer-section {
+          transform: none !important;
+          zoom: 1 !important;
+          width: 100% !important;
+          box-sizing: border-box;
+          padding: 10px 14px !important;
+          margin: 0 0 10px !important;
+        }
+        .pdf-compact-page .pdf-customer-heading { margin: 0 0 6px !important; padding: 0 0 6px !important; }
+        .pdf-compact-page .pdf-customer-heading h3 { font-size: 17px !important; margin: 2px 0 !important; }
+        .pdf-compact-page .pdf-customer-grid { display: grid; grid-template-columns: 1fr 1.35fr 0.8fr; gap: 10px !important; padding: 0 !important; }
+        .pdf-compact-page .pdf-customer-item { min-width: 0; padding: 0 8px !important; }
+        .pdf-compact-page .pdf-customer-item strong { font-size: 12px !important; overflow-wrap: anywhere; }
+        .pdf-compact-page .pdf-inverter-card { padding: 10px 14px !important; margin: 0 0 10px !important; gap: 14px !important; }
+        .pdf-compact-page .pdf-inverter-image { flex: 0 0 110px !important; width: 110px !important; min-height: 0 !important; height: auto !important; padding: 6px !important; }
+        .pdf-compact-page .pdf-inverter-image img { width: auto !important; height: auto !important; max-width: 100% !important; max-height: 95px !important; object-fit: contain !important; }
+        .pdf-compact-page .pdf-inverter-info h3 { margin: 5px 0 !important; font-size: 20px !important; }
+        .pdf-compact-page .pdf-inverter-info p { margin: 0 !important; font-size: 12px !important; line-height: 1.5 !important; }
+        .pdf-compact-page .pdf-section-title { margin: 10px 0 5px !important; padding-bottom: 5px !important; font-size: 16px !important; }
+        .pdf-compact-page .pdf-spec-row { padding: 7px 0 !important; min-height: 0 !important; font-size: 12px !important; }
+        .pdf-compact-page section { margin-top: 10px !important; }
+        .pdf-compact-page .pdf-footer { margin-top: 10px !important; padding-top: 5px !important; }
+      `}</style>
+
       <div
         ref={pdfRef}
-        className="pdf-specification"
+        className="pdf-specification pdf-compact-page"
         style={{
           position: "relative",
           overflow: "hidden",
+          width: "794px",
+          maxWidth: "none",
+          height: "auto",
+          minHeight: 0,
+          margin: 0,
+          padding: "12px",
+          boxSizing: "border-box",
+          backgroundColor: "#ffffff",
         }}
       >
-        {/* โลโก้ลายน้ำ */}
+        {/* ลายน้ำแบรนด์และข้อมูลผู้ใช้ซ้ำเต็มหน้ากระดาษ */}
         <div
           aria-hidden="true"
           style={{
             position: "absolute",
-            top: "52%",
-            left: "50%",
+            inset: 0,
             zIndex: 0,
-            width: "470px",
-            opacity: 0.055,
-            transform: "translate(-50%, -50%) rotate(-25deg)",
-            transformOrigin: "center",
+            overflow: "hidden",
             pointerEvents: "none",
           }}
         >
-          <img
-            src={imgLogo}
-            alt=""
-            style={{
-              display: "block",
-              width: "100%",
-              height: "auto",
-              objectFit: "contain",
-            }}
-          />
+          {Array.from({ length: 8 }, (_, row) =>
+            Array.from({ length: 3 }, (_, column) => (
+              <div
+                key={`watermark-${row}-${column}`}
+                style={{
+                  position: "absolute",
+                  top: `${6 + row * 12.5}%`,
+                  left: `${16 + column * 34}%`,
+                  width: "29%",
+                  transform: "translate(-50%, -50%) rotate(-25deg)",
+                  transformOrigin: "center",
+                  opacity: 0.055,
+                  textAlign: "center",
+                  color: "#163e2d",
+                  fontFamily: "inherit",
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                }}
+              >
+                <img
+                  src={imgLogo}
+                  alt=""
+                  style={{
+                    display: "block",
+                    width: "72%",
+                    height: "auto",
+                    maxHeight: "65px",
+                    objectFit: "contain",
+                    margin: "0 auto 5px",
+                  }}
+                />
+                {fullName && (
+                  <div style={{ fontSize: "17px", overflowWrap: "anywhere" }}>
+                    {fullName}
+                  </div>
+                )}
+                {personalData?.phone && (
+                  <div style={{ marginTop: "2px", fontSize: "15px" }}>
+                    {personalData.phone}
+                  </div>
+                )}
+              </div>
+            )),
+          )}
         </div>
 
         {/* เนื้อหา PDF */}
@@ -211,7 +281,7 @@ function PdfPage({
             )}
 
             {/* คำถาม EV DC ของ SigenStor */}
-            {!isMicro && data?.label === "SigenStor" && (
+            {/* {!isMicro && data?.label === "SigenStor" && (
               <div className="pdf-spec-row">
                 <div className="pdf-spec-title">
                   <strong>{optionCus.title}</strong>
@@ -223,7 +293,7 @@ function PdfPage({
                   {selectedOptions?.[optionCus.id] || "-"}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* รายการสินค้า SigenMicro */}
@@ -270,22 +340,25 @@ function PdfPage({
                   <tbody>
                     {[
                       {
+                        id: 0,
                         label: "ลดค่าไฟโดยประมาณจากแบตเตอรี่",
-                        unit: "บาท/รอบ",
+                        unit: "บาท/วัน",
                         value: energySummary.savings,
                       },
                       {
+                        id: 1,
                         label: "ผลิตไฟได้โดยประมาณ",
                         unit: "หน่วย/วัน",
                         value: energySummary.production,
                       },
                       {
+                        id: 2,
                         label:
                           "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่",
                         unit: "ชม./รอบ",
                         value: energySummary.airconHours,
                       },
-                    ].map(({ label, unit, value }) => (
+                    ].map(({ label, unit, value, id }) => (
                       <tr key={label}>
                         <th
                           scope="row"
@@ -298,6 +371,12 @@ function PdfPage({
                           }}
                         >
                           {label}
+                          {id === 1 && (
+                            <div className="small text-secondary">
+                              ถ้าติดแผงโซลาร์เซลล์เพิ่ม
+                              มีโอกาสที่ระบบแบตเตอรี่จะจ่ายไฟได้สูง 2 รอบ / วัน
+                            </div>
+                          )}
                         </th>
                         <td
                           style={{
@@ -326,7 +405,7 @@ function PdfPage({
                 >
                   ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
                   โดยสมมติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย
-                  และแอร์ใช้กำลังไฟเฉลี่ย 1 kW
+                  และแอร์ (12,000 BTU) ใช้กำลังไฟเฉลี่ย 1 kWh 
                   ผลจริงขึ้นกับการติดตั้งและการใช้งาน
                 </p>
                 <p
@@ -337,7 +416,7 @@ function PdfPage({
                     margin: 0,
                   }}
                 >
-                  ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ
+                  {/* ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ */}
                   {isMicro
                     ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
                     : energySummary.savings == null ||
@@ -351,26 +430,26 @@ function PdfPage({
             <section
               style={{
                 marginTop: "20px",
-                padding: "20px 24px",
+                padding: "12px 16px",
                 backgroundColor: "#f4f8f6",
                 border: "1px solid #d9e7df",
-                borderLeft: "4px solid #287653",
-                borderRadius: "12px",
+                borderLeft: "3px solid #287653",
+                borderRadius: "8px",
                 breakInside: "avoid",
                 pageBreakInside: "avoid",
               }}
             >
               <div
                 style={{
-                  marginBottom: "14px",
-                  paddingBottom: "12px",
+                  marginBottom: "8px",
+                  paddingBottom: "6px",
                   borderBottom: "1px solid #d9e7df",
                 }}
               >
                 <p
                   style={{
-                    margin: "0 0 5px",
-                    fontSize: "10px",
+                    margin: "0 0 3px",
+                    fontSize: "9px",
                     fontWeight: 700,
                     letterSpacing: "1.5px",
                     color: "#56806b",
@@ -382,7 +461,7 @@ function PdfPage({
                 <h3
                   style={{
                     margin: 0,
-                    fontSize: "18px",
+                    fontSize: "15px",
                     fontWeight: 700,
                     lineHeight: 1.5,
                     color: "#163e2d",
@@ -400,8 +479,8 @@ function PdfPage({
                     style={{
                       display: "flex",
                       alignItems: "baseline",
-                      gap: "10px",
-                      marginTop: index === 0 ? 0 : "10px",
+                      gap: "7px",
+                      marginTop: index === 0 ? 0 : "6px",
                       breakInside: "avoid",
                       pageBreakInside: "avoid",
                     }}
@@ -411,7 +490,7 @@ function PdfPage({
                       style={{
                         flexShrink: 0,
                         color: "#287653",
-                        fontSize: "16px",
+                        fontSize: "12px",
                         fontWeight: 700,
                       }}
                     >
@@ -421,22 +500,22 @@ function PdfPage({
                     <p
                       style={{
                         margin: 0,
-                        fontSize: "15px",
-                        lineHeight: 1.85,
+                        fontSize: "12px",
+                        lineHeight: 1.6,
                         color: "#34483d",
                         overflowWrap: "anywhere",
                       }}
                     >
                       {item.text}{" "}
                       {item.status === true && item.quantity != null && (
-                        <strong style={{ color: "#176342", fontSize: "17px" }}>
+                        <strong style={{ color: "#176342", fontSize: "13px" }}>
                           {item.quantity}{" "}
                         </strong>
                       )}
                       {item.status === false &&
                         item.title === "SigenMicro 1000" && (
                           <strong
-                            style={{ color: "#176342", fontSize: "17px" }}
+                            style={{ color: "#176342", fontSize: "13px" }}
                           >
                             {item.quantity}{" "}
                           </strong>
@@ -448,11 +527,11 @@ function PdfPage({
                           <strong
                             style={{
                               color: "#176342",
-                              fontSize: "17px",
+                              fontSize: "13px",
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {formatEnergyValue(item.endCalculateTotal)} kW
+                            {formatEnergyValue(item.endCalculateTotal)} kWh
                           </strong>
                         )}
                     </p>
@@ -464,10 +543,10 @@ function PdfPage({
             aria-label="ราคาโดยประมาณ"
             style={{
               marginTop: "20px",
-              padding: "18px 22px",
+              padding: "12px 16px",
               backgroundColor: "#edf7f2",
               border: "1px solid #cde5d8",
-              borderRadius: "12px",
+              borderRadius: "8px",
               breakInside: "avoid",
               pageBreakInside: "avoid",
             }}
@@ -480,12 +559,12 @@ function PdfPage({
                 gap: "16px",
               }}
             >
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#163e2d" }}>
+              <h3 style={{ margin: 0, fontSize: "15px", color: "#163e2d" }}>
                 ราคาโดยประมาณ
               </h3>
               <div style={{ color: "#176342", whiteSpace: "nowrap" }}>
-                <strong style={{ fontSize: "28px" }}>
-                  {hasTotalPrice ? (
+                <strong style={{ fontSize: "22px" }}>
+                  {/* {hasTotalPrice ? ( */}
                     <span>
                       {formatPrice(priceSummary.totalWithMarkup).replace(
                         /\d(?=(?:\D*\d){0,3}\D*$)/g,
@@ -493,15 +572,15 @@ function PdfPage({
                       )}{" "}
                       บาท{" "}
                     </span>
-                  ) : null}{" "}
+                  {/* ) : null}{" "} */}
                 </strong>
               </div>
             </div>
             {!hasTotalPrice && (
               <p
                 style={{
-                  margin: "8px 0 0",
-                  fontSize: "12px",
+                  margin: "5px 0 0",
+                  fontSize: "11px",
                   color: "#596579",
                 }}
               >
@@ -509,7 +588,7 @@ function PdfPage({
               </p>
             )}
             <p
-              style={{ margin: "8px 0 0", fontSize: "12px", color: "#52695e" }}
+              style={{ margin: "5px 0 0", fontSize: "11px", color: "#52695e" }}
             >
               ราคายังไม่รวมภาษีมูลค่าเพิ่ม 7%
             </p>

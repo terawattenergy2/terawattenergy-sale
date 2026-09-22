@@ -1,7 +1,7 @@
 import { Button, Image } from "react-bootstrap";
 import { AiFillMoon, AiFillSun } from "react-icons/ai";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
-
+import { Link } from "react-router-dom";
 function Header({ mode, setMode, theme, setTheme }) {
   return (
     <header className="header">
@@ -12,15 +12,10 @@ function Header({ mode, setMode, theme, setTheme }) {
           className="header-brand-logo"
         />
 
-        <span
-          className="header-brand-divider"
-          aria-hidden="true"
-        />
+        <span className="header-brand-divider" aria-hidden="true" />
 
         <div className="header-brand-content">
-          <span className="header-brand-eyebrow">
-            TERAWATT SMART DESIGN
-          </span>
+          <span className="header-brand-eyebrow">TERAWATT SMART DESIGN</span>
 
           <h1>TeraMatch</h1>
 
@@ -30,13 +25,10 @@ function Header({ mode, setMode, theme, setTheme }) {
 
       <div className="header-actions">
         <Button
-          className={`header-mode-button ${
-            mode === "wizard" ? "active" : ""
-          }`}
+          className={`header-mode-button ${mode === "wizard" ? "active" : ""}`}
           onClick={() => setMode("wizard")}
         >
           <span className="mode-indicator" />
-
           Smart Match
         </Button>
 
