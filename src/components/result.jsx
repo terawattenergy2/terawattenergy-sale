@@ -123,7 +123,6 @@ function buildComparisonRows(products) {
       })),
     };
   }).filter(Boolean);
-  
 }
 
 // Pass arrays loaded from Supabase. Leave props undefined while loading.
@@ -357,7 +356,8 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                         className="tera-compare__choose"
                         onClick={() => handleSelectSug(item)}
                       >
-                        เลือกรุ่นนี้ <span aria-hidden="true">↗</span>
+                        เลือกรุ่นนี้
+                        <span aria-hidden="true">↗</span>
                       </button>
                     </div>
                   ))}
