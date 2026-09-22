@@ -357,7 +357,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                         onClick={() => handleSelectSug(item)}
                       >
                         เลือกรุ่นนี้
-                        <span aria-hidden="true">↗</span>
+                        {/* <span aria-hidden="true">↗</span> */}
                       </button>
                     </div>
                   ))}
