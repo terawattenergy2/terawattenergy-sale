@@ -23,9 +23,13 @@ const ENERGY_ASSUMPTIONS = {
 function calculateEnergySummary(options, isMicro) {
   const model = String(isMicro ? options.microSize || "" : options["1"] || "");
   // อ่านเลขกำลังเฉพาะรูปแบบชื่อรุ่นที่ใช้ในตัวเลือก ไม่อ่าน SP2 เป็นกำลังไฟ
-  const powerMatch = isMicro
-    ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
-    : model.match(/(?:Hybrid|EC)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
+  // const powerMatch = isMicro
+  //   ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
+  //   : model.match(/(?:Hybrid|EC)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
+const powerMatch = isMicro
+  ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
+  : model.match(/(?:Hybrid|EC|NEO)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
+
   const inverterKw = powerMatch ? Number(powerMatch[1]) : null;
   const production =
     inverterKw === null
@@ -64,6 +68,7 @@ const formatEnergyValue = (value) =>
         value,
       );
 function buildPriceSummary(items, priceList) {
+  
   const prices = Array.isArray(priceList) ? priceList : [];
 
   const toNumber = (value) => {
@@ -1280,8 +1285,8 @@ function SpaceProductResult({
                   )}
               </p>
             </div>
-          ))}
-          */}
+          ))} */}
+         
           
         {isFormCompleted && (
           <>

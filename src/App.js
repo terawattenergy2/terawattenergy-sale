@@ -102,7 +102,6 @@ function App() {
                 />
               }
             />
-            {console.log("dataMain", data)}
           </Routes>
         )}
       </div>
