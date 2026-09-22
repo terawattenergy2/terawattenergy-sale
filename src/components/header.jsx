@@ -1,7 +1,7 @@
 import { Button, Image } from "react-bootstrap";
 import { AiFillMoon, AiFillSun } from "react-icons/ai";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 function Header({ mode, setMode, theme, setTheme }) {
   return (
     <header className="header">

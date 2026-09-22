@@ -672,7 +672,6 @@ function SpaceProductResult({
   const selectedPhase = selectedOptions["0"] || "1 Phase";
 
   const getMatchedOptions = (item) => {
-    console.log("item", item);
 
     const itemId = String(item?.id);
 
@@ -1276,7 +1275,6 @@ function SpaceProductResult({
             </div>
           </>
         )}
-        {console.log("priceSummary", priceSummary)}
 
         <PdfPage
           formatPrice={formatPrice}
