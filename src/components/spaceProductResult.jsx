@@ -903,7 +903,7 @@ function SpaceProductResult({
                 data-question-id="0"
               >
                 <div className="space-left col-6">
-                  <h5>เฟสไฟฟ้า</h5>
+                  <h5>ระบบไฟฟ้า</h5>
                   {/* <p>เปลี่ยนรุ่นอินเวอร์เตอร์และ Gateway ให้ตรงเฟส</p> */}
                 </div>
 

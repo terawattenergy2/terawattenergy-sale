@@ -243,7 +243,7 @@ function PdfPage({
                 {/* Phase ของ Micro */}
                 <div className="pdf-spec-row">
                   <div className="pdf-spec-title">
-                    <strong>เฟสไฟฟ้า</strong>
+                    <strong>ระบบไฟฟ้า</strong>
                   </div>
 
                   <div className="pdf-spec-value">

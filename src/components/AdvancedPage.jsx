@@ -227,7 +227,7 @@ export default function AdvancedPage({ data }) {
 
           <Col md={6}>
             <Form.Group>
-              <Form.Label>เฟสไฟฟ้า</Form.Label>
+              <Form.Label>ระบบไฟฟ้า</Form.Label>
 
               <Form.Select
                 value={selectedOptionsPhase.phase ?? "0"}
