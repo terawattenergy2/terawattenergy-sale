@@ -80,9 +80,10 @@ function buildPriceSummary(items, priceList) {
   };
 
   const lines = items.map((item) => {
-    const title = String(item.title ?? "").trim();
-    const match = title
-      ? prices.find((entry) => String(entry.product ?? "").trim() === title)
+    // product ใช้ค้นหาใน Supabase; title ใช้แสดงผลให้ลูกค้า
+    const product = String(item.product ?? item.title ?? "").trim();
+    const match = product
+      ? prices.find((entry) => String(entry.product ?? "").trim() === product)
       : undefined;
 
     const parsedPrice = toNumber(item.price ?? match?.price);
@@ -103,6 +104,8 @@ function buildPriceSummary(items, priceList) {
 
     return {
       ...item,
+      product,
+      price: unitPrice,
       text: match?.text ?? item.text ?? null,
       end_text: match?.end_text ?? item.end_text ?? null,
       status,
@@ -799,9 +802,9 @@ function SpaceProductResult({
     if (evQuestion && evOption && evOption !== "ไม่ติดตั้ง") {
       selectedPriceItems.push({
         title: `${evQuestion.title}: ${evOption}`,
+        // price_list.product ในภาพคือ "ติดตั้ง" ไม่ใช่ชื่อหัวข้อรวมตัวเลือก
+        product: evOption,
         quantity: 1,
-        price: evQuestion.prices?.[evOption],
-        status: false,
       });
     }
   }
@@ -1275,7 +1278,6 @@ function SpaceProductResult({
             </div>
           </>
         )}
-
         <PdfPage
           formatPrice={formatPrice}
           priceSummary={priceSummary}
