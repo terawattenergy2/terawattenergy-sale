@@ -623,7 +623,7 @@ function PdfPage({
             />
             <div style={{ flex: 1, fontSize: "11px", lineHeight: 1.5 }}>
               <strong style={{ color: "#176342" }}>
-                สนใจสั่งซื้อสินค้า สแกนเลย
+                ติดต่อเพื่อขอส่วนลดเพิ่มเติม สแกนเลย
               </strong>
             </div>
             <span
