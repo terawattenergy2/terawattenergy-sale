@@ -356,7 +356,7 @@ function PdfPage({
                         id: 2,
                         label:
                           "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่",
-                        unit: "ชม./รอบ",
+                        unit: "ชม./ วัน",
                         value: energySummary.airconHours,
                       },
                     ].map(({ label, unit, value, id }) => (
@@ -372,7 +372,7 @@ function PdfPage({
                           }}
                         >
                           {label}
-                          {id === 1 && (
+                          {id === 0 && (
                             <div className="small text-secondary">
                               ถ้าติดแผงโซลาร์เซลล์เพิ่ม
                               มีโอกาสที่ระบบแบตเตอรี่จะจ่ายไฟได้สูง 2 รอบ / วัน
@@ -405,9 +405,9 @@ function PdfPage({
                   }}
                 >
                   ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
-                  โดยสมมติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย
-                  และแอร์ (12,000 BTU) ใช้กำลังไฟเฉลี่ย 1 kWh 
-                  ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+                  โดยสมมุติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย และแอร์ (12,000
+                  BTU) ใช้กำลังไฟเฉลี่ย 1 kW อ้างอิงจากการใช้แบตเตอรี่ 1 รอบ/
+                  วัน ผลจริงขึ้นกับการติดตั้งและการใช้งาน
                 </p>
                 <p
                   style={{
@@ -566,13 +566,13 @@ function PdfPage({
               <div style={{ color: "#176342", whiteSpace: "nowrap" }}>
                 <strong style={{ fontSize: "22px" }}>
                   {/* {hasTotalPrice ? ( */}
-                    <span>
-                      {formatPrice(priceSummary.totalWithMarkup).replace(
-                        /\d(?=(?:\D*\d){0,3}\D*$)/g,
-                        "X",
-                      )}{" "}
-                      บาท{" "}
-                    </span>
+                  <span>
+                    {formatPrice(priceSummary.totalWithMarkup).replace(
+                      /\d(?=(?:\D*\d){0,3}\D*$)/g,
+                      "X",
+                    )}{" "}
+                    บาท{" "}
+                  </span>
                   {/* ) : null}{" "} */}
                 </strong>
               </div>
@@ -585,7 +585,8 @@ function PdfPage({
                   color: "#596579",
                 }}
               >
-                ข้อมูลราคายังไม่ครบ กรุณายืนยันราคากับเจ้าหน้าที่
+                ข้อมูลราคาเป็นเพียงการประมาณการเท่านั้น
+                กรุณายืนยันราคากับเจ้าหน้าที่
               </p>
             )}
             <p
@@ -632,7 +633,8 @@ function PdfPage({
                 whiteSpace: "nowrap",
               }}
             >
-              วันที่สร้างเอกสาร: {new Date().toLocaleDateString("th-TH", {
+              วันที่สร้างเอกสาร:{" "}
+              {new Date().toLocaleDateString("th-TH", {
                 day: "numeric",
                 month: "long",
                 year: "numeric",
