@@ -9,7 +9,7 @@ import ResultPage from "./components/result";
 import MainPage from "./components/mainPage";
 import Header from "./components/header";
 import LoginPage from "./components/LoginPage";
-import ReportMenu from "./components/ReportMenu";
+// import ReportMenu from "./components/ReportMenu";
 import ReportPage from "./components/ReportPage";
 import { supabase } from "./supabase";
 
