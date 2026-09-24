@@ -79,7 +79,7 @@ function QuoteDetail({ row }) {
       : [];
   return (
     <div className="tr-detail">
-      <h3>สิ่งที่ลูกค้าเลือก</h3>
+      <h3 className="question-card">สิ่งที่ลูกค้าเลือก</h3>
       <dl className="tr-detail-grid">
         {fields.map(([label, value]) => (
           <div key={label}>
@@ -292,7 +292,7 @@ export default function ReportPage() {
         <div>
           <span className="tr-eyebrow">TERAMATCH / SALES REPORT</span>
           <h1>
-            {access.scope === "all" ? "ภาพรวมลูกค้าและเซลส์" : "ลูกค้าของฉัน"}
+            {access.scope === "all" ? "ภาพรวมลูกค้าและเซลล์" : "ลูกค้าของฉัน"}
           </h1>
           <p>ติดตามลูกค้า ผู้ดูแล และระบบที่สนใจ จากรายการที่กด Export</p>
         </div>
@@ -590,13 +590,13 @@ export default function ReportPage() {
                 รายการลูกค้าและสินค้าที่เลือก
               </caption>
               <thead>
-                <tr>
-                  <th>วัน / วันที่ Export</th>
-                  <th>ลูกค้า</th>
-                  <th>เซลส์ / บริษัท</th>
-                  <th>สินค้าที่สนใจ</th>
-                  <th>ราคาโดยประมาณ</th>
-                  <th>รายละเอียด</th>
+                <tr className="card-text">
+                  <th className="card-text">วัน / วันที่ Export</th>
+                  <th className="card-text">ลูกค้า</th>
+                  <th className="card-text">เซลส์ / บริษัท</th>
+                  <th className="card-text">สินค้าที่สนใจ</th>
+                  <th className="card-text">ราคาโดยประมาณ</th>
+                  <th className="card-text">รายละเอียด</th>
                 </tr>
               </thead>
               <tbody>

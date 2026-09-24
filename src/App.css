@@ -695,7 +695,7 @@ body {
   transition: 0.3s;
 }
 .card-text {
-  color: var(--title);
+  color: var(--title) !important;
 }
 
 .img-logo {
