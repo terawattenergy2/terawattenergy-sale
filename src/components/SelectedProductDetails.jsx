@@ -119,11 +119,11 @@ export default function SelectedProductDetails({
         <p className="small text-danger mt-3 mb-1">
           กด Export เพื่อแสดงราคาโดยประมาณ
         </p>{" "}
-        {product.price != null
+        {/* {product.price != null
           ? Number(product.price)
               .toLocaleString("en-US", { maximumFractionDigits: 0 })
               .replace(/\d{3}$/, "xxx")
-          : "-"}{" "}บาท
+          : "-"}{" "}บาท */}
       </div>
     </section>
   );

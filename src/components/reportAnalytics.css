@@ -1,0 +1,149 @@
+.tr-report .ta-dashboard {
+  margin: 24px 0;
+  padding: 26px;
+  border: 1px solid #dce7f5;
+  border-radius: 22px;
+  background: #f6f9ff;
+  color: #20354f;
+}
+.ta-heading span {
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: #327ad3;
+}
+.ta-heading h2 {
+  font-size: 25px;
+  margin: 8px 0;
+}
+.ta-heading p,
+.ta-chart p,
+.ta-note {
+  font-size: 13px;
+  color: #64758c;
+}
+.ta-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0;
+}
+.ta-cards article,
+.ta-chart {
+  background: #fff;
+  border: 1px solid #e1e9f4;
+  border-radius: 16px;
+  padding: 20px;
+  min-width: 0;
+}
+.ta-cards span,
+.ta-cards strong,
+.ta-cards small {
+  display: block;
+}
+.ta-cards strong {
+  font-size: 25px;
+  margin: 12px 0;
+  color: #216ec5;
+  overflow-wrap: anywhere;
+}
+.ta-cards small {
+  font-size: 11px;
+  color: #728198;
+}
+.ta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.ta-chart h3 {
+  font-size: 18px;
+  margin: 0;
+}
+.ta-chart ul {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  max-height: 390px;
+  overflow: auto;
+}
+.ta-chart li {
+  margin: 0 0 17px;
+  padding-right: 8px;
+}
+.ta-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.ta-bar-label span {
+  overflow-wrap: anywhere;
+}
+.ta-bar-label strong {
+  white-space: nowrap;
+}
+.ta-track {
+  height: 11px;
+  border-radius: 8px;
+  background: #eef3fa;
+  overflow: hidden;
+}
+.ta-track > div {
+  height: 100%;
+  background: linear-gradient(90deg, #2575cf, #58a8f3);
+  border-radius: 8px;
+}
+.ta-chart:nth-child(2) .ta-track > div {
+  background: #1da899;
+}
+.ta-chart:nth-child(3) .ta-track > div {
+  background: #8572ce;
+}
+.ta-chart:nth-child(4) .ta-track > div {
+  background: #dea039;
+}
+.ta-chart small {
+  color: #7b8899;
+  font-size: 10px;
+}
+.ta-note {
+  line-height: 1.7;
+  margin-top: 20px;
+}
+.ta-note p {
+  margin: 6px 0;
+}
+.dark .ta-dashboard {
+  background: #142236;
+  color: #e4ecf7;
+  border-color: #354760;
+}
+.dark .ta-chart,
+.dark .ta-cards article {
+  background: #1c2c43;
+  border-color: #354760;
+}
+.dark .ta-heading p,
+.dark .ta-chart p,
+.dark .ta-note {
+  color: #b8c8dd;
+}
+@media (max-width: 1050px) {
+  .ta-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 650px) {
+  .tr-report .ta-dashboard {
+    padding: 16px;
+  }
+  .ta-grid,
+  .ta-cards {
+    grid-template-columns: 1fr;
+  }
+  .ta-bar-label {
+    font-size: 12px;
+  }
+}

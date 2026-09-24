@@ -1,7 +1,8 @@
 import { Button, Image } from "react-bootstrap";
 import { AiFillMoon, AiFillSun } from "react-icons/ai";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
-// import { Link } from "react-router-dom";
+import ReportMenu from "./ReportMenu";
+
 function Header({ mode, setMode, theme, setTheme }) {
   return (
     <header className="header">
@@ -15,20 +16,27 @@ function Header({ mode, setMode, theme, setTheme }) {
         <span className="header-brand-divider" aria-hidden="true" />
 
         <div className="header-brand-content">
-          <span className="header-brand-eyebrow">TERAWATT SMART DESIGN</span>
-
+          <span className="header-brand-eyebrow">
+            TERAWATT SMART DESIGN
+          </span>
           <h1>TeraMatch</h1>
-
           <p>Solar & Storage Configurator</p>
         </div>
       </div>
 
       <div className="header-actions">
+        <nav aria-label="เมนูรายงาน" className="header-report-menu">
+          <ReportMenu />
+        </nav>
+
         <Button
-          className={`header-mode-button ${mode === "wizard" ? "active" : ""}`}
+          type="button"
+          className={`header-mode-button ${
+            mode === "wizard" ? "active" : ""
+          }`}
           onClick={() => setMode("wizard")}
         >
-          <span className="mode-indicator" />
+          <span className="mode-indicator" aria-hidden="true" />
           Smart Match
         </Button>
 
@@ -37,7 +45,14 @@ function Header({ mode, setMode, theme, setTheme }) {
             role="button"
             tabIndex={0}
             aria-label="โหมดสว่าง"
+            aria-pressed={theme === "light"}
             onClick={() => setTheme("light")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setTheme("light");
+              }
+            }}
             className={theme === "light" ? "active" : ""}
           >
             <AiFillSun />
@@ -47,7 +62,14 @@ function Header({ mode, setMode, theme, setTheme }) {
             role="button"
             tabIndex={0}
             aria-label="โหมดมืด"
+            aria-pressed={theme === "dark"}
             onClick={() => setTheme("dark")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setTheme("dark");
+              }
+            }}
             className={theme === "dark" ? "active" : ""}
           >
             <AiFillMoon />

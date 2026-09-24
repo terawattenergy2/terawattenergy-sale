@@ -12,11 +12,11 @@ import { useNavigate } from "react-router-dom";
 import PdfPage from "./pdfPage";
 import { supabase } from "../supabase";
 
-// ค่าคงที่ถอดจากแท็บ "สูตรคิด" ไม่ได้ดึงสดจาก Google Sheets
+// สมมติฐานคำนวณตามสูตรที่กำหนด ใช้พลังงานแบตเตอรี่ 100%
 const ENERGY_ASSUMPTIONS = {
   equivalentSunHours: 4,
   electricityRate: 4.5,
-  batteryEnergyFraction: 0.5, // จำลองสูตรหาร 2 ในชีต ไม่ใช่การแปลง C-rate
+  batteryEnergyFraction: 1, // ใช้ความจุแบตเตอรี่รวม 100%
   airconPowerKw: 1,
 };
 
@@ -46,7 +46,10 @@ function calculateEnergySummary(options, isMicro) {
       ? null
       : batteryKwh * ENERGY_ASSUMPTIONS.batteryEnergyFraction;
   return {
-    production,
+    production, // kWh/day; retained for existing PDF consumers
+    productionValue: production === null
+      ? null
+      : production * ENERGY_ASSUMPTIONS.electricityRate, // baht/day
     savings:
       usableForEstimate === null
         ? null
@@ -155,6 +158,7 @@ function SpaceProductResult({
   const detail = data?.detail;
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isExporting, setIsExporting] = useState(false);
+  const exportLockRef = useRef(false);
   const pdfRef = useRef(null);
   const MICRO_SIZE_KEY = "microSize";
   const sugMicro = [
@@ -482,7 +486,8 @@ function SpaceProductResult({
   };
 
  const handleExportPDF = async () => {
-  if (!pdfRef.current || isExporting) return;
+  if (!pdfRef.current || exportLockRef.current) return;
+  exportLockRef.current = true;
 
   try {
     setIsExporting(true);
@@ -491,7 +496,10 @@ function SpaceProductResult({
       window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
     );
 
-    await saveToSupabase();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData?.user) {
+      throw new Error("กรุณาเข้าสู่ระบบใหม่ก่อน Export");
+    }
 
     if (document.fonts?.ready) {
       await document.fonts.ready;
@@ -547,6 +555,9 @@ function SpaceProductResult({
       "-",
     );
 
+    // Save only once rendering succeeds. The database trigger saves the lead
+    // and exporter snapshot in the SAME transaction as the quote.
+    await saveToSupabase();
     pdf.save(`system-spec-${safeName}.pdf`);
   } catch (error) {
     console.error("Export PDF error:", error);
@@ -554,6 +565,7 @@ function SpaceProductResult({
       `ไม่สามารถ Export PDF ได้: ${error.message || "เกิดข้อผิดพลาด"}`,
     );
   } finally {
+    exportLockRef.current = false;
     setIsExporting(false);
   }
 };
@@ -598,6 +610,7 @@ function SpaceProductResult({
 
     const { error: saveError } = await supabase.from("customer_quotes").insert({
       ...payload,
+      capture_exporter: true,
       selected_options: selectedOptions,
       price_summary: priceSummary,
       total_price: totalPrice, // <-- ตัวแปร totalPrice อาจมีค่าเป็น null / NaN
@@ -1090,9 +1103,9 @@ function SpaceProductResult({
                   value: energySummary.savings,
                 },
                 {
-                  label: "ผลิตไฟได้โดยประมาณ",
-                  unit: "หน่วย/วัน",
-                  value: energySummary.production,
+                  label: "มูลค่าไฟฟ้าที่ผลิตได้โดยประมาณ",
+                  unit: "บาท/วัน",
+                  value: energySummary.productionValue,
                 },
                 {
                   label: "เทียบเท่ากับการเปิดแอร์ 12,000 BTU จากแบตเตอรี่",
@@ -1112,14 +1125,18 @@ function SpaceProductResult({
                   </div>
                 </div>
               ))}
+              {console.log('energySummary', energySummary)}
             </div>
             <p className="small text-secondary mt-3 mb-1">
-              ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
-              โดยสมมุติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย
-              และแอร์ใช้กำลังไฟเฉลี่ย 1 kW อ้างอิงจากการใช้แบตเตอรี่ 1 รอบ/ วัน ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+              ประมาณการตามสูตรที่กำหนด: มูลค่าไฟฟ้าที่ผลิตได้ =
+              กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน × 4.50 บาท/หน่วย
+              โดยสมมุติขนาดแผงเพียงพอ; คิดพลังงานแบตเตอรี่ 100% ของความจุรวม
+              ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW
+              อ้างอิงการใช้แบตเตอรี่ 1 รอบ/วัน ไม่หักการสูญเสีย
+              ผลจริงขึ้นกับการติดตั้งและการใช้งาน
             </p>
             <p className="small text-secondary mb-0">
-              {/* ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ */}
+              {/* ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 100% ต่อรอบ */}
               {isMicro
                 ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
                 : energySummary.savings === null ||

@@ -3286,3 +3286,8 @@ html {
   border-radius: inherit;
 }
 
+.select{
+    width: 100%;
+    border-radius: 5px;
+    
+}

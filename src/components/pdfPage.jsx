@@ -349,8 +349,8 @@ function PdfPage({
                       {
                         id: 1,
                         label: "ผลิตไฟได้โดยประมาณ",
-                        unit: "หน่วย/วัน",
-                        value: energySummary.production,
+                        unit: "บาท/วัน",
+                        value: energySummary.productionValue,
                       },
                       {
                         id: 2,
