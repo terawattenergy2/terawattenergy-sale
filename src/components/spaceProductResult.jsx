@@ -47,9 +47,10 @@ function calculateEnergySummary(options, isMicro) {
       : batteryKwh * ENERGY_ASSUMPTIONS.batteryEnergyFraction;
   return {
     production, // kWh/day; retained for existing PDF consumers
-    productionValue: production === null
-      ? null
-      : production * ENERGY_ASSUMPTIONS.electricityRate, // baht/day
+    productionValue:
+      production === null
+        ? null
+        : production * ENERGY_ASSUMPTIONS.electricityRate, // baht/day
     savings:
       usableForEstimate === null
         ? null
@@ -67,6 +68,14 @@ const formatEnergyValue = (value) =>
     : new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(
         value,
       );
+
+      const normalizeProduct = (value) =>
+  String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 function buildPriceSummary(items, priceList) {
   const prices = Array.isArray(priceList) ? priceList : [];
 
@@ -82,13 +91,18 @@ function buildPriceSummary(items, priceList) {
     return Number.isFinite(number) ? number : null;
   };
 
+
+
   const lines = items.map((item) => {
     // product ใช้ค้นหาใน Supabase; title ใช้แสดงผลให้ลูกค้า
     const product = String(item.product ?? item.title ?? "").trim();
+    // ใน buildPriceSummary
     const match = product
-      ? prices.find((entry) => String(entry.product ?? "").trim() === product)
+      ? prices.find(
+          (entry) =>
+            normalizeProduct(entry.product) === normalizeProduct(product),
+        )
       : undefined;
-
     const parsedPrice = toNumber(item.price ?? match?.price);
     const unitPrice =
       parsedPrice !== null && parsedPrice >= 0 ? parsedPrice : null;
@@ -485,90 +499,86 @@ function SpaceProductResult({
     );
   };
 
- const handleExportPDF = async () => {
-  if (!pdfRef.current || exportLockRef.current) return;
-  exportLockRef.current = true;
+  const handleExportPDF = async () => {
+    if (!pdfRef.current || exportLockRef.current) return;
+    exportLockRef.current = true;
 
-  try {
-    setIsExporting(true);
+    try {
+      setIsExporting(true);
 
-    await new Promise((resolve) =>
-      window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
-    );
+      await new Promise((resolve) =>
+        window.requestAnimationFrame(() => window.setTimeout(resolve, 0)),
+      );
 
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData?.user) {
-      throw new Error("กรุณาเข้าสู่ระบบใหม่ก่อน Export");
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+      if (authError || !authData?.user) {
+        throw new Error("กรุณาเข้าสู่ระบบใหม่ก่อน Export");
+      }
+
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+
+      await waitForImages(pdfRef.current);
+
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        imageTimeout: 5000,
+      });
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 5;
+
+      const availableWidth = pageWidth - margin * 2;
+      const availableHeight = pageHeight - margin * 2;
+
+      // รักษาสัดส่วนภาพ และให้เนื้อหาทั้งหมดอยู่ในหน้าเดียว
+      const scale = Math.min(
+        availableWidth / canvas.width,
+        availableHeight / canvas.height,
+      );
+
+      const renderWidth = canvas.width * scale;
+      const renderHeight = canvas.height * scale;
+
+      // เพิ่มภาพเพียงครั้งเดียว
+      pdf.addImage({
+        imageData: canvas.toDataURL("image/jpeg", 0.95),
+        format: "JPEG",
+        x: (pageWidth - renderWidth) / 2,
+        y: margin,
+        width: renderWidth,
+        height: renderHeight,
+        compression: "FAST",
+      });
+
+      const safeName = (fullName || "customer").replace(/[/\\?%*:|"<>]/g, "-");
+
+      // Save only once rendering succeeds. The database trigger saves the lead
+      // and exporter snapshot in the SAME transaction as the quote.
+      await saveToSupabase();
+      pdf.save(`system-spec-${safeName}.pdf`);
+    } catch (error) {
+      console.error("Export PDF error:", error);
+      alert(`ไม่สามารถ Export PDF ได้: ${error.message || "เกิดข้อผิดพลาด"}`);
+    } finally {
+      exportLockRef.current = false;
+      setIsExporting(false);
     }
-
-    if (document.fonts?.ready) {
-      await document.fonts.ready;
-    }
-
-    await waitForImages(pdfRef.current);
-
-    const canvas = await html2canvas(pdfRef.current, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      imageTimeout: 5000,
-    });
-
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-      compress: true,
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 5;
-
-    const availableWidth = pageWidth - margin * 2;
-    const availableHeight = pageHeight - margin * 2;
-
-    // รักษาสัดส่วนภาพ และให้เนื้อหาทั้งหมดอยู่ในหน้าเดียว
-    const scale = Math.min(
-      availableWidth / canvas.width,
-      availableHeight / canvas.height,
-    );
-
-    const renderWidth = canvas.width * scale;
-    const renderHeight = canvas.height * scale;
-
-    // เพิ่มภาพเพียงครั้งเดียว
-    pdf.addImage({
-      imageData: canvas.toDataURL("image/jpeg", 0.95),
-      format: "JPEG",
-      x: (pageWidth - renderWidth) / 2,
-      y: margin,
-      width: renderWidth,
-      height: renderHeight,
-      compression: "FAST",
-    });
-
-    const safeName = (fullName || "customer").replace(
-      /[/\\?%*:|"<>]/g,
-      "-",
-    );
-
-    // Save only once rendering succeeds. The database trigger saves the lead
-    // and exporter snapshot in the SAME transaction as the quote.
-    await saveToSupabase();
-    pdf.save(`system-spec-${safeName}.pdf`);
-  } catch (error) {
-    console.error("Export PDF error:", error);
-    alert(
-      `ไม่สามารถ Export PDF ได้: ${error.message || "เกิดข้อผิดพลาด"}`,
-    );
-  } finally {
-    exportLockRef.current = false;
-    setIsExporting(false);
-  }
-};
+  };
 
   const [personalData] = useState(() => {
     try {
@@ -661,10 +671,13 @@ function SpaceProductResult({
 
       return items.map((item) => {
         const title = String(item.title ?? "").trim();
+        // ใน dataCus → addPrices
         const matchedPrice = title
-          ? prices.find((entry) => String(entry.product ?? "").trim() === title)
+          ? prices.find(
+              (entry) =>
+                normalizeProduct(entry.product) === normalizeProduct(title),
+            )
           : undefined;
-
         return {
           ...item,
           price: matchedPrice?.price ?? null,
@@ -688,7 +701,6 @@ function SpaceProductResult({
   const selectedPhase = selectedOptions["0"] || "1 Phase";
 
   const getMatchedOptions = (item) => {
-
     const itemId = String(item?.id);
 
     // หัวข้อ Phase
@@ -1125,7 +1137,7 @@ function SpaceProductResult({
                   </div>
                 </div>
               ))}
-              {console.log('energySummary', energySummary)}
+              {console.log("energySummary", energySummary)}
             </div>
             <p className="small text-secondary mt-3 mb-1">
               ประมาณการตามสูตรที่กำหนด: มูลค่าไฟฟ้าที่ผลิตได้ =
@@ -1200,20 +1212,21 @@ function SpaceProductResult({
                 {totalPrice !== null
                   ? "ยอดรวมหลังบวกเพิ่ม 10%"
                   : "ยอดรายการที่คำนวณได้ หลังบวกเพิ่ม 10%"}
-              </strong>{formatPrice(priceSummary.totalWithMarkup).replace(
-                        /\d(?=(?:\D*\d){0,3}\D*$)/g,
-                        "X",
-                      )}
+              </strong>
+              {formatPrice(priceSummary.totalWithMarkup).replace(
+                /\d(?=(?:\D*\d){0,3}\D*$)/g,
+                "X",
+              )}
               <strong>{formatPrice(priceSummary.totalWithMarkup)} บาท</strong>
             </div>
-   
+
             {!isFormCompleted && (
               <p className="text-secondary small mt-2 mb-0">
                 ยอดจะอัปเดตตามตัวเลือก กรุณาเลือกสเปกให้ครบ
               </p>
             )}
           </section>
-        )} 
+        )}
 
         {priceSummary.lines
           .filter((item) => item.text || item.end_text)
@@ -1251,7 +1264,7 @@ function SpaceProductResult({
                 }}
               >
                 {item.text}{" "}
-                { item.quantity != null && (
+                {item.quantity != null && (
                   <strong style={{ color: "#176342", fontSize: "17px" }}>
                     {item.quantity}{" "}
                   </strong>
