@@ -122,15 +122,9 @@ export function mountSolarPage(root) {
         ),
       );
       $("viewDay").value = Math.min(old, c.days);
-      const t = result.totals,
-        spill = c.exportAllowed ? t.export : t.curtailed;
+      const t = result.totals;
       $("pvValue").textContent = fmt(t.pv / c.days, 1) + " kWh";
-      $("spillLabel").textContent = c.exportAllowed
-        ? "สัดส่วนส่งออก"
-        : "สัดส่วนจำกัดการผลิต";
-      $("spillValue").textContent =
-        fmt(t.pv ? (spill / t.pv) * 100 : 0, 1) + "%";
-      $("spillSub").textContent = fmt(spill, 1) + " kWh / รอบบิล";
+
       $("savingValue").textContent = money(result.savings);
       $("newBillValue").textContent = money(result.newBill);
       $("baseline").textContent =
@@ -138,15 +132,9 @@ export function mountSolarPage(root) {
       $("summary").textContent =
         `ระบบ ${c.phases} เฟส • ช่วงกลางวัน ${timeLabel(c.dayStart)}–${timeLabel(c.dayEnd)} • ใช้ไฟ ${fmt(result.monthlyKWh, 1)} kWh • ซื้อไฟคงเหลือ ${fmt(t.grid, 1)} kWh • สูญเสียในแบต ${fmt(t.loss, 1)} kWh • พลังงานสะสมเพิ่มปลายรอบ ${fmt(result.storedChange, 1)} kWh • รายได้ขายไฟ ${money(result.exportRevenue)} • ประหยัดรวมรายได้ขายไฟ ${money(result.totalBenefit)}`;
       const b = withoutBattery,
-        bt = b.totals,
-        bs = c.exportAllowed ? bt.export : bt.curtailed;
+        bt = b.totals;
       $("base_pvValue").textContent = fmt(bt.pv / c.days, 1) + " kWh";
-      $("base_spillLabel").textContent = c.exportAllowed
-        ? "สัดส่วนส่งออก"
-        : "สัดส่วนจำกัดการผลิต";
-      $("base_spillValue").textContent =
-        fmt(bt.pv ? (bs / bt.pv) * 100 : 0, 1) + "%";
-      $("base_spillSub").textContent = fmt(bs, 1) + " kWh / รอบบิล";
+
       $("base_savingValue").textContent = money(b.savings);
       $("base_newBillValue").textContent = money(b.newBill);
       $("base_baseline").textContent =
@@ -177,8 +165,6 @@ export function mountSolarPage(root) {
       withoutBattery = null;
       for (const id of [
         "base_pvValue",
-        "base_spillValue",
-        "base_spillSub",
         "base_savingValue",
         "base_newBillValue",
         "base_baseline",
@@ -199,7 +185,7 @@ export function mountSolarPage(root) {
         const context = cv?.getContext("2d");
         if (context) context.clearRect(0, 0, cv.width, cv.height);
       }
-      for (const id of ["pvValue", "spillValue", "savingValue", "newBillValue"])
+      for (const id of ["pvValue", "savingValue", "newBillValue"])
         $(id).textContent = "—";
       $("summary").textContent = "แก้ไขข้อมูลเพื่อคำนวณใหม่";
       $("batterySizing").textContent = "แก้ไขข้อมูลเพื่อคำนวณความจุแบต";

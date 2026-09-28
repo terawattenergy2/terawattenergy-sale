@@ -267,14 +267,7 @@ export default function SolarPage() {
             <strong id={"base_pvValue"}></strong>
             <small>{"ก่อนหักส่วนที่จำกัดการผลิต"}</small>
           </div>
-          <div className={"card"}>
-            <span id={"base_spillLabel"}></span>
-            <strong
-              id={"base_spillValue"}
-              style={{ color: "var(--te-accent)" }}
-            ></strong>
-            <small id={"base_spillSub"}></small>
-          </div>
+
           <div className={"card"}>
             <span>{"ประหยัดค่าไฟ / รอบบิล"}</span>
             <strong
@@ -354,14 +347,7 @@ export default function SolarPage() {
             <strong id={"pvValue"}></strong>
             <small>{"ก่อนหักส่วนที่จำกัดการผลิต"}</small>
           </div>
-          <div className={"card"}>
-            <span id={"spillLabel"}></span>
-            <strong
-              id={"spillValue"}
-              style={{ color: "var(--te-accent)" }}
-            ></strong>
-            <small id={"spillSub"}></small>
-          </div>
+
           <div className={"card"}>
             <span>{"ประหยัดค่าไฟ / รอบบิล"}</span>
             <strong
