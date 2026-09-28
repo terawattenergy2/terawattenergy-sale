@@ -103,16 +103,16 @@ export default function AdvancedPage({ data }) {
     setBackupEnergy(nighttimeUsagePerDay.toFixed(2));
   };
 
-  const handleDirectSuggest = () => {
-    const directAnswers = {
-      systemSize: Number(systemSize),
-      phase: selectedOptionsPhase.phase ?? "0",
-      dailyEnergy: Number(dailyEnergy),
-      backupEnergy: Number(backupEnergy),
-      budgetLevel: Number(budgetLevel),
-      evPlan: selectedOptionsEV.EV ?? "0",
-    };
-  };
+  // const handleDirectSuggest = () => {
+  //   const directAnswers = {
+  //     systemSize: Number(systemSize),
+  //     phase: selectedOptionsPhase.phase ?? "0",
+  //     dailyEnergy: Number(dailyEnergy),
+  //     backupEnergy: Number(backupEnergy),
+  //     budgetLevel: Number(budgetLevel),
+  //     evPlan: selectedOptionsEV.EV ?? "0",
+  //   };
+  // };
   return (
     <>
       <div className="advanced-card">
@@ -312,7 +312,7 @@ export default function AdvancedPage({ data }) {
             </Form.Group>
           </Col>
           <div className="text-end mt-5">
-            <Button type="button" onClick={handleDirectSuggest}>
+            <Button type="button">
               คำนวณระบบที่แนะนำ →
             </Button>{" "}
           </div>

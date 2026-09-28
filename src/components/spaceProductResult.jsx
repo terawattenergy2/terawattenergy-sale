@@ -1026,11 +1026,6 @@ function SpaceProductResult({
                   ? currentValue
                   : "";
 
-                const isSelectQuestion =
-                  String(item?.id) === "3" ||
-                  String(item?.id) === "4" ||
-                  String(item?.id) === "5";
-
                 return (
                   <div
                     className="space-data row w-100 progressive-question"
@@ -1042,7 +1037,6 @@ function SpaceProductResult({
                       <p>{item.sub_title}</p>
                     </div>
 
-                    {/* {isSelectQuestion ? ( */}
                     {item.status ? (
                       <div className="space-right col-6">
                         <>
