@@ -27,11 +27,7 @@ function DataGate({ loading, error, onRetry, children }) {
     return (
       <div className="p-5 text-center" role="alert">
         <p className="text-danger">{error}</p>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={onRetry}
-        >
+        <button type="button" className="btn btn-primary" onClick={onRetry}>
           ลองใหม่
         </button>
       </div>
@@ -50,6 +46,7 @@ function App() {
     question: [],
     space: [],
     price_list: [],
+    status: [],
   });
 
   const [loading, setLoading] = useState(true);
@@ -82,8 +79,9 @@ function App() {
           if (result.error) throw result.error;
         }
 
-        const [answer, inverter, question, space, price_list] =
-          results.map((result) => result.data ?? []);
+        const [answer, inverter, question, space, price_list] = results.map(
+          (result) => result.data ?? [],
+        );
 
         if (active) {
           setData({
@@ -148,9 +146,7 @@ function App() {
 
           <Route
             path="/wizard"
-            element={withData(
-              <WizardPage question={data.question} />
-            )}
+            element={withData(<WizardPage question={data.question} />)}
           />
 
           <Route
@@ -161,10 +157,9 @@ function App() {
                 answer={data.answer}
                 space={data.space}
                 priceList={data.price_list}
-              />
+              />,
             )}
           />
-
           <Route path="/solar" element={<SolarPage />} />
         </Routes>
       </div>

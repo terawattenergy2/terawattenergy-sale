@@ -112,8 +112,6 @@ export default function AdvancedPage({ data }) {
       budgetLevel: Number(budgetLevel),
       evPlan: selectedOptionsEV.EV ?? "0",
     };
-
-    console.log("สเปกที่ผู้ใช้ยืนยัน:", directAnswers);
   };
   return (
     <>

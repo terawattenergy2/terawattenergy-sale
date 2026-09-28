@@ -69,7 +69,7 @@ const formatEnergyValue = (value) =>
         value,
       );
 
-      const normalizeProduct = (value) =>
+const normalizeProduct = (value) =>
   String(value ?? "")
     .normalize("NFKC")
     .replace(/[\u200B-\u200D\uFEFF]/g, "")
@@ -90,8 +90,6 @@ function buildPriceSummary(items, priceList) {
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   };
-
-
 
   const lines = items.map((item) => {
     // product ใช้ค้นหาใน Supabase; title ใช้แสดงผลให้ลูกค้า
@@ -409,6 +407,7 @@ function SpaceProductResult({
         item?.option_9,
         item?.option_10,
       ].filter(Boolean);
+
     },
     [data?.id],
   );
@@ -1043,7 +1042,8 @@ function SpaceProductResult({
                       <p>{item.sub_title}</p>
                     </div>
 
-                    {isSelectQuestion ? (
+                    {/* {isSelectQuestion ? ( */}
+                    {item.status ? (
                       <div className="space-right col-6">
                         <>
                           <div className="space-right col-6 d-flex flex-column align-items-start">
@@ -1137,7 +1137,6 @@ function SpaceProductResult({
                   </div>
                 </div>
               ))}
-              {console.log("energySummary", energySummary)}
             </div>
             <p className="small text-secondary mt-3 mb-1">
               ประมาณการตามสูตรที่กำหนด: มูลค่าไฟฟ้าที่ผลิตได้ =
