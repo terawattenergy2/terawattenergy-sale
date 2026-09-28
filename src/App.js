@@ -12,7 +12,8 @@ import LoginPage from "./components/LoginPage";
 // import ReportMenu from "./components/ReportMenu";
 import ReportPage from "./components/ReportPage";
 import { supabase } from "./supabase";
-
+import SolarPage from "./components/SolarPage";
+// import { Link } from "react-router-dom";
 function DataGate({ loading, error, onRetry, children }) {
   if (loading) {
     return (
@@ -122,6 +123,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className={`main-page ${theme === "dark" ? "dark" : ""}`}>
+        {/* <Link to="/solar">จำลอง Solar + แบตเตอรี่</Link> */}
         <Header
           mode={mode}
           setMode={setMode}
@@ -162,6 +164,8 @@ function App() {
               />
             )}
           />
+
+          <Route path="/solar" element={<SolarPage />} />
         </Routes>
       </div>
     </BrowserRouter>

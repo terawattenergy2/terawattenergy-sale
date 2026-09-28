@@ -1,0 +1,342 @@
+.solar-page {
+  font-family: Tahoma, system-ui, sans-serif;
+  color: #20354b;
+  background: #f2f5f8;
+  font-size: 14px;
+}
+.solar-page * {
+  box-sizing: border-box;
+}
+.solar-page {
+  margin: 0;
+}
+.solar-page main {
+  max-width: 1440px;
+  margin: auto;
+  padding: 32px 24px;
+}
+.solar-page h1 {
+  font-size: 25px;
+  margin: 8px 0;
+}
+.solar-page p {
+  line-height: 1.8;
+}
+.solar-page .eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #548278;
+  font-weight: 700;
+}
+.solar-page .sub {
+  color: #647588;
+  margin: 8px 0 24px;
+}
+.solar-page .controls {
+  background: #203f62;
+  color: white;
+  padding: 26px;
+  border-radius: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 26px;
+  box-shadow: 0 8px 20px #203f6210;
+}
+.solar-page label {
+  display: block;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.solar-page output {
+  display: block;
+  font-size: 25px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+.solar-page input[type="range"] {
+  width: 100%;
+  accent-color: #15be84;
+  margin: 16px 0 0;
+}
+.solar-page input[type="number"],
+.solar-page select {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #ccd6df;
+  border-radius: 7px;
+  background: white;
+  color: #20354b;
+  margin-top: 5px;
+  font: inherit;
+}
+.solar-page details {
+  background: white;
+  border: 1px solid #e1e7ee;
+  border-radius: 12px;
+  margin: 18px 0;
+  padding: 16px;
+}
+.solar-page summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+.solar-page .settings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-top: 20px;
+}
+.solar-page .hint {
+  font-size: 12px;
+  color: #738297;
+}
+.solar-page .legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: 25px 0 16px;
+  font-size: 12px;
+}
+.solar-page .dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+}
+.solar-page .chart-box {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e6edf2;
+}
+.solar-page .chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+.solar-page .chart-head select {
+  width: auto;
+}
+.solar-page canvas {
+  width: 100%;
+  height: 340px;
+  display: block;
+  margin-top: 12px;
+}
+.solar-page .readout {
+  min-height: 42px;
+  color: #556879;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.solar-page .cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 18px;
+}
+.solar-page .card {
+  background: white;
+  border: 1px solid #e6edf2;
+  border-radius: 14px;
+  padding: 20px;
+}
+.solar-page .card span {
+  color: #748292;
+  font-size: 12px;
+}
+.solar-page .card strong {
+  display: block;
+  font-size: 26px;
+  margin: 10px 0;
+  color: #149a70;
+}
+.solar-page .card small {
+  color: #798896;
+  line-height: 1.6;
+}
+.solar-page .note {
+  background: #e9f2ef;
+  padding: 15px 18px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+.solar-page button {
+  background: #203f62;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  font: inherit;
+}
+.solar-page pre {
+  white-space: pre-wrap;
+  background: #f2f5f8;
+  padding: 18px;
+  line-height: 1.8;
+  font-size: 12px;
+}
+.solar-page #error {
+  color: #ae3030;
+}
+.solar-page .footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-top: 18px;
+}
+.solar-page .soc {
+  height: 130px;
+}
+@media (max-width: 800px) {
+  .solar-page .controls,
+  .solar-page .settings,
+  .solar-page .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .solar-page main {
+    padding: 20px 14px;
+  }
+  .solar-page h1 {
+    font-size: 21px;
+  }
+  .solar-page canvas {
+    height: 290px;
+  }
+}
+@media (max-width: 440px) {
+  .solar-page .settings {
+    grid-template-columns: 1fr;
+  }
+  .solar-page .controls {
+    gap: 18px;
+    padding: 20px;
+  }
+  .solar-page .cards {
+    gap: 10px;
+  }
+  .solar-page .card {
+    padding: 14px;
+  }
+  .solar-page .card strong {
+    font-size: 22px;
+  }
+  .solar-page .footer {
+    align-items: start;
+    flex-direction: column;
+  }
+}
+.solar-page .controls {
+  grid-template-columns: repeat(3, 1fr);
+}
+.solar-page .battery-panel {
+  background: #fff;
+  border: 1px solid #e1e7ee;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+}
+.solar-page h2 {
+  font-size: 20px;
+  margin: 28px 0 16px;
+}
+@media (max-width: 600px) {
+  .solar-page .controls {
+    grid-template-columns: 1fr;
+  }
+}
+.solar-page {
+  --te-bg: #f3f5f7;
+  --te-surface: #ffffff;
+  --te-text: #16212e;
+  --te-muted: #657080;
+  --te-border: #dce2e8;
+  --te-soft: #eaf1f8;
+  --te-accent: #147bce;
+  --te-direct: #278bd5;
+  --te-battery: #9bcdf0;
+  --te-grid: #b7bec8;
+  --te-pv: #145b9d;
+  --te-load: #17212e;
+  color-scheme: light;
+}
+.dark .solar-page,
+.solar-page.dark,
+[data-theme="dark"] .solar-page,
+.solar-page[data-theme="dark"] {
+  --te-bg: #0b1119;
+  --te-surface: #131e2b;
+  --te-text: #edf3fa;
+  --te-muted: #a6b3c4;
+  --te-border: #2c3a4a;
+  --te-soft: #192c40;
+  --te-accent: #64b5f5;
+  --te-direct: #2685cc;
+  --te-battery: #8ac7f0;
+  --te-grid: #596878;
+  --te-pv: #69baff;
+  --te-load: #f1f5f9;
+  color-scheme: dark;
+}
+.solar-page {
+  background: var(--te-bg);
+  color: var(--te-text);
+}
+.solar-page .controls {
+  background: var(--te-soft);
+  color: var(--te-text);
+  box-shadow: none;
+}
+.solar-page .chart-box,
+.solar-page .card,
+.solar-page details,
+.solar-page .battery-panel {
+  background: var(--te-surface);
+  color: var(--te-text);
+  border-color: var(--te-border);
+}
+.solar-page .sub,
+.solar-page .hint,
+.solar-page .card span,
+.solar-page .card small,
+.solar-page .readout {
+  color: var(--te-muted);
+}
+.solar-page .eyebrow,
+.solar-page .card strong {
+  color: var(--te-accent);
+}
+.solar-page input[type="range"] {
+  accent-color: var(--te-accent);
+}
+.solar-page input[type="number"],
+.solar-page select {
+  background: var(--te-surface);
+  color: var(--te-text);
+  border-color: var(--te-border);
+}
+.solar-page .note,
+.solar-page pre {
+  background: var(--te-soft);
+  color: var(--te-text);
+}
+.solar-page button {
+  background: var(--te-accent);
+  color: var(--te-bg);
+}
+.solar-page #error {
+  color: var(--te-text);
+  font-weight: bold;
+}
+
+.solar-page input,
+.solar-page select,
+.solar-page button {
+  font-family: inherit;
+}
