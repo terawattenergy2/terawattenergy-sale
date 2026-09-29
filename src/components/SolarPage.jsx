@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { mountSolarPage } from "./solar-page-controller";
 import "./SolarPage.css";
+import { findInverters, calculateBatteryCount } from "./find-inverters";
 import { Button } from "react-bootstrap";
 
-// Solar and charge power share React state; the controller owns calculated outputs.
+// Solar uses React state; charge power is independent. The controller owns calculated outputs.
 // Its effect is scoped to this page and cleans up on route changes/StrictMode.
 function ChartLegend({ battery = false }) {
   const itemStyle = { display: "inline-flex", alignItems: "center", gap: 8 };
@@ -58,9 +59,28 @@ function ChartLegend({ battery = false }) {
 
 export default function SolarPage() {
   const root = useRef(null);
+  const [latestCalculation, setLatestCalculation] = useState(null);
+  const [result, setResult] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [searchStatus, setSearchStatus] = useState("idle");
+  const [searchError, setSearchError] = useState("");
+  const searchRequest = useRef(null);
+  const clearSearch = () => {
+    searchRequest.current?.abort();
+    searchRequest.current = null;
+    setProducts([]);
+    setSearchStatus("idle");
+    setSearchError("");
+  };
+  useEffect(() => () => searchRequest.current?.abort(), []);
   useEffect(
     () =>
       mountSolarPage(root.current, {
+        onCalculation: (calculation) => {
+          clearSearch();
+          setLatestCalculation(calculation);
+          setResult(null);
+        },
         onBatteryAvailability: (available) => {
           setCanAddBattery(available);
           if (!available) setIsBat(false);
@@ -80,8 +100,42 @@ export default function SolarPage() {
   }, [isBat]);
 
   const handleIsBat = () => {
+    clearSearch();
+    setResult(null);
     setIsBat((prev) => !prev);
   };
+
+
+  const handleFindInverter = async () => {
+    if (!latestCalculation) return;
+    const roundUpToFive = (value) => Math.ceil(value / 5) * 5;
+    const selectedBatteryKWh = isBat ? latestCalculation.batteryKWh : 0;
+    const result = {
+      point: roundUpToFive(latestCalculation.peakLoadKW),
+      bat: roundUpToFive(isBat ? latestCalculation.batteryKWh : 0),
+      phase: `${latestCalculation.phases} phase`,
+    };
+    clearSearch();
+    setResult(result);
+    const request = new AbortController();
+    searchRequest.current = request;
+    setSearchStatus("loading");
+    try {
+      const matches = await findInverters(result, { signal: request.signal });
+      if (searchRequest.current !== request || request.signal.aborted) return;
+      setProducts(matches.map((item) => ({
+        ...item,
+        selectedBatteryKWh,
+        batteryCount: calculateBatteryCount(selectedBatteryKWh, item.bat_caculated),
+      })));
+      setSearchStatus("success");
+    } catch (error) {
+      if (searchRequest.current !== request || request.signal.aborted) return;
+      setSearchError(error.message);
+      setSearchStatus("error");
+    }
+  };
+
   return (
     <div className="solar-page" ref={root}>
       <main>
@@ -222,8 +276,7 @@ export default function SolarPage() {
                 type={"number"}
                 min={"0"}
                 step={"0.5"}
-                value={solarKWp}
-                readOnly
+                defaultValue={"5"}
               />
             </label>
             <label>
@@ -243,7 +296,7 @@ export default function SolarPage() {
                 type={"number"}
                 min={"1"}
                 max={"100"}
-                defaultValue={"95"}
+                defaultValue={"99"}
               />
             </label>
             <label>
@@ -253,7 +306,7 @@ export default function SolarPage() {
                 type={"number"}
                 min={"1"}
                 max={"100"}
-                defaultValue={"95"}
+                defaultValue={"99"}
               />
             </label>
             <label>
@@ -263,7 +316,7 @@ export default function SolarPage() {
                 type={"number"}
                 min={"0"}
                 max={"100"}
-                defaultValue={"10"}
+                defaultValue={"0"}
               />
             </label>
             <label>
@@ -273,12 +326,12 @@ export default function SolarPage() {
                 type={"number"}
                 min={"0"}
                 max={"100"}
-                defaultValue={"95"}
+                defaultValue={"99"}
               />
             </label>
             <label>
               {"เงื่อนไขไฟส่วนเกิน"}
-              <select id={"exportAllowed"}>
+              <select id={"exportAllowed"} defaultValue="true">
                 <option value={"false"}>{"ไม่ส่งออก / จำกัดการผลิต"}</option>
                 <option value={"true"}>{"อนุญาตให้ส่งออก"}</option>
               </select>
@@ -290,13 +343,13 @@ export default function SolarPage() {
                 type={"number"}
                 min={"0"}
                 step={"0.01"}
-                defaultValue={"0"}
+                defaultValue={"2.2"}
               />
             </label>
           </div>
           <p className={"hint"}>
             {
-              "\n        ค่าไฟ 4.50 เป็นค่าตัวอย่าง ไม่ใช่อัตราประกาศ •\n        กรอกอัตราและค่าคงที่บนฐานภาษีเดียวกัน • ประสิทธิภาพชาร์จและจ่าย 95%\n        ให้ประสิทธิภาพรอบประมาณ 90.25%\n      "
+              "\n        ค่าไฟ 4.50 เป็นค่าตัวอย่าง ไม่ใช่อัตราประกาศ •\n        กรอกอัตราและค่าคงที่บนฐานภาษีเดียวกัน • ค่าเริ่มต้นประสิทธิภาพชาร์จและจ่าย 99%\n        ให้ประสิทธิภาพรอบ 98.01% • ราคาขายไฟ 2.20 เป็นค่าที่ตั้งในแบบจำลอง\n      "
             }
           </p>
         </details>
@@ -452,41 +505,70 @@ export default function SolarPage() {
           </div>
         </div>
         <div className={"note"} id={"summary"}></div>
+        <Button onClick={handleFindInverter} disabled={!latestCalculation || searchStatus === "loading"} className="mt-4">
+          {searchStatus === "loading" ? "กำลังค้นหา…" : "ค้นหาอินเวอร์ที่เหมาะสม"}
+        </Button>
+        {result && (
+          <div className="note" role="status">
+            ค่าที่ใช้ค้นหา: {result.point} kW · แบต {result.bat} kWh · {result.phase}
+          </div>
+        )}
+        {searchStatus === "error" && <p role="alert">{searchError}</p>}
+        {searchStatus === "success" && products.length === 0 && (
+          <p role="status">ไม่พบสินค้าที่ตรงกับโหลด แบต และเฟสที่เลือก</p>
+        )}
+        {searchStatus === "success" && products.length > 0 && (
+          <section aria-label="สินค้าที่ตรงเงื่อนไข">
+            <h2>สินค้าที่ตรงเงื่อนไข ({products.length})</h2>
+            <div className="cards">
+              {products.map((item) => (
+                <div className="card" key={item.matchKey}>
+                  <h3>{item.product}</h3>
+                  {item.type && <p>ประเภท: {item.type}</p>}
+                  {result.bat > 0 && <p>แบต: {item.bat} · จำนวน {item.batteryCount === null ? "คำนวณไม่ได้" : `${item.batteryCount} ก้อน`}</p>}
+                  <p>{result.point} kW · {result.phase}</p>
+                  {result.bat > 0 && <p>
+                    ก้อนละ {Number(item.bat_caculated)} kWh · รวม {Number((item.batteryCount * Number(item.bat_caculated)).toFixed(2))} kWh
+                  </p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         <div className={"footer"}>
           <span className={"hint"}>
             {
               "แบบจำลองราย 15 นาที • ช่วงกลางวันตามที่เลือก •\n        ต่อเนื่องตลอดรอบบิล"
             }
           </span>
-          <button id={"download"}>{"ดาวน์โหลดข้อมูล CSV"}</button>
         </div>
-        <details>
-          <summary>{"สูตรและขอบเขตของแบบจำลอง"}</summary>
-          <p>
-            {
-              "\n        ใช้รูปแบบโหลดกลางวัน/กลางคืนคงที่ และผลผลิต Solar รูปคลื่น sin² ช่วง\n        06:00–18:00 โดยปรับพื้นที่ใต้กราฟให้ตรงกับพลังงานต่อวัน\n        ไม่ได้ใช้ข้อมูลอากาศหรือมิเตอร์จริง\n      "
-            }
-          </p>
-          <pre id={"liveFormulas"}></pre>
-          <label>
-            {"ดูสูตรรายช่วงเวลา"}
-            <select id={"formulaTime"}></select>
-          </label>
-          <pre id={"stepFormulas"}></pre>
-          <details>
-            <summary>{"สูตรทั่วไป"}</summary>
-            <pre>
+          <details hidden style={{ display: "none" }}>
+            <summary>{"สูตรและขอบเขตของแบบจำลอง"}</summary>
+            <p>
               {
-                "\nหน่วยไฟเดือน = (บิล − ค่าคงที่) ÷ อัตราค่าไฟ หรือใช้หน่วยจริงที่กรอก\nหน่วยไฟวัน = หน่วยไฟเดือน ÷ จำนวนวัน\nชั่วโมงกลางวัน = เวลาสิ้นสุด − เวลาเริ่มต้น\nโหลดกลางวัน = หน่วยไฟวัน × สัดส่วนกลางวัน ÷ ชั่วโมงกลางวัน\nโหลดนอกช่วง = หน่วยไฟวัน × (1 − สัดส่วนกลางวัน) ÷ (24 − ชั่วโมงกลางวัน)\nSolar ต่อวัน = ขนาด kWp × ผลผลิต kWh/kWp/วัน\n\nเพดานแบตจากพื้นที่ส่วนเกิน:\nพลังงานส่วนเกินต่อวัน = Σ max(Solar − โหลด, 0) × 0.25\nความจุแบตพิกัด = พลังงานส่วนเกิน × ประสิทธิภาพชาร์จ ÷ (SOCสูงสุด − SOCขั้นต่ำ)\nใช้ SOC เป็นสัดส่วน 0–1 และปัดความจุขึ้นทีละ 0.1 kWh\nเป็นขนาดเพื่อรับส่วนเกินหนึ่งวัน ไม่ใช่ขนาดที่เหมาะสมที่สุดด้านความคุ้มค่า\n\nแต่ละช่วงเวลา Δt = 0.25 ชั่วโมง:\nใช้ตรง = min(โหลด, Solar)\nส่วนเกิน = max(Solar − โหลด, 0)\nส่วนขาด = max(โหลด − Solar, 0)\nชาร์จ = min(ส่วนเกิน, กำลังชาร์จสูงสุด, (Emax − E) ÷ (Δt × ηชาร์จ))\nจ่าย = min(ส่วนขาด, กำลังจ่ายสูงสุด, (E − Emin) × ηจ่าย ÷ Δt)\nEใหม่ = E + ชาร์จ × Δt × ηชาร์จ − จ่าย × Δt ÷ ηจ่าย\nซื้อไฟ = ส่วนขาด − จ่าย\nส่งออกหรือจำกัดการผลิต = ส่วนเกิน − ชาร์จ\n\nพลังงานแต่ละรายการ (kWh) = Σ กำลัง (kW) × Δt\nบิลใหม่ = พลังงานซื้อไฟ × อัตราค่าไฟ + ค่าคงที่\nประหยัด = บิลเดิมที่คำนวณได้ − บิลใหม่\nรายได้ขายไฟ = พลังงานส่งออก × ราคาขายไฟ"
+                "\n        ใช้รูปแบบโหลดกลางวัน/กลางคืนคงที่ และผลผลิต Solar รูปคลื่น sin² ช่วง\n        06:00–18:00 โดยปรับพื้นที่ใต้กราฟให้ตรงกับพลังงานต่อวัน\n        ไม่ได้ใช้ข้อมูลอากาศหรือมิเตอร์จริง\n      "
               }
-            </pre>
+            </p>
+            <pre id={"liveFormulas"}></pre>
+            <label>
+              {"ดูสูตรรายช่วงเวลา"}
+              <select id={"formulaTime"}></select>
+            </label>
+            <pre id={"stepFormulas"}></pre>
+            <details>
+              <summary>{"สูตรทั่วไป"}</summary>
+              <pre>
+                {
+                  "\nหน่วยไฟเดือน = (บิล − ค่าคงที่) ÷ อัตราค่าไฟ หรือใช้หน่วยจริงที่กรอก\nหน่วยไฟวัน = หน่วยไฟเดือน ÷ จำนวนวัน\nชั่วโมงกลางวัน = เวลาสิ้นสุด − เวลาเริ่มต้น\nโหลดกลางวัน = หน่วยไฟวัน × สัดส่วนกลางวัน ÷ ชั่วโมงกลางวัน\nโหลดนอกช่วง = หน่วยไฟวัน × (1 − สัดส่วนกลางวัน) ÷ (24 − ชั่วโมงกลางวัน)\nSolar ต่อวัน = ขนาด kWp × ผลผลิต kWh/kWp/วัน\n\nเพดานแบตจากพื้นที่ส่วนเกิน:\nพลังงานส่วนเกินต่อวัน = Σ max(Solar − โหลด, 0) × 0.25\nความจุแบตพิกัด = พลังงานส่วนเกิน × ประสิทธิภาพชาร์จ ÷ (SOCสูงสุด − SOCขั้นต่ำ)\nใช้ SOC เป็นสัดส่วน 0–1 และปัดความจุขึ้นทีละ 0.1 kWh\nเป็นขนาดเพื่อรับส่วนเกินหนึ่งวัน ไม่ใช่ขนาดที่เหมาะสมที่สุดด้านความคุ้มค่า\n\nแต่ละช่วงเวลา Δt = 0.25 ชั่วโมง:\nใช้ตรง = min(โหลด, Solar)\nส่วนเกิน = max(Solar − โหลด, 0)\nส่วนขาด = max(โหลด − Solar, 0)\nชาร์จ = min(ส่วนเกิน, กำลังชาร์จสูงสุด, (Emax − E) ÷ (Δt × ηชาร์จ))\nจ่าย = min(ส่วนขาด, กำลังจ่ายสูงสุด, (E − Emin) × ηจ่าย ÷ Δt)\nEใหม่ = E + ชาร์จ × Δt × ηชาร์จ − จ่าย × Δt ÷ ηจ่าย\nซื้อไฟ = ส่วนขาด − จ่าย\nส่งออกหรือจำกัดการผลิต = ส่วนเกิน − ชาร์จ\n\nพลังงานแต่ละรายการ (kWh) = Σ กำลัง (kW) × Δt\nบิลใหม่ = พลังงานซื้อไฟ × อัตราค่าไฟ + ค่าคงที่\nประหยัด = บิลเดิมที่คำนวณได้ − บิลใหม่\nรายได้ขายไฟ = พลังงานส่งออก × ราคาขายไฟ"
+                }
+              </pre>
+            </details>
+            <p className={"hint"}>
+              {
+                "\n        เริ่มแบตที่ระดับสำรองขั้นต่ำและส่งต่อสถานะทุกวัน ไม่มีการชาร์จจากกริด\n        ไม่มี TOU/ขั้นบันได/demand charge การเสื่อมแบต ขีดจำกัดอินเวอร์เตอร์ร่วม\n        หรือการประเมินไฟสำรองขณะไฟดับ ตัวเลขเป็นการประมาณด้วยอัตราค่าไฟคงที่\n        ไม่ใช่ใบเสนอราคาหรือบิลจริง แกนเวลาแสดงต้นช่วง ส่วน SOC เป็นค่าท้ายช่วง\n      "
+              }
+            </p>
           </details>
-          <p className={"hint"}>
-            {
-              "\n        เริ่มแบตที่ระดับสำรองขั้นต่ำและส่งต่อสถานะทุกวัน ไม่มีการชาร์จจากกริด\n        ไม่มี TOU/ขั้นบันได/demand charge การเสื่อมแบต ขีดจำกัดอินเวอร์เตอร์ร่วม\n        หรือการประเมินไฟสำรองขณะไฟดับ ตัวเลขเป็นการประมาณด้วยอัตราค่าไฟคงที่\n        ไม่ใช่ใบเสนอราคาหรือบิลจริง แกนเวลาแสดงต้นช่วง ส่วน SOC เป็นค่าท้ายช่วง\n      "
-            }
-          </p>
-        </details>
       </main>
     </div>
   );

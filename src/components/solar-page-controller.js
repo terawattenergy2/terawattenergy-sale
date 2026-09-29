@@ -1,7 +1,7 @@
 import * as SolarEngine from "./solar-engine";
 import { renderFormulas } from "./solar-formulas";
 
-export function mountSolarPage(root, { onBatteryAvailability = () => {} } = {}) {
+export function mountSolarPage(root, { onBatteryAvailability = () => {}, onCalculation = () => {} } = {}) {
   if (!root) return () => {};
   const cleanups = [];
   const setText = (id, value) => {
@@ -29,6 +29,18 @@ export function mountSolarPage(root, { onBatteryAvailability = () => {} } = {}) 
   };
   for (const id of ["dayStart", "dayEnd", "formulaTime", "viewDay"])
     root.querySelector("#" + id).replaceChildren();
+
+  // Apply initial assumptions before the first calculation, including after hot reload.
+  // Subsequent input events use the user's edits, without resetting these values.
+  const initialAssumptions = {
+    monthlyKWh: "", rate: "4.5", fixed: "0", days: "30",
+    yieldPerKWp: "4", chargeKW: "5", dischargeKW: "5",
+    chargeEfficiency: "99", dischargeEfficiency: "99",
+    minSOC: "0", maxSOC: "99", exportAllowed: "true", exportRate: "2.2",
+  };
+  for (const [id, value] of Object.entries(initialAssumptions)) {
+    root.querySelector("#" + id).value = value;
+  }
 
   const tooltip = document.createElement("div");
   tooltip.className = "solar-chart-tooltip";
@@ -70,8 +82,6 @@ export function mountSolarPage(root, { onBatteryAvailability = () => {} } = {}) 
   $("dayEnd").value = 18;
   function update() {
     hideTooltip();
-    // Model rule: maximum charging kW follows the selected Solar kWp value.
-    $("chargeKW").value = $("solarKWp").value;
     setText("solarOut", fmt(+$("solarKWp").value, 1) + " kWp");
     setText("billOut", money(+$("bill").value));
     setText("batteryOut", fmt(+$("batteryKWh").value) + " kWh");
@@ -189,7 +199,13 @@ export function mountSolarPage(root, { onBatteryAvailability = () => {} } = {}) 
         money(result.totalBenefit - b.totalBenefit) +
         " / รอบบิล");
       draw();
+      onCalculation({
+        peakLoadKW: result.series.reduce((peak, row) => Math.max(peak, row.load), 0),
+        batteryKWh: c.batteryKWh,
+        phases: c.phases,
+      });
     } catch (e) {
+      onCalculation(null);
       onBatteryAvailability(false);
       console.error("Solar calculation failed:", e);
       withoutBattery = null;
