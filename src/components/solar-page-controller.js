@@ -1,14 +1,47 @@
 import * as SolarEngine from "./solar-engine";
 import { renderFormulas } from "./solar-formulas";
 
-export function mountSolarPage(root) {
+export function mountSolarPage(root, { onBatteryAvailability = () => {} } = {}) {
+  if (!root) return () => {};
   const cleanups = [];
+  const setText = (id, value) => {
+    const element = root.querySelector("#" + id);
+    if (element) element.textContent = value;
+  };
+  const requiredIds = [
+    "dayStart", "dayEnd", "formulaTime", "viewDay", "solarKWp", "bill",
+    "batteryKWh", "batteryChoice", "rate", "fixed", "days", "yieldPerKWp", "chargeKW",
+    "dischargeKW", "exportRate", "phases", "daytimeShare",
+    "chargeEfficiency", "dischargeEfficiency", "minSOC", "maxSOC",
+    "monthlyKWh", "exportAllowed",
+  ];
+  const missing = requiredIds.filter((id) => !root.querySelector("#" + id));
+  if (missing.length) {
+    const message = "ไม่พบช่องที่ใช้คำนวณ: " + missing.join(", ");
+    console.error(message);
+    setText("error", message);
+    return () => {};
+  }
   const listen = (target, type, handler) => {
+    if (!target) return;
     target.addEventListener(type, handler);
     cleanups.push(() => target.removeEventListener(type, handler));
   };
   for (const id of ["dayStart", "dayEnd", "formulaTime", "viewDay"])
     root.querySelector("#" + id).replaceChildren();
+
+  const tooltip = document.createElement("div");
+  tooltip.className = "solar-chart-tooltip";
+  tooltip.hidden = true;
+  tooltip.setAttribute("role", "tooltip");
+  root.appendChild(tooltip);
+  const hideTooltip = () => { tooltip.hidden = true; };
+  listen(window, "scroll", hideTooltip);
+  listen(window, "blur", hideTooltip);
+  const visibilityObserver = new MutationObserver(hideTooltip);
+  const batteryPanel = root.querySelector("#battery-calculation");
+  if (batteryPanel) visibilityObserver.observe(batteryPanel, { attributes: true, attributeFilter: ["style", "hidden"] });
+  cleanups.push(() => { visibilityObserver.disconnect(); tooltip.remove(); });
 
   const $ = (id) => root.querySelector("#" + id),
     fmt = (n, d = 0) =>
@@ -20,8 +53,7 @@ export function mountSolarPage(root) {
   let withoutBattery,
     result,
     rows = [],
-    sizing,
-    initialized = false;
+    sizing;
   const timeLabel = (h) =>
     String(Math.floor(h)).padStart(2, "0") +
     ":" +
@@ -37,10 +69,13 @@ export function mountSolarPage(root) {
   $("dayStart").value = 6;
   $("dayEnd").value = 18;
   function update() {
-    $("solarOut").textContent = fmt(+$("solarKWp").value, 1) + " kWp";
-    $("billOut").textContent = money(+$("bill").value);
-    $("batteryOut").textContent = fmt(+$("batteryKWh").value) + " kWh";
-    $("dayOut").textContent = $("daytimeShare").value + "%";
+    hideTooltip();
+    // Model rule: maximum charging kW follows the selected Solar kWp value.
+    $("chargeKW").value = $("solarKWp").value;
+    setText("solarOut", fmt(+$("solarKWp").value, 1) + " kWp");
+    setText("billOut", money(+$("bill").value));
+    setText("batteryOut", fmt(+$("batteryKWh").value) + " kWh");
+    setText("dayOut", $("daytimeShare").value + "%");
     try {
       const c = {};
       for (const id of [
@@ -77,43 +112,41 @@ export function mountSolarPage(root) {
         )
           throw Error("กรุณาตรวจสอบช่องตัวเลขและช่วงค่าที่กำหนด");
       sizing = SolarEngine.sizeBatteryFromSurplus(c);
-      c.batteryKWh = initialized
-        ? Math.min(c.batteryKWh, sizing.batteryKWh)
-        : sizing.batteryKWh;
-      $("batteryKWh").max = sizing.batteryKWh;
+      // Use the unrounded surplus-based capacity; rounding up must not unlock a size.
+      const capacityLimit = sizing.usableFraction > 0
+        ? sizing.surplusKWh * c.chargeEfficiency / sizing.usableFraction
+        : 0;
+      const maxTenths = Math.min(304, Math.floor((capacityLimit + 1e-9) * 10));
+      const batteryOptions = [0];
+      for (let tenths = 60; tenths <= maxTenths; tenths++) batteryOptions.push(tenths / 10);
+      // Slider positions map to 0, 6.0, 6.1, ...; forbidden sizes have no position.
+      const slider = $("batteryChoice");
+      const index = Math.max(0, Math.min(batteryOptions.length - 1, Math.round(+slider.value || 0)));
+      c.batteryKWh = batteryOptions[index];
       $("batteryKWh").value = c.batteryKWh;
-      $("batteryKWh").disabled = sizing.batteryKWh === 0;
-      initialized = true;
-      $("batterySizing").textContent =
-        "เลือก " +
-        fmt(c.batteryKWh, 1) +
-        " / สูงสุด " +
-        fmt(sizing.batteryKWh, 1) +
-        " kWh • ส่วนเกิน " +
-        fmt(sizing.surplusKWh, 2) +
-        " kWh/วัน × ประสิทธิภาพชาร์จ " +
-        fmt(c.chargeEfficiency * 100) +
-        "% ÷ ช่วงความจุใช้ได้ " +
-        fmt(sizing.usableFraction * 100) +
-        "% (ปัดขึ้น 0.1 kWh)" +
-        (sizing.powerLimitedKWh > 1e-8
-          ? " • กำลังชาร์จไม่พอ: ต้องรองรับ " +
-            fmt(sizing.requiredChargeKW, 2) +
-            " kW เพื่อรับส่วนเกินทุกช่วง"
-          : "") +
-        " • เพดานนี้อิงส่วนเกินหนึ่งวัน หากมีแบตเหลือจากวันก่อนอาจยังรับส่วนเกินได้ไม่หมด";
-      $("batteryOut").textContent = fmt(c.batteryKWh, 1) + " kWh";
+      slider.min = 0;
+      slider.max = batteryOptions.length - 1;
+      slider.step = 1;
+      slider.value = index;
+      slider.disabled = batteryOptions.length === 1;
+      slider.setAttribute("aria-valuetext", c.batteryKWh === 0 ? "ไม่ติดแบต" : fmt(c.batteryKWh, 1) + " kWh");
+      const maxBattery = batteryOptions[batteryOptions.length - 1];
+      onBatteryAvailability(maxBattery >= 6);
+      setText("batteryOptions", maxBattery >= 6 ? "0 (ไม่ติดแบต) → 6.0 → 6.1 → … → " + fmt(maxBattery, 1) + " kWh" : "0 (ไม่ติดแบต)");
+      setText("batterySizing", maxBattery >= 6
+        ? "เลือกได้ 0 หรือ 6.0–" + fmt(maxBattery, 1) + " kWh ทีละ 0.1 • ส่วนเกิน " + fmt(sizing.surplusKWh, 2) + " kWh/วัน"
+        : "Solar ส่วนเกินยังไม่พอสำหรับแบต 6 kWh • เลือกได้เฉพาะ 0 (ไม่ติดแบต) • ส่วนเกิน " + fmt(sizing.surplusKWh, 2) + " kWh/วัน");
+      setText("batteryOut", c.batteryKWh === 0 ? "0 kWh · ไม่ติดแบต" : fmt(c.batteryKWh, 1) + " kWh");
       result = SolarEngine.simulate(c);
       withoutBattery = SolarEngine.simulate({ ...c, batteryKWh: 0 });
-      $("periodInfo").textContent =
-        timeLabel(c.dayStart) +
+      setText("periodInfo", timeLabel(c.dayStart) +
         "–" +
         timeLabel(c.dayEnd) +
         " · " +
         fmt(c.dayEnd - c.dayStart, 2) +
-        " ชั่วโมง";
-      $("error").textContent = "";
-      $("download").disabled = false;
+        " ชั่วโมง");
+      setText("error", "");
+      if ($("download")) $("download").disabled = false;
       const old = +$("viewDay").value || 1;
       $("viewDay").replaceChildren(
         ...Array.from(
@@ -123,24 +156,20 @@ export function mountSolarPage(root) {
       );
       $("viewDay").value = Math.min(old, c.days);
       const t = result.totals;
-      $("pvValue").textContent = fmt(t.pv / c.days, 1) + " kWh";
+      setText("pvValue", fmt(t.pv / c.days, 1) + " kWh");
 
-      $("savingValue").textContent = money(result.savings);
-      $("newBillValue").textContent = money(result.newBill);
-      $("baseline").textContent =
-        "เทียบกับบิลเดิม " + money(result.baselineBill);
-      $("summary").textContent =
-        `ระบบ ${c.phases} เฟส • ช่วงกลางวัน ${timeLabel(c.dayStart)}–${timeLabel(c.dayEnd)} • ใช้ไฟ ${fmt(result.monthlyKWh, 1)} kWh • ซื้อไฟคงเหลือ ${fmt(t.grid, 1)} kWh • สูญเสียในแบต ${fmt(t.loss, 1)} kWh • พลังงานสะสมเพิ่มปลายรอบ ${fmt(result.storedChange, 1)} kWh • รายได้ขายไฟ ${money(result.exportRevenue)} • ประหยัดรวมรายได้ขายไฟ ${money(result.totalBenefit)}`;
+      setText("savingValue", money(result.savings));
+      setText("newBillValue", money(result.newBill));
+      setText("baseline", "เทียบกับบิลเดิม " + money(result.baselineBill));
+      setText("summary", `ระบบ ${c.phases} เฟส • ช่วงกลางวัน ${timeLabel(c.dayStart)}–${timeLabel(c.dayEnd)} • ใช้ไฟ ${fmt(result.monthlyKWh, 1)} kWh • ซื้อไฟคงเหลือ ${fmt(t.grid, 1)} kWh • สูญเสียในแบต ${fmt(t.loss, 1)} kWh • พลังงานสะสมเพิ่มปลายรอบ ${fmt(result.storedChange, 1)} kWh • รายได้ขายไฟ ${money(result.exportRevenue)} • ประหยัดรวมรายได้ขายไฟ ${money(result.totalBenefit)}`);
       const b = withoutBattery,
         bt = b.totals;
-      $("base_pvValue").textContent = fmt(bt.pv / c.days, 1) + " kWh";
+      setText("base_pvValue", fmt(bt.pv / c.days, 1) + " kWh");
 
-      $("base_savingValue").textContent = money(b.savings);
-      $("base_newBillValue").textContent = money(b.newBill);
-      $("base_baseline").textContent =
-        "เทียบกับบิลเดิม " + money(b.baselineBill);
-      $("baseSummary").textContent =
-        "ยังไม่ติดแบต • ใช้ไฟ " +
+      setText("base_savingValue", money(b.savings));
+      setText("base_newBillValue", money(b.newBill));
+      setText("base_baseline", "เทียบกับบิลเดิม " + money(b.baselineBill));
+      setText("baseSummary", "ยังไม่ติดแบต • ใช้ไฟ " +
         fmt(b.monthlyKWh, 1) +
         " kWh • Solar ใช้ตรง " +
         fmt(bt.direct, 1) +
@@ -149,9 +178,8 @@ export function mountSolarPage(root) {
         " kWh • รายได้ขายไฟ " +
         money(b.exportRevenue) +
         " • ประหยัดรวมรายได้ขายไฟ " +
-        money(b.totalBenefit);
-      $("batteryDelta").textContent =
-        "แบตที่เลือก " +
+        money(b.totalBenefit));
+      setText("batteryDelta", "แบตที่เลือก " +
         fmt(c.batteryKWh, 1) +
         " kWh • ซื้อไฟลดเพิ่ม " +
         fmt(bt.grid - t.grid, 1) +
@@ -159,9 +187,11 @@ export function mountSolarPage(root) {
         money(b.newBill - result.newBill) +
         " / รอบบิล • ผลประโยชน์สุทธิเพิ่มรวมรายได้ขายไฟ " +
         money(result.totalBenefit - b.totalBenefit) +
-        " / รอบบิล";
+        " / รอบบิล");
       draw();
     } catch (e) {
+      onBatteryAvailability(false);
+      console.error("Solar calculation failed:", e);
       withoutBattery = null;
       for (const id of [
         "base_pvValue",
@@ -172,23 +202,23 @@ export function mountSolarPage(root) {
         "batteryDelta",
         "baseReadout",
       ])
-        $(id).textContent = "—";
+        setText(id, "—");
       result = null;
       rows = [];
-      $("liveFormulas").textContent = "แก้ไขข้อมูลเพื่อแสดงสูตร";
-      $("stepFormulas").textContent = "";
-      $("periodInfo").textContent = "ตรวจสอบช่วงเวลา";
-      $("error").textContent = e.message;
-      $("download").disabled = true;
+      setText("liveFormulas", "แก้ไขข้อมูลเพื่อแสดงสูตร");
+      setText("stepFormulas", "");
+      setText("periodInfo", "ตรวจสอบช่วงเวลา");
+      setText("error", e instanceof Error ? e.message : String(e));
+      if ($("download")) $("download").disabled = true;
       for (const id of ["chart", "socChart", "baseChart"]) {
         const cv = $(id);
         const context = cv?.getContext("2d");
         if (context) context.clearRect(0, 0, cv.width, cv.height);
       }
       for (const id of ["pvValue", "savingValue", "newBillValue"])
-        $(id).textContent = "—";
-      $("summary").textContent = "แก้ไขข้อมูลเพื่อคำนวณใหม่";
-      $("batterySizing").textContent = "แก้ไขข้อมูลเพื่อคำนวณความจุแบต";
+        setText(id, "—");
+      setText("summary", "แก้ไขข้อมูลเพื่อคำนวณใหม่");
+      setText("batterySizing", "แก้ไขข้อมูลเพื่อคำนวณความจุแบต");
     }
   }
   function plot(id, soc = false, data = rows) {
@@ -198,25 +228,26 @@ export function mountSolarPage(root) {
     const w = cv.clientWidth,
       h = cv.clientHeight,
       dpr = window.devicePixelRatio || 1;
+    if (w <= 0 || h <= 0) return;
     cv.width = w * dpr;
     cv.height = h * dpr;
     const palette = (name) => {
       const dark = Boolean(cv.closest('.dark, [data-theme="dark"]'));
       const fallback = dark
         ? {
-            "--te-direct": "#2685cc",
-            "--te-battery": "#8ac7f0",
-            "--te-grid": "#596878",
-            "--te-pv": "#69baff",
+            "--te-direct": "#f59e0b",
+            "--te-battery": "#22c55e",
+            "--te-grid": "#9bd5f5",
+            "--te-pv": "#ea580c",
             "--te-load": "#f1f5f9",
             "--te-border": "#2c3a4a",
             "--te-muted": "#a6b3c4",
           }
         : {
-            "--te-direct": "#278bd5",
-            "--te-battery": "#9bcdf0",
-            "--te-grid": "#b7bec8",
-            "--te-pv": "#145b9d",
+            "--te-direct": "#f59e0b",
+            "--te-battery": "#22c55e",
+            "--te-grid": "#9bd5f5",
+            "--te-pv": "#ea580c",
             "--te-load": "#17212e",
             "--te-border": "#dce2e8",
             "--te-muted": "#657080",
@@ -366,6 +397,32 @@ export function mountSolarPage(root) {
         [5, 4],
       );
     }
+    // Draw a sun directly inside each power chart, above the Solar peak.
+    if (!soc && rows.some((row) => row.pv > 0)) {
+      const peakIndex = rows.reduce((best, row, index) =>
+        row.pv > rows[best].pv ? index : best, 0);
+      const sunX = x(peakIndex + 0.5);
+      const sunY = Math.max(top + 19, y(rows[peakIndex].pv) - 24);
+      ctx.save();
+      ctx.strokeStyle = palette("--te-pv");
+      ctx.fillStyle = palette("--te-direct");
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 7, 0, Math.PI * 2);
+      ctx.fill();
+      for (let ray = 0; ray < 8; ray++) {
+        const angle = ray * Math.PI / 4;
+        ctx.beginPath();
+        ctx.moveTo(sunX + Math.cos(angle) * 11, sunY + Math.sin(angle) * 11);
+        ctx.lineTo(sunX + Math.cos(angle) * 16, sunY + Math.sin(angle) * 16);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    cv.onpointerleave = hideTooltip;
+    cv.onpointercancel = hideTooltip;
     cv.onpointermove = (e) => {
       const bounds = cv.getBoundingClientRect(),
         i = Math.max(
@@ -373,12 +430,34 @@ export function mountSolarPage(root) {
           Math.min(95, Math.floor(((e.clientX - bounds.left - l) / pw) * 96)),
         ),
         v = rows[i];
-      $(id === "baseChart" ? "baseReadout" : "readout").textContent =
-        `${String(Math.floor(v.hour)).padStart(2, "0")}:${String(Math.round((v.hour % 1) * 60)).padStart(2, "0")} · โหลด ${fmt(v.load, 2)} / Solar ${fmt(v.pv, 2)} / ใช้ตรง ${fmt(v.direct, 2)} / ชาร์จ ${fmt(v.charge, 2)} / แบตจ่าย ${fmt(v.discharge, 2)} / ซื้อไฟ ${fmt(v.grid, 2)} / ส่งออก ${fmt(v.export, 2)} / จำกัดผลิต ${fmt(v.curtailed, 2)} kW · SOC ${fmt(v.soc, 1)}%`;
+      if (!v) return;
+      tooltip.textContent = [
+        "วันที่ " + v.day + " · " + timeLabel(v.hour),
+        "โหลดรวม: " + fmt(v.load, 2) + " kW",
+        "☀ Solar ผลิต: " + fmt(v.pv, 2) + " kW",
+        "☀ Solar ใช้ตรง: " + fmt(v.direct, 2) + " kW",
+        ...(id === "baseChart" ? [] : [
+          "ชาร์จแบต: " + fmt(v.charge, 2) + " kW",
+          "แบตจ่าย: " + fmt(v.discharge, 2) + " kW",
+          "ระดับแบต: " + fmt(v.soc, 1) + "%",
+        ]),
+        "ซื้อไฟ: " + fmt(v.grid, 2) + " kW",
+        "ส่งออก: " + fmt(v.export, 2) + " kW",
+        "จำกัดผลิต: " + fmt(v.curtailed, 2) + " kW",
+      ].join("\n");
+      tooltip.hidden = false;
+      const box = tooltip.getBoundingClientRect();
+      const left = e.clientX + 16 + box.width > window.innerWidth - 8
+        ? e.clientX - box.width - 16 : e.clientX + 16;
+      const top = e.clientY + 16 + box.height > window.innerHeight - 8
+        ? e.clientY - box.height - 16 : e.clientY + 16;
+      tooltip.style.left = Math.max(8, left) + "px";
+      tooltip.style.top = Math.max(8, top) + "px";
+      setText(id === "baseChart" ? "baseReadout" : "readout", `${String(Math.floor(v.hour)).padStart(2, "0")}:${String(Math.round((v.hour % 1) * 60)).padStart(2, "0")} · โหลด ${fmt(v.load, 2)} / Solar ${fmt(v.pv, 2)} / ใช้ตรง ${fmt(v.direct, 2)} / ชาร์จ ${fmt(v.charge, 2)} / แบตจ่าย ${fmt(v.discharge, 2)} / ซื้อไฟ ${fmt(v.grid, 2)} / ส่งออก ${fmt(v.export, 2)} / จำกัดผลิต ${fmt(v.curtailed, 2)} kW · SOC ${fmt(v.soc, 1)}%`);
     };
   }
   function showFormulas() {
-    if (result)
+    if (result && $("liveFormulas") && $("stepFormulas"))
       renderFormulas(
         root,
         result,
@@ -389,6 +468,7 @@ export function mountSolarPage(root) {
   }
   listen($("formulaTime"), "change", showFormulas);
   function draw() {
+    hideTooltip();
     if (!result) return;
     showFormulas();
     rows = result.series.filter((v) => v.day === +$("viewDay").value);
@@ -397,20 +477,21 @@ export function mountSolarPage(root) {
       false,
       withoutBattery.series.filter((v) => v.day === +$("viewDay").value),
     );
-    $("baseReadout").textContent =
-      "Solar อย่างเดียว • วันที่ " +
+    setText("baseReadout", "Solar อย่างเดียว • วันที่ " +
       $("viewDay").value +
-      " • เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่า";
+      " • เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่า");
     plot("chart");
     plot("socChart", true);
-    $("readout").textContent = "เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่ารายช่วงเวลา";
+    setText("readout", "เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่ารายช่วงเวลา");
   }
   root
     .querySelectorAll("input, #exportAllowed, #dayStart, #dayEnd, #phases")
     .forEach((el) => listen(el, "input", update));
+  listen($("solarKWp"), "change", update);
   listen($("viewDay"), "change", draw);
   listen(window, "resize", draw);
-  $("download").onclick = () => {
+  listen(root, "solar:battery-visible", draw);
+  listen($("download"), "click", () => {
     if (!result) return;
     const keys = [
       "phases",
@@ -463,7 +544,7 @@ export function mountSolarPage(root) {
     a.download = "solar-bess-15min.csv";
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
+  });
   const themeObserver = new MutationObserver(() => draw());
   for (let node = root; node; node = node.parentElement)
     themeObserver.observe(node, {
@@ -477,7 +558,8 @@ export function mountSolarPage(root) {
     cleanups.forEach((cleanup) => cleanup());
     root.querySelectorAll("canvas").forEach((canvas) => {
       canvas.onpointermove = null;
+      canvas.onpointerleave = null;
+      canvas.onpointercancel = null;
     });
-    root.querySelector("#download").onclick = null;
   };
 }

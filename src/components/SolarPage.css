@@ -259,10 +259,10 @@
   --te-border: #dce2e8;
   --te-soft: #eaf1f8;
   --te-accent: #147bce;
-  --te-direct: #278bd5;
-  --te-battery: #9bcdf0;
-  --te-grid: #b7bec8;
-  --te-pv: #145b9d;
+  --te-direct: #f59e0b;
+  --te-battery: #22c55e;
+  --te-grid: #9bd5f5;
+  --te-pv: #ea580c;
   --te-load: #17212e;
   color-scheme: light;
 }
@@ -277,10 +277,10 @@
   --te-border: #2c3a4a;
   --te-soft: #192c40;
   --te-accent: #64b5f5;
-  --te-direct: #2685cc;
-  --te-battery: #8ac7f0;
-  --te-grid: #596878;
-  --te-pv: #69baff;
+  --te-direct: #f59e0b;
+  --te-battery: #22c55e;
+  --te-grid: #9bd5f5;
+  --te-pv: #fb923c;
   --te-load: #f1f5f9;
   color-scheme: dark;
 }
@@ -349,3 +349,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+.solar-page button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.solar-page .solar-chart-tooltip {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  max-width: min(300px, calc(100vw - 16px));
+  padding: 12px 16px;
+  border: 1px solid var(--te-border);
+  border-radius: 12px;
+  background: var(--te-surface);
+  color: var(--te-text);
+  box-shadow: 0 8px 28px #0003;
+  white-space: pre-line;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.solar-page .solar-chart-tooltip[hidden] { display: none; }

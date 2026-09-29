@@ -1,12 +1,87 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { mountSolarPage } from "./solar-page-controller";
 import "./SolarPage.css";
+import { Button } from "react-bootstrap";
 
-// Uncontrolled form fields; the controller owns canvas and calculated outputs.
+// Solar and charge power share React state; the controller owns calculated outputs.
 // Its effect is scoped to this page and cleans up on route changes/StrictMode.
+function ChartLegend({ battery = false }) {
+  const itemStyle = { display: "inline-flex", alignItems: "center", gap: 8 };
+  const sun = (color) => (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4" fill={color} />
+      <path d="M12 1v3m0 16v3M1 12h3m16 0h3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+    </svg>
+  );
+  const dot = (color) => (
+    <span
+      aria-hidden="true"
+      style={{ width: 14, height: 14, borderRadius: 3, background: color }}
+    />
+  );
+  return (
+    <div
+      aria-label="คำอธิบายกราฟ"
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "12px 24px",
+        margin: "16px 0",
+      }}
+    >
+      <span style={itemStyle}>{sun("var(--te-direct)")}Solar ใช้ตรง</span>
+      {battery && (
+        <span style={itemStyle}>{dot("var(--te-battery)")}แบตจ่าย</span>
+      )}
+      <span style={itemStyle}>{dot("var(--te-grid, #9bd5f5)")}ซื้อไฟ</span>
+      <span style={itemStyle}>
+        {sun("var(--te-pv)")}Solar ที่ผลิตได้ตามแบบจำลอง
+      </span>
+      <span style={itemStyle}>
+        <span
+          aria-hidden="true"
+          style={{ width: 24, borderTop: "2px dashed var(--te-load, #17212e)" }}
+        />
+        โหลดรวม (เส้นประ)
+      </span>
+    </div>
+  );
+}
+
 export default function SolarPage() {
   const root = useRef(null);
-  useEffect(() => mountSolarPage(root.current), []);
+  useEffect(
+    () =>
+      mountSolarPage(root.current, {
+        onBatteryAvailability: (available) => {
+          setCanAddBattery(available);
+          if (!available) setIsBat(false);
+        },
+      }),
+    [],
+  );
+
+  const [isBat, setIsBat] = useState(false);
+  const [canAddBattery, setCanAddBattery] = useState(false);
+  const [solarKWp, setSolarKWp] = useState(9);
+
+  useEffect(() => {
+    if (isBat) {
+      root.current?.dispatchEvent(new Event("solar:battery-visible"));
+    }
+  }, [isBat]);
+
+  const handleIsBat = () => {
+    setIsBat((prev) => !prev);
+  };
   return (
     <div className="solar-page" ref={root}>
       <main>
@@ -26,7 +101,8 @@ export default function SolarPage() {
               min={"0"}
               max={"30"}
               step={"0.5"}
-              defaultValue={"9"}
+              value={solarKWp}
+              onChange={(event) => setSolarKWp(Number(event.target.value))}
             />
             <output id={"solarOut"}></output>
           </label>
@@ -146,7 +222,8 @@ export default function SolarPage() {
                 type={"number"}
                 min={"0"}
                 step={"0.5"}
-                defaultValue={"5"}
+                value={solarKWp}
+                readOnly
               />
             </label>
             <label>
@@ -224,34 +301,10 @@ export default function SolarPage() {
           </p>
         </details>
         <p id={"error"} role={"alert"}></p>
-        <div className={"legend"}>
-          <span>
-            <i className={"dot"} style={{ background: "var(--te-direct)" }}></i>
-            {"Solar ใช้ตรง"}
-          </span>
-          <span>
-            <i
-              className={"dot"}
-              style={{ background: "var(--te-battery)" }}
-            ></i>
-            {"แบตจ่าย"}
-          </span>
-          <span>
-            <i className={"dot"} style={{ background: "var(--te-grid)" }}></i>
-            {"ซื้อไฟ"}
-          </span>
-          <span>
-            <i className={"dot"} style={{ background: "var(--te-pv)" }}></i>
-            {"Solar\n        ที่ผลิตได้ตามแบบจำลอง"}
-          </span>
-          <span>
-            <i className={"dot"} style={{ background: "var(--te-load)" }}></i>
-            {"โหลดรวม (เส้นประ)"}
-          </span>
-        </div>
         <h2>{"1. Solar อย่างเดียว — ยังไม่ติดแบต"}</h2>
         <section className={"chart-box"}>
-          <b>{"กำลังไฟตลอดวัน · kW"}</b>
+          <b>{"☀ กำลังไฟตลอดวัน · kW"}</b>
+          <ChartLegend />
           <canvas
             id={"baseChart"}
             role={"img"}
@@ -264,7 +317,7 @@ export default function SolarPage() {
         <div className={"cards"}>
           <div className={"card"}>
             <span>{"Solar ที่ผลิตได้ / วัน"}</span>
-            <strong id={"base_pvValue"}></strong>
+            <strong style={{ color: "orange" }} id={"base_pvValue"}></strong>
             <small>{"ก่อนหักส่วนที่จำกัดการผลิต"}</small>
           </div>
 
@@ -286,83 +339,116 @@ export default function SolarPage() {
           </div>
         </div>
         <div className={"note"} id={"baseSummary"}></div>
-        <h2>{"2. เลือกความจุแบตเตอรี่"}</h2>
-        <section className={"battery-panel"}>
-          <label>
-            {"▣ ความจุแบตเตอรี่"}
-            <input
-              id={"batteryKWh"}
-              type={"range"}
-              min={"0"}
-              max={"50"}
-              step={"0.1"}
-              defaultValue={"0"}
-            />
-            <output id={"batteryOut"}></output>
-          </label>
-          <div className={"note"}>
-            <b>{"เลือกแบตได้ตั้งแต่ 0 ถึงเพดานจาก Solar ส่วนเกินทั้งวัน"}</b>
-            <div id={"batterySizing"} aria-live={"polite"}></div>
-          </div>
-          <p className={"hint"}>
-            {
-              "ปรับได้ตั้งแต่ 0 ถึง Max จากพื้นที่ส่วนเกินในกราฟด้านบน ผล Solar อย่างเดียวจะไม่เปลี่ยนตามตัวเลื่อนนี้"
-            }
+        <Button
+          onClick={handleIsBat}
+          disabled={!canAddBattery}
+          aria-describedby={!canAddBattery ? "battery-advice" : undefined}
+          aria-expanded={isBat}
+          aria-controls="battery-calculation"
+          className="mt-4"
+        >
+          {!canAddBattery
+            ? "Solar ส่วนเกินไม่พอติดแบต"
+            : isBat
+              ? "ไม่สนใจติดตั้งแบต"
+              : "สนใจติดตั้งแบต"}
+        </Button>
+        {!canAddBattery && (
+          <p id="battery-advice" className="hint" role="status">
+            ลองเพิ่มขนาด Solar หรือลดการใช้ไฟช่วงกลางวัน
           </p>
-        </section>
-        <h2>{"3. Solar + แบตเตอรี่ที่เลือก"}</h2>
-        <div className={"note"} id={"batteryDelta"}></div>
-        <section className={"chart-box"}>
-          <div className={"chart-head"}>
-            <b>
-              {"กำลังไฟตลอดวัน "}
-              <span className={"hint"}>{"· kW"}</span>
-            </b>
+        )}
+        <div
+          id="battery-calculation"
+          style={{ display: isBat ? "block" : "none" }}
+        >
+          <h2>{"2. เลือกความจุแบตเตอรี่"}</h2>
+          <section className={"battery-panel"}>
             <label>
-              {"วันที่แสดง\n          "}
-              <select id={"viewDay"}></select>
+              {"▣ ความจุแบตเตอรี่"}
+              <input
+                id="batteryChoice"
+                type="range"
+                min="0"
+                max="0"
+                step="1"
+                defaultValue="0"
+                aria-label="ความจุแบตเตอรี่"
+                aria-describedby="batterySizing"
+              />
+              <input id="batteryKWh" type="hidden" defaultValue="0" />
+              <div
+                id="batteryOptions"
+                aria-hidden="true"
+                style={{ display: "flex", justifyContent: "space-between" }}
+              />
+              <output id={"batteryOut"}></output>
             </label>
-          </div>
-          <canvas
-            id={"chart"}
-            role={"img"}
-            aria-label={
-              "กราฟกำลังไฟราย 15 นาที แสดง Solar แบตเตอรี่ และการซื้อไฟ"
-            }
-          ></canvas>
-          <div id={"readout"} className={"readout"} aria-live={"polite"}>
-            {"\n        เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่ารายช่วงเวลา\n      "}
-          </div>
-          {/* <div className={"hint"}>{"ระดับพลังงานในแบตเตอรี่ · SOC (%)"}</div>
-          <canvas
-            id={"socChart"}
-            className={"soc"}
-            role={"img"}
-            aria-label={"กราฟระดับแบตเตอรี่"}
-          ></canvas> */}
-        </section>
-        <div className={"cards"}>
-          <div className={"card"}>
-            <span>{"Solar ที่ผลิตได้ / วัน"}</span>
-            <strong id={"pvValue"}></strong>
-            <small>{"ก่อนหักส่วนที่จำกัดการผลิต"}</small>
-          </div>
+            <div className={"note"}>
+              <b>{"เลือกแบตตามพลังงาน Solar ส่วนเกิน"}</b>
+              <div id={"batterySizing"} aria-live={"polite"}></div>
+            </div>
+            <p className={"hint"}>
+              {
+                "เลือก 0 (ไม่ติดแบต) หรือ 6.0–30.4 kWh ทีละ 0.1 โดยไม่เกิน Solar ส่วนเกิน หากไม่ถึง 6 จะเลือกได้เฉพาะ 0"
+              }
+            </p>
+          </section>
+          <h2>{"3. Solar + แบตเตอรี่ที่เลือก"}</h2>
+          <div className={"note"} id={"batteryDelta"}></div>
+          <section className={"chart-box"}>
+            <div className={"chart-head"}>
+              <b>
+                {"กำลังไฟตลอดวัน "}
+                <span className={"hint"}>{"· kW"}</span>
+              </b>
+              <label>
+                {"วันที่แสดง\n          "}
+                <select id={"viewDay"}></select>
+              </label>
+            </div>
+            <ChartLegend battery />
+            <canvas
+              id={"chart"}
+              role={"img"}
+              aria-label={
+                "กราฟกำลังไฟราย 15 นาที แสดง Solar แบตเตอรี่ และการซื้อไฟ"
+              }
+            ></canvas>
+            <div id={"readout"} className={"readout"} aria-live={"polite"}>
+              {"\n        เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่ารายช่วงเวลา\n      "}
+            </div>
+            {/* <div className={"hint"}>{"ระดับพลังงานในแบตเตอรี่ · SOC (%)"}</div>
+        <canvas
+          id={"socChart"}
+          className={"soc"}
+          role={"img"}
+          aria-label={"กราฟระดับแบตเตอรี่"}
+        ></canvas> */}
+          </section>
+          <div className={"cards"}>
+            <div className={"card"}>
+              <span>{"Solar ที่ผลิตได้ / วัน"}</span>
+              <strong id={"pvValue"}></strong>
+              <small>{"ก่อนหักส่วนที่จำกัดการผลิต"}</small>
+            </div>
 
-          <div className={"card"}>
-            <span>{"ประหยัดค่าไฟ / รอบบิล"}</span>
-            <strong
-              id={"savingValue"}
-              style={{ color: "var(--te-accent)" }}
-            ></strong>
-            <small>{"ยังไม่รวมรายได้ขายไฟ"}</small>
-          </div>
-          <div className={"card"}>
-            <span>{"บิลใหม่โดยประมาณ"}</span>
-            <strong
-              id={"newBillValue"}
-              style={{ color: "var(--te-text)" }}
-            ></strong>
-            <small id={"baseline"}></small>
+            <div className={"card"}>
+              <span>{"ประหยัดค่าไฟ / รอบบิล"}</span>
+              <strong
+                id={"savingValue"}
+                style={{ color: "var(--te-accent)" }}
+              ></strong>
+              <small>{"ยังไม่รวมรายได้ขายไฟ"}</small>
+            </div>
+            <div className={"card"}>
+              <span>{"บิลใหม่โดยประมาณ"}</span>
+              <strong
+                id={"newBillValue"}
+                style={{ color: "var(--te-text)" }}
+              ></strong>
+              <small id={"baseline"}></small>
+            </div>
           </div>
         </div>
         <div className={"note"} id={"summary"}></div>
