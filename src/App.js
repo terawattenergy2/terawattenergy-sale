@@ -156,7 +156,7 @@ function PrivateApp() {
           )}
         />
         <Route path="/solar" element={<SolarPage />} />
-        <Route path="*" element={<Navigate to="/mainpage" replace />} />
+        <Route path="*" element={<Navigate to="/solar" replace />} />
       </Routes>
     </div>
   );

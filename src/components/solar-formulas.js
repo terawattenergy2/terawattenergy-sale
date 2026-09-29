@@ -28,7 +28,7 @@ Emax = ${f(c.batteryKWh)} × ${f(c.maxSOC)} = ${f(c.batteryKWh * c.maxSOC)} kWh
 ระบบ ${c.phases} เฟสเป็นข้อมูลระบบ ไม่ใช่ตัวคูณพลังงาน
 
 3. รวมตลอด ${c.days} วัน จากผลจำลองทุก 15 นาที
-ซื้อไฟ = Σ กำลังซื้อไฟ × 0.25 = ${f(t.grid)} kWh
+Grid มิเตอร์การไฟฟ้า = Σ กำลังซื้อไฟ × 0.25 = ${f(t.grid)} kWh
 ชาร์จเข้า = ${f(t.charge)} / แบตจ่ายออก = ${f(t.discharge)} kWh
 ส่งออก = ${f(t.export)} / จำกัดการผลิต = ${f(t.curtailed)} kWh
 สูญเสียแบต = ${f(t.loss)} / พลังงานสะสมเพิ่มปลายรอบ = ${f(r.storedChange)} kWh
@@ -64,7 +64,7 @@ E ก่อนช่วง = ${f(e)} kWh ${at ? "จากพลังงาน�
 จ่าย = min(${f(deficit)}, ${f(c.dischargeKW)}, (${f(e)} − ${f(c.batteryKWh * c.minSOC)}) × ${f(c.dischargeEfficiency)} ÷ 0.25) = ${f(v.discharge)} kW
 Eใหม่ = ${f(e)} + ${f(v.charge)} × 0.25 × ${f(c.chargeEfficiency)} − ${f(v.discharge)} × 0.25 ÷ ${f(c.dischargeEfficiency)} = ${f(v.energy)} kWh
 SOCท้ายช่วง = ${c.batteryKWh ? `${f(v.energy)} ÷ ${f(c.batteryKWh)} × 100 = ${f(v.soc)}%` : "0% (ไม่มีแบต)"}
-ซื้อไฟ = ${f(deficit)} − ${f(v.discharge)} = ${f(v.grid)} kW
+Grid มิเตอร์การไฟฟ้า = ${f(deficit)} − ${f(v.discharge)} = ${f(v.grid)} kW
 ส่วนเกินหลังชาร์จ = ${f(surplus)} − ${f(v.charge)} = ${f(surplus - v.charge)} kW → ${c.exportAllowed ? "ส่งออก" : "จำกัดการผลิต"}
 พลังงานส่วนเกินของช่วงนี้ = ${f(surplus)} × 0.25 = ${f(surplus * 0.25)} kWh (นำไปรวมพื้นที่สีขาวทั้งวัน)`;
 }

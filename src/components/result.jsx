@@ -16,7 +16,8 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import SpaceSuggest from "./spaceSuggest";
-import { useNavigate } from "react-router-dom";
+import { mergeSolarProducts } from "./merge-solar-products";
+import { useLocation, useNavigate } from "react-router-dom";
 import { IoRefresh } from "react-icons/io5";
 
 const getDriveImageUrl = (url) => {
@@ -128,6 +129,9 @@ function buildComparisonRows(products) {
 
 // Pass arrays loaded from Supabase. Leave props undefined while loading.
 function ResultPage({ inverter, answer, space, priceList, error = null }) {
+  const location = useLocation();
+  const solarSearch = location.state?.solarSearch;
+  const fromSolar = solarSearch?.source === "solar" && Array.isArray(solarSearch.products);
   const inverterTypes = Array.isArray(inverter) ? inverter : [];
   const isLoading =
     !Array.isArray(inverter) || !Array.isArray(answer) || !Array.isArray(space);
@@ -144,6 +148,10 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
 
   const handleRestart = () => {
     setRestartError("");
+    if (fromSolar) {
+      navigate(-1);
+      return;
+    }
     try {
       // Only the calculation key observed in this page. Keep Supabase auth intact.
       localStorage.removeItem("wizard_answers");
@@ -216,6 +224,13 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
       return;
     }
 
+    if (fromSolar) {
+      setMatchedProducts(mergeSolarProducts(
+        solarSearch.products, answer, Array.isArray(priceList) ? priceList : [],
+      ));
+      return;
+    }
+
     let savedAnswers = {};
 
     try {
@@ -258,7 +273,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
       });
 
     setMatchedProducts(productsWithPrice);
-  }, [answer, priceList]);
+  }, [answer, priceList, fromSolar, solarSearch]);
 
   const inverterSug =
     matchedProducts.length > 0 ? matchedProducts[0].ans_product : "SigenStor";
@@ -341,6 +356,9 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
           <h2>อินเวอร์เตอร์ที่แนะนำ: {inverterSug}</h2>
 
           <p className="text-secondary small">{desSug}</p>
+          {fromSolar && <p className="text-secondary small">
+            โหลดที่ใช้ค้นหา {solarSearch.result.point} kW · {solarSearch.result.phase} · แบตที่เลือก {solarSearch.selectedBatteryKWh} kWh
+          </p>}
 
           {matchedProducts.length > 0 ? (
             <section
@@ -367,6 +385,12 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                         ตัวเลือก {index + 1}
                       </p>
                       <h3>{item.ans_product}</h3>
+                      {fromSolar && item.solarRecommendation && <p>
+                        {item.selectedBatteryKWh > 0
+                          ? `แบต ${item.solarRecommendation.bat || ""} · ${item.batteryCount} ก้อน · รวม ${Number((item.batteryCount * Number(item.solarRecommendation.bat_caculated)).toFixed(2))} kWh`
+                          : "ไม่ติดแบต"}
+                      </p>}
+                      {item.missingCatalogDetails && <p role="status">ยังไม่มีรูปและข้อมูลเปรียบเทียบของชื่อนี้ในตารางเดิม</p>}
                       <div className="tera-compare__image">
                         {item.img_product ? (
                           <img
@@ -381,6 +405,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                         type="button"
                         className="tera-compare__choose"
                         onClick={() => handleSelectSug(item)}
+                        disabled={item.missingCatalogDetails}
                       >
                         เลือกรุ่นนี้
                         {/* <span aria-hidden="true">↗</span> */}
@@ -522,6 +547,8 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
           >
             <SpaceSuggest
               spaceSug={spaceSug}
+              priceList={priceList}
+              batteryCatalog={answer}
               onCompare={() => scrollToSection("#product-comparison")}
               onCustomize={() => {
                 const matchingInverter = inverterTypes.find(

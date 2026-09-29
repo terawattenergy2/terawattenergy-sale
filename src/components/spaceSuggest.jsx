@@ -4,164 +4,146 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import SelectedProductDetails from "./SelectedProductDetails";
 import SpaceSuggestPdfPage from "./SpaceSuggestPdfPage";
+import BatterySummary from "./BatterySummary";
+import { getBatterySummary } from "./battery-summary";
 import { useNavigate } from "react-router-dom";
 
-function SpaceSuggest({ spaceSug, getDriveImageUrl, onCompare, onCustomize }) {
+export default function SpaceSuggest({
+  spaceSug,
+  getDriveImageUrl,
+  onCompare,
+  onCustomize,
+  priceList = [],
+  batteryCatalog = [],
+}) {
   const pdfRef = useRef(null);
   const [isExporting, setIsExporting] = useState(false);
-const [personalData] = useState(() => {
-  try {
-    return JSON.parse(
-      localStorage.getItem("personal_data") || "{}"
-    );
-  } catch (error) {
-    console.error("อ่านข้อมูลส่วนตัวไม่ได้:", error);
-
-    localStorage.removeItem("personal_data");
-
-    return {};
-  }
-});
+  const [exportError, setExportError] = useState("");
+  const [personalData] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("personal_data") || "{}") || {};
+    } catch {
+      return {};
+    }
+  });
+  const navigate = useNavigate();
+  const battery = getBatterySummary(
+    spaceSug,
+    Array.isArray(priceList) ? priceList : [],
+    Array.isArray(batteryCatalog) ? batteryCatalog : [],
+  );
   const fullName = [personalData.firstName, personalData.lastName]
     .filter(Boolean)
     .join(" ");
-
   const handleExportPDF = async () => {
     if (!pdfRef.current || isExporting) return;
-
+    setIsExporting(true);
+    setExportError("");
     try {
-      setIsExporting(true);
-
-      if (document.fonts?.ready) {
-        await document.fonts.ready;
-      }
-
-      const element = pdfRef.current;
-      const images = Array.from(element.querySelectorAll("img"));
-
-      // รอรูปทั้งหมดโหลดเสร็จ
+      if (document.fonts?.ready) await document.fonts.ready;
       await Promise.all(
-        images.map((image) => {
-          if (image.complete) {
-            return Promise.resolve();
-          }
-
-          return new Promise((resolve) => {
-            image.onload = resolve;
-            image.onerror = resolve;
-          });
-        }),
+        Array.from(pdfRef.current.querySelectorAll("img")).map((img) =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise((resolve) => {
+                const done = () => {
+                  clearTimeout(timer);
+                  img.removeEventListener("load", done);
+                  img.removeEventListener("error", done);
+                  resolve();
+                };
+                const timer = setTimeout(done, 10000);
+                img.addEventListener("load", done);
+                img.addEventListener("error", done);
+              }),
+        ),
       );
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: "#ffffff",
-        logging: false,
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-        windowWidth: 794,
-        windowHeight: 1122,
-      });
-
-      const imageData = canvas.toDataURL("image/png", 1);
-
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      // ป้องกันค่าทศนิยมเกินขอบ A4
-      const safetyMargin = 0.5;
-      const availableWidth = pageWidth - safetyMargin * 2;
-      const availableHeight = pageHeight - safetyMargin * 2;
-
-      // รักษาสัดส่วน Canvas และย่อให้พอดีหน้าเดียว
-      const scaleX = availableWidth / canvas.width;
-
-      const scaleY = availableHeight / canvas.height;
-
-      const pdfScale = Math.min(scaleX, scaleY);
-
-      const renderWidth = canvas.width * pdfScale;
-
-      const renderHeight = canvas.height * pdfScale;
-
-      // จัดให้อยู่กลางหน้า
-      const positionX = (pageWidth - renderWidth) / 2;
-
-      const positionY = (pageHeight - renderHeight) / 2;
-
-      // เพิ่มเพียงครั้งเดียว จึงมี PDF หน้าเดียว
-      pdf.addImage(
-        imageData,
-        "PNG",
-        positionX,
-        positionY,
-        renderWidth,
-        renderHeight,
+      const pages = Array.from(
+        pdfRef.current.querySelectorAll("[data-pdf-page]"),
       );
-
-      const fileName = (spaceSug?.ans_product || "recommended-solution")
-        .replace(/[\\/:*?"<>|]/g, "-")
-        .trim();
-
-      pdf.save(`${fileName}.pdf`);
+      for (let i = 0; i < pages.length; i++) {
+        const element = pages[i];
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: "#fff",
+          logging: false,
+          windowWidth: 794,
+          width: element.offsetWidth,
+          height: element.offsetHeight,
+        });
+        if (i) pdf.addPage();
+        const scale = Math.min(209 / canvas.width, 296 / canvas.height);
+        const w = canvas.width * scale,
+          h = canvas.height * scale;
+        pdf.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          (210 - w) / 2,
+          (297 - h) / 2,
+          w,
+          h,
+        );
+      }
+      pdf.save(
+        `${(spaceSug?.ans_product || "recommended-solution").replace(/[\\/:*?"<>|]/g, "-")}.pdf`,
+      );
     } catch (error) {
-      console.error("Export PDF Error:", error);
-
-      alert("ไม่สามารถ Export PDF ได้ กรุณาลองใหม่อีกครั้ง");
+      console.error(error);
+      setExportError("สร้าง PDF ไม่สำเร็จ กรุณาลองใหม่");
     } finally {
       setIsExporting(false);
     }
   };
-  const navigate = useNavigate();
-
-  const handleRestart = () => {
-    navigate("/");
-  };
   return (
     <div className="space-suggest-wrapper">
-      <SelectedProductDetails
-        product={spaceSug}
-        getDriveImageUrl={getDriveImageUrl}
-        onCompare={onCompare}
-        onCustomize={onCustomize}
-      />
-
-      {/* ปุ่ม Export อยู่นอกหน้าสำหรับ PDF */}
+      <style>{`
+      .solar-selected-unified { background: var(--te-surface, #fff); border: 1px solid var(--te-border, #e3eaf2); border-radius: 28px; overflow: hidden; }
+      .solar-selected-unified > .solar-selected-main > :first-child { background: transparent; border: 0; box-shadow: none; margin: 0; border-radius: 0; }
+      .solar-selected-battery { padding: 0 clamp(24px, 5vw, 80px) 40px; }
+    `}</style>
+      <div className="solar-selected-unified">
+        <div className="solar-selected-main">
+          <SelectedProductDetails
+            product={spaceSug}
+            getDriveImageUrl={getDriveImageUrl}
+            onCompare={onCompare}
+            onCustomize={onCustomize}
+          />
+        </div>
+        {battery && (
+          <div className="solar-selected-battery">
+            <BatterySummary
+              battery={battery}
+              getDriveImageUrl={getDriveImageUrl}
+              showPrice={false}
+            />
+          </div>
+        )}
+      </div>
       <div className="space-suggest-export">
-        <Button variant="outline-secondary" onClick={handleRestart}>
+        <Button variant="outline-secondary" onClick={() => navigate("/")}>
           Restart
         </Button>
-
-        <Button
-          type="button"
-          className="btn-export-pdf"
-          onClick={handleExportPDF}
-          disabled={isExporting}
-        >
+        <Button onClick={handleExportPDF} disabled={isExporting}>
           {isExporting ? "กำลังสร้างไฟล์..." : "Export PDF"}
         </Button>
       </div>
-
-      {/* Template ที่ใช้สร้าง PDF */}
+      {exportError && <p role="alert">{exportError}</p>}
       <SpaceSuggestPdfPage
         fullName={fullName}
         personalData={personalData}
         pdfRef={pdfRef}
         spaceSug={spaceSug}
+        battery={battery}
         getDriveImageUrl={getDriveImageUrl}
       />
-      
     </div>
   );
 }
-
-export default SpaceSuggest;

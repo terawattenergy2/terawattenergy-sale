@@ -48,13 +48,14 @@ export default function LoginPage() {
     const url = new URL(window.location.href);
     const hash = new URLSearchParams(url.hash.slice(1));
     return {
-      recovery: url.searchParams.get("recovery") === "1" ||
+      recovery:
+        url.searchParams.get("recovery") === "1" ||
         hash.get("type") === "recovery",
       invalid: hash.has("error") || url.searchParams.has("error"),
     };
   });
   const [mode, setMode] = useState(
-    callbackInfo.recovery || callbackInfo.invalid ? "reset" : "login"
+    callbackInfo.recovery || callbackInfo.invalid ? "reset" : "login",
   );
   const [sessionEmail, setSessionEmail] = useState("");
   const [sessionReady, setSessionReady] = useState(false);
@@ -75,36 +76,42 @@ export default function LoginPage() {
       setSessionEmail(session?.user?.email || "");
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!active) return;
-        applySession(session);
-        if (event === "PASSWORD_RECOVERY") {
-          setMode("reset");
-          setPassword("");
-          setNotice("");
-          setError(callbackInfo.invalid ? expiredMessage : "");
-          // Preserve recovery UI on refresh, even after the SDK removes tokens.
-          const url = new URL(window.location.href);
-          url.searchParams.set("recovery", "1");
-          window.history.replaceState(window.history.state, "", url);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      applySession(session);
+      if (event === "PASSWORD_RECOVERY") {
+        setMode("reset");
+        setPassword("");
+        setNotice("");
+        setError(callbackInfo.invalid ? expiredMessage : "");
+        // Preserve recovery UI on refresh, even after the SDK removes tokens.
+        const url = new URL(window.location.href);
+        url.searchParams.set("recovery", "1");
+        window.history.replaceState(window.history.state, "", url);
       }
-    );
+    });
 
     // getSession waits for the browser SDK to process the callback URL.
-    supabase.auth.getSession().then(({ data, error: sessionError }) => {
-      if (!active) return;
-      applySession(data?.session);
-      if (callbackInfo.invalid ||
-          (callbackInfo.recovery && (sessionError || !data?.session))) {
-        setError(expiredMessage);
-      }
-    }).catch(() => {
-      if (active) setError("ตรวจสอบลิงก์ไม่สำเร็จ กรุณาลองเปิดลิงก์อีกครั้ง");
-    }).finally(() => {
-      if (active) setChecking(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data, error: sessionError }) => {
+        if (!active) return;
+        applySession(data?.session);
+        if (
+          callbackInfo.invalid ||
+          (callbackInfo.recovery && (sessionError || !data?.session))
+        ) {
+          setError(expiredMessage);
+        }
+      })
+      .catch(() => {
+        if (active) setError("ตรวจสอบลิงก์ไม่สำเร็จ กรุณาลองเปิดลิงก์อีกครั้ง");
+      })
+      .finally(() => {
+        if (active) setChecking(false);
+      });
 
     return () => {
       active = false;
@@ -124,18 +131,26 @@ export default function LoginPage() {
     setError("");
     setNotice("");
     try {
-      const redirect = new URL(window.location.pathname, window.location.origin);
-      redirect.searchParams.set("recovery", "1");
-      const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(), { redirectTo: redirect.toString() }
+      const redirect = new URL(
+        window.location.pathname,
+        window.location.origin,
       );
+      redirect.searchParams.set("recovery", "1");
+      const { error: recoveryError } =
+        await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: redirect.toString(),
+        });
       if (recoveryError) {
-        setError(recoveryError.status === 429
-          ? "ส่งคำขอบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่"
-          : "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ");
+        setError(
+          recoveryError.status === 429
+            ? "ส่งคำขอบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่"
+            : "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ",
+        );
         return;
       }
-      setNotice("หากมีบัญชีอีเมลนี้ ระบบจะส่งลิงก์ตั้งรหัสผ่านให้ กรุณาตรวจกล่องจดหมายและ Spam แล้วเปิดลิงก์ล่าสุดในเบราว์เซอร์นี้");
+      setNotice(
+        "หากมีบัญชีอีเมลนี้ ระบบจะส่งลิงก์ตั้งรหัสผ่านให้ กรุณาตรวจกล่องจดหมายและ Spam แล้วเปิดลิงก์ล่าสุดในเบราว์เซอร์นี้",
+      );
     } catch {
       setError("เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่");
     } finally {
@@ -170,10 +185,13 @@ export default function LoginPage() {
       if (updateError) {
         const messages = {
           same_password: "กรุณาใช้รหัสผ่านใหม่ที่ต่างจากรหัสเดิม",
-          weak_password: "รหัสผ่านไม่ผ่านเงื่อนไขความปลอดภัยของระบบ กรุณาใช้รหัสที่ยาวและคาดเดายากขึ้น",
+          weak_password:
+            "รหัสผ่านไม่ผ่านเงื่อนไขความปลอดภัยของระบบ กรุณาใช้รหัสที่ยาวและคาดเดายากขึ้น",
         };
-        setError(messages[updateError.code] ||
-          "ตั้งรหัสผ่านไม่สำเร็จ กรุณาขอลิงก์ใหม่หรือติดต่อผู้ดูแลระบบ");
+        setError(
+          messages[updateError.code] ||
+            "ตั้งรหัสผ่านไม่สำเร็จ กรุณาขอลิงก์ใหม่หรือติดต่อผู้ดูแลระบบ",
+        );
         return;
       }
       setNewPassword("");
@@ -188,7 +206,9 @@ export default function LoginPage() {
       url.hash = "";
       window.history.replaceState(window.history.state, "", url);
     } catch {
-      setError("การเชื่อมต่อขัดข้อง หากบันทึกไปแล้วให้ลองเข้าสู่ระบบด้วยรหัสใหม่");
+      setError(
+        "การเชื่อมต่อขัดข้อง หากบันทึกไปแล้วให้ลองเข้าสู่ระบบด้วยรหัสใหม่",
+      );
     } finally {
       submittingRef.current = false;
       setLoading(false);
@@ -202,7 +222,7 @@ export default function LoginPage() {
     setNotice("");
 
     const selectedBusiness = BUSINESS_LIST.find(
-      (business) => String(business.id) === businessId
+      (business) => String(business.id) === businessId,
     );
     const cleanFirst = firstName.trim().replace(/\s+/g, " ");
     const cleanLast = lastName.trim().replace(/\s+/g, " ");
@@ -213,13 +233,19 @@ export default function LoginPage() {
       setError("กรุณาเลือกบริษัท");
       return;
     }
-    if (!englishName.test(cleanFirst) || !englishName.test(cleanLast) ||
-        cleanFirst.length > 100 || cleanLast.length > 100) {
+    if (
+      !englishName.test(cleanFirst) ||
+      !englishName.test(cleanLast) ||
+      cleanFirst.length > 100 ||
+      cleanLast.length > 100
+    ) {
       setError("กรุณากรอกชื่อและนามสกุลภาษาอังกฤษ ช่องละไม่เกิน 100 ตัวอักษร");
       return;
     }
     if (!/^\+?[0-9]{8,15}$/.test(cleanPhone)) {
-      setError("กรุณากรอกเบอร์โทรศัพท์ 8–15 หลัก สามารถใส่ + นำหน้ารหัสประเทศได้");
+      setError(
+        "กรุณากรอกเบอร์โทรศัพท์ 8–15 หลัก สามารถใส่ + นำหน้ารหัสประเทศได้",
+      );
       return;
     }
     if (!email.trim()) {
@@ -238,7 +264,10 @@ export default function LoginPage() {
     submittingRef.current = true;
     setLoading(true);
     try {
-      const redirect = new URL(window.location.pathname, window.location.origin);
+      const redirect = new URL(
+        window.location.pathname,
+        window.location.origin,
+      );
       const { data, error: signupError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -256,19 +285,27 @@ export default function LoginPage() {
       });
       if (signupError) {
         const messages = {
-          user_already_exists: "อีเมลนี้มีบัญชีแล้ว กรุณาเข้าสู่ระบบหรือใช้ลืมรหัสผ่าน",
-          email_exists: "อีเมลนี้มีบัญชีแล้ว กรุณาเข้าสู่ระบบหรือใช้ลืมรหัสผ่าน",
+          user_already_exists:
+            "อีเมลนี้มีบัญชีแล้ว กรุณาเข้าสู่ระบบหรือใช้ลืมรหัสผ่าน",
+          email_exists:
+            "อีเมลนี้มีบัญชีแล้ว กรุณาเข้าสู่ระบบหรือใช้ลืมรหัสผ่าน",
           signup_disabled: "ระบบยังไม่เปิดรับสมัครสมาชิก กรุณาติดต่อผู้ดูแล",
-          weak_password: "รหัสผ่านไม่ผ่านเงื่อนไข กรุณาใช้รหัสที่ยาวและคาดเดายากขึ้น",
+          weak_password:
+            "รหัสผ่านไม่ผ่านเงื่อนไข กรุณาใช้รหัสที่ยาวและคาดเดายากขึ้น",
           email_address_invalid: "รูปแบบอีเมลไม่ถูกต้อง",
-          over_email_send_rate_limit: "ส่งอีเมลบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่",
-          over_request_rate_limit: "ทำรายการบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่",
+          over_email_send_rate_limit:
+            "ส่งอีเมลบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่",
+          over_request_rate_limit:
+            "ทำรายการบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่",
         };
         console.error("Supabase signup failed:", {
-          code: signupError.code, message: signupError.message,
+          code: signupError.code,
+          message: signupError.message,
         });
-        setError(messages[signupError.code] ||
-          "สมัครสมาชิกไม่สำเร็จ กรุณาให้ผู้ดูแลตรวจสอบการตั้งค่าสมัครสมาชิกและ SQL");
+        setError(
+          messages[signupError.code] ||
+            "สมัครสมาชิกไม่สำเร็จ กรุณาให้ผู้ดูแลตรวจสอบการตั้งค่าสมัครสมาชิกและ SQL",
+        );
         return;
       }
       // With email confirmation enabled, no authenticated session exists yet.
@@ -277,13 +314,19 @@ export default function LoginPage() {
       setSignupConfirmation("");
       setMode("login");
       if (data?.session) {
-        const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
-        setNotice(signOutError
-          ? "สร้างบัญชีแล้ว กรุณาเข้าสู่ระบบเพื่อให้ระบบตรวจสอบบริษัท"
-          : "สมัครสมาชิกเรียบร้อยแล้ว กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่านที่ตั้งไว้");
+        const { error: signOutError } = await supabase.auth.signOut({
+          scope: "local",
+        });
+        setNotice(
+          signOutError
+            ? "สร้างบัญชีแล้ว กรุณาเข้าสู่ระบบเพื่อให้ระบบตรวจสอบบริษัท"
+            : "สมัครสมาชิกเรียบร้อยแล้ว กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่านที่ตั้งไว้",
+        );
       } else {
         // Avoid claiming that an existing/obfuscated account was newly created.
-        setNotice("ส่งคำขอสมัครแล้ว หากเป็นอีเมลใหม่ กรุณาตรวจอีเมลและ Spam เพื่อยืนยันบัญชีก่อน Login หากเคยสมัครแล้วให้เข้าสู่ระบบหรือใช้ลืมรหัสผ่าน");
+        setNotice(
+          "ส่งคำขอสมัครแล้ว หากเป็นอีเมลใหม่ กรุณาตรวจอีเมลและ Spam เพื่อยืนยันบัญชีก่อน Login หากเคยสมัครแล้วให้เข้าสู่ระบบหรือใช้ลืมรหัสผ่าน",
+        );
       }
     } catch {
       setError("การเชื่อมต่อขัดข้อง กรุณาตรวจอีเมลยืนยันก่อนลองสมัครอีกครั้ง");
@@ -302,7 +345,7 @@ export default function LoginPage() {
     setError("");
 
     const selectedBusiness = BUSINESS_LIST.find(
-      (business) => String(business.id) === businessId
+      (business) => String(business.id) === businessId,
     );
 
     if (!selectedBusiness) {
@@ -346,26 +389,38 @@ export default function LoginPage() {
 
       // The RPC only returns the profile belonging to auth.uid().
       const { data: profile, error: profileError } = await supabase.rpc(
-        "teramatch_my_profile"
+        "teramatch_my_profile",
       );
       const normalizeBusiness = (value) =>
-        String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+        String(value || "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLowerCase();
       let rejection = "";
       if (profileError) {
         rejection = "ตรวจสอบข้อมูลบริษัทไม่สำเร็จ กรุณาติดต่อผู้ดูแลระบบ";
       } else if (!profile) {
-        rejection = "ไม่พบข้อมูลบัญชีใน user_teramatch กรุณาให้ผู้ดูแลตรวจสอบ ID ให้ตรงกับ Authentication";
-      } else if (!profile.business ||
-        normalizeBusiness(profile.business) !== normalizeBusiness(selectedBusiness.title)) {
+        rejection =
+          "ไม่พบข้อมูลบัญชีใน user_teramatch กรุณาให้ผู้ดูแลตรวจสอบ ID ให้ตรงกับ Authentication";
+      } else if (
+        !profile.business ||
+        normalizeBusiness(profile.business) !==
+          normalizeBusiness(selectedBusiness.title)
+      ) {
         rejection = "บัญชีนี้ไม่ได้อยู่ในบริษัทที่เลือก";
       }
       if (rejection) {
-        const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
-        setError(rejection + (signOutError ? " — ออกจากเซสชันไม่สำเร็จ กรุณาลองใหม่" : ""));
+        const { error: signOutError } = await supabase.auth.signOut({
+          scope: "local",
+        });
+        setError(
+          rejection +
+            (signOutError ? " — ออกจากเซสชันไม่สำเร็จ กรุณาลองใหม่" : ""),
+        );
         return;
       }
 
-      navigate("/mainpage", {
+      navigate("/solar", {
         replace: true,
         state: {
           selectedBusinessId: selectedBusiness.id,
@@ -380,9 +435,7 @@ export default function LoginPage() {
             : "Unknown connection error",
       });
 
-      setError(
-        "เชื่อมต่อระบบไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่"
-      );
+      setError("เชื่อมต่อระบบไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่");
     } finally {
       submittingRef.current = false;
       setLoading(false);
@@ -400,221 +453,394 @@ export default function LoginPage() {
       >
         <div className="card-body p-4 p-md-5">
           <h1 className="h3 fw-bold mb-2">
-            {mode === "signup" ? "สมัครสมาชิก" :
-              mode === "reset" ? "ตั้งรหัสผ่านใหม่" :
-              mode === "forgot" ? "ลืมรหัสผ่าน" :
-              mode === "done" ? "เปลี่ยนรหัสผ่านสำเร็จ" : "Login"}
+            {mode === "signup"
+              ? "สมัครสมาชิก"
+              : mode === "reset"
+                ? "ตั้งรหัสผ่านใหม่"
+                : mode === "forgot"
+                  ? "ลืมรหัสผ่าน"
+                  : mode === "done"
+                    ? "เปลี่ยนรหัสผ่านสำเร็จ"
+                    : "Login"}
           </h1>
 
-          {mode === "login" && <p className="text-secondary mb-4">
-            เข้าสู่ระบบ หรือกดสมัครสมาชิกเพื่อสร้างบัญชีใหม่
-          </p>}
-          {notice && <div className="alert alert-success" role="status">{notice}</div>}
-          {error && <div className="alert alert-danger" role="alert">{error}</div>}
+          {mode === "login" && (
+            <p className="text-secondary mb-4">
+              เข้าสู่ระบบ หรือกดสมัครสมาชิกเพื่อสร้างบัญชีใหม่
+            </p>
+          )}
+          {notice && (
+            <div className="alert alert-success" role="status">
+              {notice}
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+            </div>
+          )}
           {checking && <p role="status">กำลังตรวจสอบเซสชัน...</p>}
 
           {mode === "signup" ? (
             <form onSubmit={handleSignUp} aria-busy={loading || checking}>
               <fieldset disabled={loading || checking}>
                 <div className="mb-3">
-                  <label htmlFor="signup-business" className="form-label">บริษัท</label>
-                  <select id="signup-business" className="form-select" value={businessId}
-                    onChange={(e) => setBusinessId(e.target.value)} required>
-                    <option value="" disabled>เลือกบริษัท</option>
+                  <label htmlFor="signup-business" className="form-label">
+                    บริษัท
+                  </label>
+                  <select
+                    id="signup-business"
+                    className="form-select"
+                    value={businessId}
+                    onChange={(e) => setBusinessId(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>
+                      เลือกบริษัท
+                    </option>
                     {BUSINESS_LIST.map((business) => (
-                      <option key={business.id} value={business.id}>{business.title}</option>
+                      <option key={business.id} value={business.id}>
+                        {business.title}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="signup-first-name" className="form-label">ชื่อภาษาอังกฤษ</label>
-                  <input id="signup-first-name" className="form-control" type="text"
-                    autoComplete="given-name" placeholder="First name" maxLength={100}
-                    value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                  <label htmlFor="signup-first-name" className="form-label">
+                    ชื่อภาษาอังกฤษ
+                  </label>
+                  <input
+                    id="signup-first-name"
+                    className="form-control"
+                    type="text"
+                    autoComplete="given-name"
+                    placeholder="First name"
+                    maxLength={100}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="signup-last-name" className="form-label">นามสกุลภาษาอังกฤษ</label>
-                  <input id="signup-last-name" className="form-control" type="text"
-                    autoComplete="family-name" placeholder="Last name" maxLength={100}
-                    value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                  <label htmlFor="signup-last-name" className="form-label">
+                    นามสกุลภาษาอังกฤษ
+                  </label>
+                  <input
+                    id="signup-last-name"
+                    className="form-control"
+                    type="text"
+                    autoComplete="family-name"
+                    placeholder="Last name"
+                    maxLength={100}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="signup-phone" className="form-label">เบอร์โทรศัพท์</label>
-                  <input id="signup-phone" className="form-control" type="tel" autoComplete="tel"
-                    placeholder="08xxxxxxxx" maxLength={30}
-                    value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                  <label htmlFor="signup-phone" className="form-label">
+                    เบอร์โทรศัพท์
+                  </label>
+                  <input
+                    id="signup-phone"
+                    className="form-control"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="08xxxxxxxx"
+                    maxLength={30}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="signup-email" className="form-label">อีเมล</label>
-                  <input id="signup-email" className="form-control" type="email"
-                    autoComplete="email" autoCapitalize="none" spellCheck={false}
-                    value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label htmlFor="signup-email" className="form-label">
+                    อีเมล
+                  </label>
+                  <input
+                    id="signup-email"
+                    className="form-control"
+                    type="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="signup-password" className="form-label">รหัสผ่าน</label>
-                  <input id="signup-password" className="form-control" type="password"
-                    autoComplete="new-password" minLength={8} placeholder="อย่างน้อย 8 ตัวอักษร"
-                    value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <label htmlFor="signup-password" className="form-label">
+                    รหัสผ่าน
+                  </label>
+                  <input
+                    id="signup-password"
+                    className="form-control"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    placeholder="อย่างน้อย 8 ตัวอักษร"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="mb-4">
-                  <label htmlFor="signup-confirm" className="form-label">ยืนยันรหัสผ่าน</label>
-                  <input id="signup-confirm" className="form-control" type="password"
-                    autoComplete="new-password" minLength={8}
-                    value={signupConfirmation} onChange={(e) => setSignupConfirmation(e.target.value)} required />
+                  <label htmlFor="signup-confirm" className="form-label">
+                    ยืนยันรหัสผ่าน
+                  </label>
+                  <input
+                    id="signup-confirm"
+                    className="form-control"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={signupConfirmation}
+                    onChange={(e) => setSignupConfirmation(e.target.value)}
+                    required
+                  />
                 </div>
                 <button type="submit" className="btn btn-primary w-100 py-2">
                   {loading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
                 </button>
-                <button type="button" className="btn btn-link w-100 mt-2"
-                  onClick={() => { setMode("login"); setError(""); setNotice(""); setPassword(""); setSignupConfirmation(""); }}>
+                <button
+                  type="button"
+                  className="btn btn-link w-100 mt-2"
+                  onClick={() => {
+                    setMode("login");
+                    setError("");
+                    setNotice("");
+                    setPassword("");
+                    setSignupConfirmation("");
+                  }}
+                >
                   มีบัญชีแล้ว เข้าสู่ระบบ
                 </button>
               </fieldset>
             </form>
           ) : mode === "done" ? (
-            <button className="btn btn-primary w-100" type="button"
-              onClick={() => { setMode("login"); setError(""); }}>
+            <button
+              className="btn btn-primary w-100"
+              type="button"
+              onClick={() => {
+                setMode("login");
+                setError("");
+              }}
+            >
               กลับไปเข้าสู่ระบบ
             </button>
           ) : mode === "reset" ? (
-            <form onSubmit={handleResetPassword} aria-busy={loading || checking}>
-              {sessionEmail && <p className="text-secondary">บัญชี: {sessionEmail}</p>}
+            <form
+              onSubmit={handleResetPassword}
+              aria-busy={loading || checking}
+            >
+              {sessionEmail && (
+                <p className="text-secondary">บัญชี: {sessionEmail}</p>
+              )}
               <div className="mb-3">
-                <label className="form-label" htmlFor="new-password">รหัสผ่านใหม่</label>
-                <input id="new-password" className="form-control" type="password"
-                  autoComplete="new-password" minLength={8} required
-                  value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={loading || checking || !sessionReady} />
+                <label className="form-label" htmlFor="new-password">
+                  รหัสผ่านใหม่
+                </label>
+                <input
+                  id="new-password"
+                  className="form-control"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={loading || checking || !sessionReady}
+                />
               </div>
               <div className="mb-4">
-                <label className="form-label" htmlFor="confirm-password">ยืนยันรหัสผ่านใหม่</label>
-                <input id="confirm-password" className="form-control" type="password"
-                  autoComplete="new-password" minLength={8} required
-                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={loading || checking || !sessionReady} />
+                <label className="form-label" htmlFor="confirm-password">
+                  ยืนยันรหัสผ่านใหม่
+                </label>
+                <input
+                  id="confirm-password"
+                  className="form-control"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={loading || checking || !sessionReady}
+                />
               </div>
-              <button className="btn btn-primary w-100" type="submit"
-                disabled={loading || checking || !sessionReady}>
+              <button
+                className="btn btn-primary w-100"
+                type="submit"
+                disabled={loading || checking || !sessionReady}
+              >
                 {loading ? "กำลังบันทึก..." : "บันทึกรหัสผ่านใหม่"}
               </button>
-              <button className="btn btn-link w-100 mt-2" type="button" disabled={loading}
-                onClick={() => { setMode("forgot"); setError(""); setNotice(""); }}>
+              <button
+                className="btn btn-link w-100 mt-2"
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setMode("forgot");
+                  setError("");
+                  setNotice("");
+                }}
+              >
                 ขอลิงก์ตั้งรหัสผ่านใหม่
               </button>
             </form>
           ) : mode === "forgot" ? (
             <form onSubmit={handleSendRecovery} aria-busy={loading}>
               <div className="mb-4">
-                <label className="form-label" htmlFor="recovery-email">อีเมลของบัญชี</label>
-                <input id="recovery-email" className="form-control" type="email"
-                  autoComplete="email" autoCapitalize="none" spellCheck={false}
-                  value={email} onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading} required />
+                <label className="form-label" htmlFor="recovery-email">
+                  อีเมลของบัญชี
+                </label>
+                <input
+                  id="recovery-email"
+                  className="form-control"
+                  type="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  required
+                />
               </div>
-              <button className="btn btn-primary w-100" type="submit" disabled={loading}>
+              <button
+                className="btn btn-primary w-100"
+                type="submit"
+                disabled={loading}
+              >
                 {loading ? "กำลังส่ง..." : "ส่งลิงก์ตั้งรหัสผ่าน"}
               </button>
-              <button className="btn btn-link w-100 mt-2" type="button" disabled={loading}
-                onClick={() => { setMode("login"); setError(""); setNotice(""); }}>
+              <button
+                className="btn btn-link w-100 mt-2"
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                  setNotice("");
+                }}
+              >
                 กลับไปเข้าสู่ระบบ
               </button>
             </form>
           ) : (
-          <form onSubmit={handleLogin} aria-busy={loading || checking}>
-            <div className="mb-3">
-              <label htmlFor="login-business" className="form-label">
-                Business
-              </label>
+            <form onSubmit={handleLogin} aria-busy={loading || checking}>
+              <div className="mb-3">
+                <label htmlFor="login-business" className="form-label">
+                  Business
+                </label>
 
-              <select
-                id="login-business"
-                name="business"
-                className="form-select"
-                value={businessId}
-                onChange={(event) => setBusinessId(event.target.value)}
-                disabled={loading}
-                required
-              >
-                <option value="" disabled>
-                  เลือกบริษัท
-                </option>
-
-                {BUSINESS_LIST.map((business) => (
-                  <option key={business.id} value={business.id}>
-                    {business.title}
+                <select
+                  id="login-business"
+                  name="business"
+                  className="form-select"
+                  value={businessId}
+                  onChange={(event) => setBusinessId(event.target.value)}
+                  disabled={loading}
+                  required
+                >
+                  <option value="" disabled>
+                    เลือกบริษัท
                   </option>
-                ))}
-              </select>
-            </div>
 
-            <div className="mb-3">
-              <label htmlFor="login-email" className="form-label">
-                E-mail
-              </label>
+                  {BUSINESS_LIST.map((business) => (
+                    <option key={business.id} value={business.id}>
+                      {business.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <input
-                id="login-email"
-                name="email"
-                type="email"
-                className="form-control"
-                autoComplete="username"
-                autoCapitalize="none"
-                spellCheck={false}
-                placeholder="name@example.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                disabled={loading}
-                required
-              />
-            </div>
+              <div className="mb-3">
+                <label htmlFor="login-email" className="form-label">
+                  E-mail
+                </label>
 
-            <div className="mb-4">
-              <label htmlFor="login-password" className="form-label">
-                Password
-              </label>
+                <input
+                  id="login-email"
+                  name="email"
+                  type="email"
+                  className="form-control"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
 
-              <input
-                id="login-password"
-                name="password"
-                type="password"
-                className="form-control"
-                autoComplete="current-password"
-                placeholder="กรอกรหัสผ่าน"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                disabled={loading}
-                required
-              />
-            </div>
+              <div className="mb-4">
+                <label htmlFor="login-password" className="form-label">
+                  Password
+                </label>
 
-            <button
-              type="submit"
-              className="btn btn-primary w-100 py-2"
-              disabled={loading || checking}
-            >
-              {loading ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    aria-hidden="true"
-                  />
-                  กำลังเข้าสู่ระบบ...
-                </>
-              ) : (
-                "Login"
-              )}
-            </button>
-            <button type="button" className="btn btn-outline-primary w-100 mt-3"
-              disabled={loading || checking}
-              onClick={() => { setMode("signup"); setError(""); setNotice(""); setPassword(""); setSignupConfirmation(""); }}>
-              สมัครสมาชิก
-            </button>
-            <button type="button" className="btn btn-link w-100 mt-2"
-              disabled={loading || checking}
-              onClick={() => { setMode("forgot"); setError(""); setNotice(""); setPassword(""); }}>
-              ลืมรหัสผ่าน / ตั้งรหัสผ่านใหม่
-            </button>
-          </form>
+                <input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  className="form-control"
+                  autoComplete="current-password"
+                  placeholder="กรอกรหัสผ่าน"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary w-100 py-2"
+                disabled={loading || checking}
+              >
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      aria-hidden="true"
+                    />
+                    กำลังเข้าสู่ระบบ...
+                  </>
+                ) : (
+                  "Login"
+                )}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-primary w-100 mt-3"
+                disabled={loading || checking}
+                onClick={() => {
+                  setMode("signup");
+                  setError("");
+                  setNotice("");
+                  setPassword("");
+                  setSignupConfirmation("");
+                }}
+              >
+                สมัครสมาชิก
+              </button>
+              <button
+                type="button"
+                className="btn btn-link w-100 mt-2"
+                disabled={loading || checking}
+                onClick={() => {
+                  setMode("forgot");
+                  setError("");
+                  setNotice("");
+                  setPassword("");
+                }}
+              >
+                ลืมรหัสผ่าน / ตั้งรหัสผ่านใหม่
+              </button>
+            </form>
           )}
         </div>
       </div>
