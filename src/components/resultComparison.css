@@ -39,7 +39,7 @@
 }
 .tera-compare__hero {
   display: grid;
-  grid-template-rows: auto minmax(90px, auto) 300px auto;
+  grid-template-rows: auto minmax(90px, auto) auto 300px auto;
   justify-items: center;
   text-align: center;
   min-width: 0;
@@ -191,7 +191,7 @@
     column-gap: 24px;
   }
   .tera-compare__hero {
-    grid-template-rows: auto minmax(90px, auto) 220px auto;
+    grid-template-rows: auto minmax(90px, auto) auto 220px auto;
     padding-bottom: 32px;
   }
   .tera-compare__image {
@@ -282,7 +282,7 @@
     column-gap: 12px;
   }
   .tera-compare__hero {
-    grid-template-rows: auto minmax(52px, auto) 130px auto;
+    grid-template-rows: auto minmax(52px, auto) auto 130px auto;
     padding: 6px 0 18px;
   }
   .tera-compare__eyebrow {
@@ -406,4 +406,16 @@
   .te-result-back {
     transition: none;
   }
+}
+
+/* Battery information has its own content-sized row before the image. */
+.tera-compare__battery-info {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+.tera-compare__battery-info p {
+  margin: 0;
+}
+.tera-compare__battery-total {
+  display: block;
 }

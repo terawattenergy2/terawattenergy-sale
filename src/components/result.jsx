@@ -385,12 +385,23 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                         ตัวเลือก {index + 1}
                       </p>
                       <h3>{item.ans_product}</h3>
-                      {fromSolar && item.solarRecommendation && <p>
-                        {item.selectedBatteryKWh > 0
-                          ? `แบต ${item.solarRecommendation.bat || ""} · ${item.batteryCount} ก้อน · รวม ${Number((item.batteryCount * Number(item.solarRecommendation.bat_caculated)).toFixed(2))} kWh`
-                          : "ไม่ติดแบต"}
-                      </p>}
-                      {item.missingCatalogDetails && <p role="status">ยังไม่มีรูปและข้อมูลเปรียบเทียบของชื่อนี้ในตารางเดิม</p>}
+                      <div className="tera-compare__battery-info">
+                        {fromSolar && item.solarRecommendation && (
+                          <p>
+                            {item.selectedBatteryKWh > 0 ? (
+                              <>
+                                แบต {item.solarRecommendation.bat || ""} · {item.batteryCount} ก้อน
+                                <span className="tera-compare__battery-total">
+                                  รวม {Number((item.batteryCount * Number(item.solarRecommendation.bat_caculated)).toFixed(2))} kWh
+                                </span>
+                              </>
+                            ) : "ไม่ติดแบต"}
+                          </p>
+                        )}
+                        {item.missingCatalogDetails && (
+                          <p role="status">ยังไม่มีรูปและข้อมูลเปรียบเทียบของชื่อนี้ในตารางเดิม</p>
+                        )}
+                      </div>
                       <div className="tera-compare__image">
                         {item.img_product ? (
                           <img
