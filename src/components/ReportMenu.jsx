@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import useReportAccess from "./useReportAccess";
 import "./report.css";
-import { Button } from "react-bootstrap";
 
 export default function ReportMenu() {
   const access = useReportAccess();
