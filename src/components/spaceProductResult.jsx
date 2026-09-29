@@ -76,6 +76,33 @@ const normalizeProduct = (value) =>
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+// Meter รุ่น SP ใช้กับ 1 Phase; TP และ TPX ใช้กับ 3 Phase
+function matchesSensorPhase(option, selectedPhase) {
+  const phase = String(selectedPhase ?? "").match(/\b([13])\s*phase\b/i)?.[1];
+  const model = String(option ?? "").match(/\b(SP|TPX|TP)(?=[\s_-]|$)/i)?.[1]?.toUpperCase();
+  return phase === "1"
+    ? model === "SP"
+    : phase === "3" && (model === "TP" || model === "TPX");
+}
+
+// ใช้ type เฉพาะ Installation Kits เพื่อคงเงื่อนไข Battery และคำถามอื่นเดิม
+function isInstallationKitVisible(item, data) {
+  if (!/installation\s+kits?\b/i.test(String(item?.title ?? ""))) {
+    return true;
+  }
+  const productId = String(data?.id ?? "");
+  const productType = normalizeProduct(data?.short);
+  const isNeo = productId === "2" || productType === "neo";
+  const isMicro = productId === "3" || productType === "micro";
+  const kitType = normalizeProduct(item?.type);
+
+  if (isMicro) return false;
+  if (kitType === "neo") return isNeo;
+  if (kitType === "all") return !isNeo;
+  if (kitType === "stor") return productId === "1" || productType === "stor";
+  return false;
+}
+
 function buildPriceSummary(items, priceList) {
   const prices = Array.isArray(priceList) ? priceList : [];
 
@@ -435,6 +462,7 @@ function SpaceProductResult({
     isSigenStor && (noBattery || (batteryCount !== "" && batteryCount !== "6"));
   const activeSpace = (space || []).filter(
     (item) =>
+      isInstallationKitVisible(item, data) &&
       !skippedIds.includes(String(item.id)) &&
       (String(item.id) !== "5" || canSelectEv),
   );
@@ -739,7 +767,14 @@ function SpaceProductResult({
       });
     }
 
-    // ตัวเลือกอื่น ๆ ใช้ข้อมูลเดิมจาก Google Sheet
+    // Meter Sigen Power Sensor: กรองรุ่นให้ตรงกับ Phase
+    if (itemId === "6" || /sigen\s+power\s+sensor/i.test(String(item?.title ?? ""))) {
+      return getOptions(item).filter((option) =>
+        matchesSensorPhase(option, selectedOptions["0"]),
+      );
+    }
+
+    // ตัวเลือกอื่น ๆ ใช้ข้อมูลเดิม
     return getOptions(item);
   };
 

@@ -117,17 +117,14 @@ function PrivateApp() {
   }
   return (
     <div className={`main-page ${theme === "dark" ? "dark" : ""}`}>
-      <Header mode={mode} setMode={setMode} theme={theme} setTheme={setTheme} />
-      <div className="text-end px-3">
-        <button
-          type="button"
-          className="btn btn-outline-secondary"
-          disabled={signingOut}
-          onClick={logout}
-        >
-          {signingOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}
-        </button>
-      </div>
+      <Header
+        mode={mode}
+        setMode={setMode}
+        theme={theme}
+        setTheme={setTheme}
+        onSignOut={logout}
+        signingOut={signingOut}
+      />
       {logoutError && (
         <p className="text-danger px-3" role="alert">
           {logoutError}

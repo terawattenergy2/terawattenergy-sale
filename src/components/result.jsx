@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import "./resultComparison.css";
+// import "./ResultRestart.css";
 import SpaceProductResult from "./spaceProductResult";
 import LoadingResult from "./LoadingResult";
 import {
@@ -139,9 +140,24 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
   const [spaceSug, setSpaceSug] = useState();
   const [spaceSugOpen, setSpaceSugOpen] = useState(false);
   const navigate = useNavigate();
+  const [restartError, setRestartError] = useState("");
 
   const handleRestart = () => {
-    navigate("/");
+    setRestartError("");
+    try {
+      // Only the calculation key observed in this page. Keep Supabase auth intact.
+      localStorage.removeItem("wizard_answers");
+    } catch {
+      setRestartError("ล้างคำตอบไม่สำเร็จ กรุณาอนุญาตการใช้งานพื้นที่จัดเก็บของเบราว์เซอร์แล้วลองใหม่");
+      return;
+    }
+    setMatchedProducts([]);
+    setSelectedInverter(null);
+    setIsCustom(false);
+    setSpaceSug(undefined);
+    setSpaceSugOpen(false);
+    navigate("/mainpage", { replace: true, state: null });
+    window.scrollTo({ top: 0, behavior: "auto" });
   };
   const scrollToSection = (selector) => {
     let attempt = 0;
@@ -311,6 +327,16 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
   return (
     <Row>
       <Col xs={12}>
+        <div className="te-result-back-row">
+          <button type="button" className="te-result-back" onClick={handleRestart}
+            aria-label="กลับหน้าหลักและล้างคำตอบเพื่อคำนวณใหม่"
+            title="กลับหน้าหลักและคำนวณใหม่">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5m6-6-6 6 6 6" />
+            </svg>
+          </button>
+        </div>
+        {restartError && <p role="alert" className="te-restart-error">{restartError}</p>}
         <div id="product-comparison" className="advanced-card mt-4 card-text">
           <h2>อินเวอร์เตอร์ที่แนะนำ: {inverterSug}</h2>
 

@@ -4,6 +4,18 @@ import { useNavigate } from "react-router-dom";
 import PersonalPage from "./personalPage";
 import { IoHome, IoWarningOutline } from "react-icons/io5";
 import CheckPhase from "../components/assets/images/checkPhae.png";
+const getOptionValue = (option) => option.value ?? option.title ?? option.ans;
+
+const hasValidAnswer = (question, answers) => {
+  const value = answers[question?.id]?.value;
+  return (
+    value !== undefined &&
+    value !== null &&
+    String(value).trim() !== "" &&
+    (question?.options ?? []).some((option) => getOptionValue(option) === value)
+  );
+};
+
 function WizardPage({ question = [] }) {
   useEffect(() => {
     localStorage.removeItem("personal_data");
@@ -18,18 +30,20 @@ function WizardPage({ question = [] }) {
   const [answers, setAnswers] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("wizard_answers") || "{}");
-      return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+      return saved && typeof saved === "object" && !Array.isArray(saved)
+        ? saved
+        : {};
     } catch {
       return {};
     }
   });
-  const [select, setSelect] = useState();
   // 2. บันทึกลง localStorage อัตโนมัติทุกครั้งที่ answers เปลี่ยนแปลง
   useEffect(() => {
     localStorage.setItem("wizard_answers", JSON.stringify(answers));
   }, [answers]);
 
   const currentQuestion = question[step];
+  const canProceed = hasValidAnswer(currentQuestion, answers);
   const handlePersonalComplete = (personalData) => {
     localStorage.setItem("wizard_answers", JSON.stringify(answers));
 
@@ -41,20 +55,19 @@ function WizardPage({ question = [] }) {
     });
   };
 
-  // 3. ปรับฟังก์ชันเลือก ให้เก็บทั้ง optionId, title (หรือ value) เข้าไปใน Object เดียวกัน
-  const handleSelect = (questionId, optionId, optionValue, optionTitle) => {
-    setSelect(optionId);
+  // ใช้ answers เป็นแหล่งข้อมูลเดียวสำหรับคำตอบและสถานะการ์ดที่เลือก
+  const handleSelect = (questionId, option) => {
     setAnswers((prev) => ({
       ...prev,
-      [questionId]: {
-        value: optionValue || optionTitle, // เก็บค่า value (ถ้าไม่มีจะเก็บ title แทน)
-      },
+      [questionId]: { value: getOptionValue(option) },
     }));
   };
 
   if (!question || question.length === 0) {
     return (
-      <div className="p-5 text-center" role="status">ไม่พบข้อมูลคำถาม</div>
+      <div className="p-5 text-center" role="status">
+        ไม่พบข้อมูลคำถาม
+      </div>
     );
   }
 
@@ -92,82 +105,32 @@ function WizardPage({ question = [] }) {
         </p>
 
         <Row className="g-3">
-          {answers[0]?.value === "large" && step === 1 ? (
+          {currentQuestion?.options?.map((option) => (
             <Col
-              key={currentQuestion?.options?.[1]?.id}
+              key={option.id}
               xs={12}
-              sm={12}
-              lg={12}
+              sm={6}
+              lg={12 / currentQuestion.options.length}
             >
-              <>
-                {" "}
-                <div
-                  className={`option-card h-100 ${
-                    select === currentQuestion?.options?.[1]?.id ? "active" : ""
-                  }`}
-                  onClick={() =>
-                    handleSelect(
-                      currentQuestion?.id,
-                      currentQuestion?.options?.[1]?.id,
-                      currentQuestion?.options?.[1]?.value,
-                      currentQuestion?.options?.[1]?.title ||
-                        currentQuestion?.options?.[1]?.ans,
-                    )
-                  }
-                >
-                  <div className="option-icon">
-                    <IoHome />
-                  </div>
-
-                  <h4>
-                    {currentQuestion?.options?.[1]?.title ||
-                      currentQuestion?.options?.[1]?.ans}
-                  </h4>
-                  <p>
-                    {currentQuestion?.options?.[1]?.subTitle ||
-                      currentQuestion?.options?.[1]?.sub_ans}
-                  </p>
+              <div
+                className={`option-card h-100 ${
+                  canProceed &&
+                  answers[currentQuestion.id]?.value === getOptionValue(option)
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() => handleSelect(currentQuestion.id, option)}
+              >
+                <div className="option-icon">
+                  <IoHome />
                 </div>
-              </>
+                <h4>{option.title || option.ans}</h4>
+                <p>{option.subTitle || option.sub_ans}</p>
+              </div>
             </Col>
-          ) : (
-            <>
-              {currentQuestion?.options?.map((option) => (
-                <Col
-                  key={option.id}
-                  xs={12}
-                  sm={6}
-                  lg={12 / currentQuestion?.options?.length}
-                >
-                  <>
-                    {" "}
-                    <div
-                      className={`option-card h-100 ${
-                        select === option.id ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        handleSelect(
-                          currentQuestion?.id,
-                          option.id,
-                          option.value,
-                          option.title || option.ans,
-                        )
-                      }
-                    >
-                      <div className="option-icon">
-                        <IoHome />
-                      </div>
-
-                      <h4>{option.title || option.ans}</h4>
-                      <p>{option.subTitle || option.sub_ans}</p>
-                    </div>
-                  </>
-                </Col>
-              ))}
-            </>
-          )}
+          ))}
         </Row>
-        
+
         {String(currentQuestion?.id) === "1" && (
           <aside
             className="alert alert-primary border-0 mt-4 mb-0 d-flex gap-3 align-items-start"
@@ -182,10 +145,8 @@ function WizardPage({ question = [] }) {
               <h3 id="phase-help-title" className="h6 fw-bold mb-2">
                 ไม่แน่ใจว่าบ้านใช้ไฟกี่เฟส?
               </h3>
-              <p className="mb-2">
-                
-              </p>
-             
+              <p className="mb-2"></p>
+
               <details className="my-3">
                 <summary
                   className="fw-semibold"
@@ -218,27 +179,31 @@ function WizardPage({ question = [] }) {
                 </figure>
               </details>
               <p className="small mb-0">
-              หากไม่สามารถสังเกตได้ แนะนำให้สอบถามช่างไฟฟ้า หรือการไฟฟ้าในเขตพื้นที่ของท่าน ไม่ควรเปิดตู้หรือสัมผัสสายไฟโดยตรง
+                หากไม่สามารถสังเกตได้ แนะนำให้สอบถามช่างไฟฟ้า
+                หรือการไฟฟ้าในเขตพื้นที่ของท่าน
+                ไม่ควรเปิดตู้หรือสัมผัสสายไฟโดยตรง
               </p>
             </div>
           </aside>
         )}
 
         <div className="d-flex justify-content-between mt-5">
-          <Button
-            variant="light"
-            disabled={step === 0}
-            onClick={() => setStep((prev) => prev - 1)}
-          >
-            ย้อนกลับ
-          </Button>
+          {step > 0 && (
+            <Button
+              variant="light"
+              onClick={() => setStep((prev) => Math.max(0, prev - 1))}
+            >
+              ย้อนกลับ
+            </Button>
+          )}
 
           <Button
-            disabled={answers[currentQuestion?.id] === undefined}
+            className="ms-auto"
+            disabled={!canProceed}
             onClick={() => {
+              if (!canProceed) return;
               if (step < question.length - 1) {
                 setStep((previous) => previous + 1);
-                setSelect(undefined);
               } else {
                 // บันทึกคำตอบก่อน
                 localStorage.setItem("wizard_answers", JSON.stringify(answers));
