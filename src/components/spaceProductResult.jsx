@@ -78,8 +78,16 @@ const normalizeProduct = (value) =>
     .toLowerCase();
 // Meter รุ่น SP ใช้กับ 1 Phase; TP และ TPX ใช้กับ 3 Phase
 function matchesSensorPhase(option, selectedPhase) {
+  const text = String(option ?? "").trim();
+
+  if (text.replace(/\s+/g, "") === "ไม่รับมิเตอร์") {
+    return true;
+  }
+
   const phase = String(selectedPhase ?? "").match(/\b([13])\s*phase\b/i)?.[1];
-  const model = String(option ?? "").match(/\b(SP|TPX|TP)(?=[\s_-]|$)/i)?.[1]?.toUpperCase();
+
+  const model = text.match(/\b(SP|TPX|TP)(?=[\s_-]|$)/i)?.[1]?.toUpperCase();
+
   return phase === "1"
     ? model === "SP"
     : phase === "3" && (model === "TP" || model === "TPX");
@@ -101,6 +109,24 @@ function isInstallationKitVisible(item, data) {
   if (kitType === "all") return !isNeo;
   if (kitType === "stor") return productId === "1" || productType === "stor";
   return false;
+}
+
+// Include only accessories currently visible and selected in the configurator.
+function buildAccessoryPriceItems(activeSpace, selectedOptions) {
+  const declinedOptions = new Set([
+    "ไม่รับมิเตอร์", "ไม่ติดตั้ง", "ไม่เพิ่มเติม", "ไม่รับชุดติดตั้ง",
+  ]);
+  return activeSpace.flatMap((item) => {
+    const id = String(item.id);
+    const title = String(item.title ?? "");
+    const isSensor = id === "6" || /sigen\s+power\s+sensor/i.test(title);
+    const isKit = id === "7" || id === "8" || /installation\s+kits?\b/i.test(title);
+    if (!isSensor && !isKit) return [];
+
+    const product = String(selectedOptions[item.id] ?? "").trim();
+    if (!product || declinedOptions.has(product.replace(/\s+/g, ""))) return [];
+    return [{ title: product, product, quantity: 1 }];
+  });
 }
 
 function buildPriceSummary(items, priceList) {
@@ -434,7 +460,6 @@ function SpaceProductResult({
         item?.option_9,
         item?.option_10,
       ].filter(Boolean);
-
     },
     [data?.id],
   );
@@ -768,10 +793,18 @@ function SpaceProductResult({
     }
 
     // Meter Sigen Power Sensor: กรองรุ่นให้ตรงกับ Phase
-    if (itemId === "6" || /sigen\s+power\s+sensor/i.test(String(item?.title ?? ""))) {
-      return getOptions(item).filter((option) =>
+    if (
+      itemId === "6" ||
+      /sigen\s+power\s+sensor/i.test(String(item?.title ?? ""))
+    ) {
+      const sensorOptions = getOptions(item).filter((option) =>
         matchesSensorPhase(option, selectedOptions["0"]),
       );
+      // Always offer opting out, even when the meter row has no such option.
+      const hasNoMeter = sensorOptions.some(
+        (option) => String(option ?? "").replace(/\s+/g, "") === "ไม่รับมิเตอร์",
+      );
+      return hasNoMeter ? sensorOptions : [...sensorOptions, "ไม่รับมิเตอร์"];
     }
 
     // ตัวเลือกอื่น ๆ ใช้ข้อมูลเดิม
@@ -866,6 +899,7 @@ function SpaceProductResult({
         quantity: 1,
       });
     }
+    selectedPriceItems.push(...buildAccessoryPriceItems(activeSpace, selectedOptions));
   }
 
   const priceSummary = buildPriceSummary(selectedPriceItems, priceList);
