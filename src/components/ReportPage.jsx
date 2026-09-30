@@ -297,7 +297,7 @@ export default function ReportPage() {
           <p>ติดตามลูกค้า ผู้ดูแล และระบบที่สนใจ จากรายการที่กด Export</p>
         </div>
         <div className="tr-header-actions">
-          <Link to="/mainpage">กลับหน้าหลัก</Link>
+          <Link to="/solar">กลับหน้าหลัก</Link>
           <button
             type="button"
             disabled={loading || Boolean(exporting)}
