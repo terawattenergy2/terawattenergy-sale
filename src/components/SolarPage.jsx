@@ -8,13 +8,16 @@ import PersonalPage from "./personalPage";
 
 // Use the exact selected capacity, not the rounded search bucket.
 // With no battery selected, preserve the existing inverter recommendations.
-function filterNeoBatteryOptions(matches, selectedBatteryKWh) {
+function filterBatteryOptionsByType(matches, selectedBatteryKWh) {
   if (selectedBatteryKWh <= 0) return matches;
 
   const neoBatteryCapacity = selectedBatteryKWh > 15 ? 7.53 : 6.02;
   return matches.filter((item) => {
     const type = String(item.type ?? "").trim().toLowerCase();
-    return type !== "neo" || Number(item.bat_caculated) === neoBatteryCapacity;
+    const capacity = Number(item.bat_caculated);
+    if (type === "neo") return capacity === neoBatteryCapacity;
+    if (type === "stor" || type === "hybrid") return capacity === 9.04;
+    return true;
   });
 }
 
@@ -137,7 +140,7 @@ export default function SolarPage({ resultPath = "/result" }) {
     try {
       const matches = await findInverters(result, { signal: request.signal });
       if (searchRequest.current !== request || request.signal.aborted) return;
-      const batteryMatches = filterNeoBatteryOptions(matches, selectedBatteryKWh);
+      const batteryMatches = filterBatteryOptionsByType(matches, selectedBatteryKWh);
       const recommendations = batteryMatches.map((item) => ({
         ...item,
         selectedBatteryKWh,
