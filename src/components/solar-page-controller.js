@@ -1,6 +1,20 @@
 import * as SolarEngine from "./solar-engine";
 import { renderFormulas } from "./solar-formulas";
 
+const MAX_BATTERY_KWH = 54.24;
+
+function batteryOptionsFromLimit(capacityLimit) {
+  const limit = Math.max(0, Math.min(MAX_BATTERY_KWH, capacityLimit));
+  const options = [0];
+  const maxTenths = Math.floor((limit + 1e-9) * 10);
+  for (let tenths = 60; tenths <= maxTenths; tenths++) {
+    options.push(tenths / 10);
+  }
+  // Keep 0.1 kWh increments and allow the exact hardware maximum as a final stop.
+  if (limit >= MAX_BATTERY_KWH) options.push(MAX_BATTERY_KWH);
+  return options;
+}
+
 export function mountSolarPage(
   root,
   { onBatteryAvailability = () => {}, onCalculation = () => {} } = {},
@@ -71,6 +85,10 @@ export function mountSolarPage(
   for (const [id, value] of Object.entries(initialAssumptions)) {
     root.querySelector("#" + id).value = value;
   }
+
+  // This field stores a computed selection; allow the exact 54.24 endpoint.
+  root.querySelector("#batteryKWh").max = String(MAX_BATTERY_KWH);
+  root.querySelector("#batteryKWh").step = "any";
 
   const tooltip = document.createElement("div");
   tooltip.className = "solar-chart-tooltip";
@@ -168,11 +186,8 @@ export function mountSolarPage(
         sizing.usableFraction > 0
           ? (sizing.surplusKWh * c.chargeEfficiency) / sizing.usableFraction
           : 0;
-      const maxTenths = Math.min(304, Math.floor((capacityLimit + 1e-9) * 10));
-      const batteryOptions = [0];
-      for (let tenths = 60; tenths <= maxTenths; tenths++)
-        batteryOptions.push(tenths / 10);
-      // Slider positions map to 0, 6.0, 6.1, ...; forbidden sizes have no position.
+      const batteryOptions = batteryOptionsFromLimit(capacityLimit);
+      // Slider positions map to 0, 6.0, 6.1, ..., 54.2, 54.24 when surplus permits.
       const slider = $("batteryChoice");
       const index = Math.max(
         0,
@@ -187,22 +202,24 @@ export function mountSolarPage(
       slider.disabled = batteryOptions.length === 1;
       slider.setAttribute(
         "aria-valuetext",
-        c.batteryKWh === 0 ? "ไม่ติดแบต" : fmt(c.batteryKWh, 1) + " kWh",
+        c.batteryKWh === 0 ? "ไม่ติดแบต" : fmt(c.batteryKWh, 2) + " kWh",
       );
       const maxBattery = batteryOptions[batteryOptions.length - 1];
       onBatteryAvailability(maxBattery >= 6);
       setText(
         "batteryOptions",
         maxBattery >= 6
-          ? "0 (ไม่ติดแบต) → 6.0 → 6.1 → … → " + fmt(maxBattery, 1) + " kWh"
+          ? "0 (ไม่ติดแบต) → 6.0 → 6.1 → … → " + fmt(maxBattery, 2) + " kWh"
           : "0 (ไม่ติดแบต)",
       );
       setText(
         "batterySizing",
         maxBattery >= 6
           ? "เลือกได้ 0 หรือ 6.0–" +
-              fmt(maxBattery, 1) +
-              " kWh ทีละ 0.1 • ส่วนเกิน " +
+              fmt(maxBattery, 2) +
+              " kWh ทีละ 0.1" +
+              (maxBattery === MAX_BATTERY_KWH ? " (ขั้นสุดท้าย 54.24)" : "") +
+              " • ส่วนเกิน " +
               fmt(sizing.surplusKWh, 2) +
               " kWh/วัน"
           : "Solar ส่วนเกินยังไม่พอสำหรับแบต 6 kWh • เลือกได้เฉพาะ 0 (ไม่ติดแบต) • ส่วนเกิน " +
@@ -213,7 +230,7 @@ export function mountSolarPage(
         "batteryOut",
         c.batteryKWh === 0
           ? "0 kWh · ไม่ติดแบต"
-          : fmt(c.batteryKWh, 1) + " kWh",
+          : fmt(c.batteryKWh, 2) + " kWh",
       );
       result = SolarEngine.simulate(c);
       withoutBattery = SolarEngine.simulate({ ...c, batteryKWh: 0 });
@@ -227,6 +244,7 @@ export function mountSolarPage(
           " ชั่วโมง",
       );
       setText("error", "");
+
       if ($("download")) $("download").disabled = false;
       const old = +$("viewDay").value || 1;
       $("viewDay").replaceChildren(
@@ -269,7 +287,7 @@ export function mountSolarPage(
       setText(
         "batteryDelta",
         "แบตที่เลือก " +
-          fmt(c.batteryKWh, 1) +
+          fmt(c.batteryKWh, 2) +
           " kWh • ซื้อไฟลดเพิ่ม " +
           fmt(bt.grid - t.grid, 1) +
           " kWh • ลดบิลเพิ่ม " +
@@ -531,7 +549,6 @@ export function mountSolarPage(
           Math.min(95, Math.floor(((e.clientX - bounds.left - l) / pw) * 96)),
         ),
         v = rows[i];
-      console.log("v", v);
 
       if (!v) return;
       tooltip.textContent = [
