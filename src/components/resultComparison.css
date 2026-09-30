@@ -7,7 +7,7 @@
   background: #fff;
   border-radius: 24px;
   padding: clamp(20px, 4vw, 64px) 0 24px;
-  margin-top: 24px;
+  /* margin-top: 4px; */
   width: 100%;
   min-width: 0;
 }

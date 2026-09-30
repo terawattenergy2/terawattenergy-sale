@@ -6,6 +6,18 @@ import { findInverters, calculateBatteryCount } from "./find-inverters";
 import { Button } from "react-bootstrap";
 import PersonalPage from "./personalPage";
 
+// Use the exact selected capacity, not the rounded search bucket.
+// With no battery selected, preserve the existing inverter recommendations.
+function filterNeoBatteryOptions(matches, selectedBatteryKWh) {
+  if (selectedBatteryKWh <= 0) return matches;
+
+  const neoBatteryCapacity = selectedBatteryKWh > 15 ? 7.53 : 6.02;
+  return matches.filter((item) => {
+    const type = String(item.type ?? "").trim().toLowerCase();
+    return type !== "neo" || Number(item.bat_caculated) === neoBatteryCapacity;
+  });
+}
+
 // The controller owns the form inputs and calculated outputs.
 // Its effect is scoped to this page and cleans up on route changes/StrictMode.
 function ChartLegend({ battery = false }) {
@@ -125,7 +137,8 @@ export default function SolarPage({ resultPath = "/result" }) {
     try {
       const matches = await findInverters(result, { signal: request.signal });
       if (searchRequest.current !== request || request.signal.aborted) return;
-      const recommendations = matches.map((item) => ({
+      const batteryMatches = filterNeoBatteryOptions(matches, selectedBatteryKWh);
+      const recommendations = batteryMatches.map((item) => ({
         ...item,
         selectedBatteryKWh,
         batteryCount: calculateBatteryCount(

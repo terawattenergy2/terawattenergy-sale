@@ -531,12 +531,16 @@ export function mountSolarPage(
           Math.min(95, Math.floor(((e.clientX - bounds.left - l) / pw) * 96)),
         ),
         v = rows[i];
+        console.log('v', v);
+        
       if (!v) return;
       tooltip.textContent = [
         "วันที่ " + v.day + " · " + timeLabel(v.hour),
         "โหลดรวม: " + fmt(v.load, 2) + " kW",
         "☀ Solar ผลิต: " + fmt(v.pv, 2) + " kW",
         "☀ Solar ใช้ตรง: " + fmt(v.direct, 2) + " kW",
+        
+        
         ...(id === "baseChart"
           ? []
           : [
