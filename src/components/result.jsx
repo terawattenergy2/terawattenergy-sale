@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import "./resultComparison.css";
+import "./resultTypeBar.css";
 // import "./ResultRestart.css";
 import SpaceProductResult from "./spaceProductResult";
 import LoadingResult from "./LoadingResult";
@@ -433,24 +434,32 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
           )}
 
           {fromSolar && (
-            <div className="d-flex justify-content-center flex-wrap gap-2">
-              {[
-                { value: "", label: "ทั้งหมด" },
-                { value: "stor", label: "SigenStor" },
-                { value: "neo", label: "SigenStor NEO" },
-                { value: "hybrid", label: "Sigen Hybrid" },
-              ].map(({ value, label }) => (
-                <Button
-                  key={value}
-                  onClick={() => filterType(value)}
-                  variant={
-                    istype === value ? "primary" : "outline-primary"
-                  }
-                  aria-pressed={istype === value}
-                >
-                  {label}
-                </Button>
-              ))}
+            <div className="tera-type-bar" role="group" aria-label="กรองประเภทอินเวอร์เตอร์">
+              <div className="tera-type-bar__track">
+                {[
+                  { value: "", label: "ทั้งหมด" },
+                  { value: "stor", label: "SigenStor" },
+                  { value: "neo", label: "SigenStor NEO" },
+                  { value: "hybrid", label: "Sigen Hybrid" },
+                ].map(({ value, label }) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className="tera-type-bar__item"
+                    aria-pressed={istype === value}
+                    onClick={(event) => {
+                      filterType(value);
+                      event.currentTarget.scrollIntoView({
+                        behavior: "auto",
+                        block: "nearest",
+                        inline: "nearest",
+                      });
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

@@ -1,0 +1,111 @@
+/* Underlined filter bar. Scoped to avoid changing other buttons. */
+#product-comparison .tera-type-bar {
+  --type-accent: #1768d1;
+  --type-muted: #657080;
+  --type-line: #dce4ee;
+  width: 100%;
+  min-width: 0;
+  margin: 28px 0 24px;
+  border-bottom: 1px solid var(--type-line);
+}
+
+#product-comparison .tera-type-bar__track {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: flex-start;
+  gap: 24px;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--type-line) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+#product-comparison button.tera-type-bar__item {
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 4px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--type-muted);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: normal;
+  white-space: nowrap;
+  cursor: pointer;
+  transform: none;
+  transition: color 160ms ease;
+}
+
+#product-comparison .tera-type-bar__item::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--type-accent);
+  transform: scaleX(0);
+  transition: transform 160ms ease;
+}
+
+#product-comparison .tera-type-bar__item:hover,
+#product-comparison .tera-type-bar__item[aria-pressed="true"] {
+  color: var(--type-accent);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+#product-comparison .tera-type-bar__item[aria-pressed="true"]::after {
+  transform: scaleX(1);
+}
+
+#product-comparison .tera-type-bar__item:focus-visible {
+  outline: 2px solid var(--type-accent);
+  outline-offset: -3px;
+  border-radius: 4px;
+}
+
+@media (max-width: 575px) {
+  #product-comparison .tera-type-bar {
+    margin: 20px 0;
+  }
+  #product-comparison .tera-type-bar__track {
+    gap: 20px;
+  }
+  #product-comparison button.tera-type-bar__item {
+    font-size: 14px;
+  }
+}
+
+:is(.dark, [data-theme="dark"], [data-bs-theme="dark"])
+  #product-comparison
+  .tera-type-bar,
+#product-comparison:is(.dark, [data-theme="dark"], [data-bs-theme="dark"])
+  .tera-type-bar {
+  --type-accent: #82b7ff;
+  --type-muted: #a9b6c7;
+  --type-line: #33445b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #product-comparison .tera-type-bar__item,
+  #product-comparison .tera-type-bar__item::after {
+    transition: none;
+  }
+}
