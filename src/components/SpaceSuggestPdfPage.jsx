@@ -85,7 +85,14 @@ export default function SpaceSuggestPdfPage({
       ? null
       : inverterPrice + (battery?.totalPrice || 0);
   const date = new Date().toLocaleDateString("th-TH");
+  // Opaque surfaces hide the watermark beneath images and information.
+  const foreground = {
+    position: "relative",
+    zIndex: 1,
+    background: "#fff",
+  };
   const panel = {
+    ...foreground,
     border: "1px solid #e0e8f2",
     borderRadius: 14,
     padding: 20,
@@ -107,6 +114,9 @@ export default function SpaceSuggestPdfPage({
         <div
           data-pdf-page
           style={{
+            position: "relative",
+            zIndex: 0,
+            overflow: "hidden",
             width: 794,
             minHeight: 1122,
             height: "auto",
@@ -121,8 +131,65 @@ export default function SpaceSuggestPdfPage({
             lineHeight: 1.6,
           }}
         >
+          {/* ลายน้ำอยู่ด้านหลัง และแสดงเฉพาะพื้นที่ว่างระหว่างข้อมูล */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            overflow: "hidden",
+            pointerEvents: "none",
+          }}
+        >
+          {Array.from({ length: 8 }, (_, row) =>
+            Array.from({ length: 3 }, (_, column) => (
+              <div
+                key={`watermark-${row}-${column}`}
+                style={{
+                  position: "absolute",
+                  top: `${6 + row * 12.5}%`,
+                  left: `${16 + column * 34}%`,
+                  width: "29%",
+                  transform: "translate(-50%, -50%) rotate(-25deg)",
+                  transformOrigin: "center",
+                  opacity: 0.055,
+                  textAlign: "center",
+                  color: "#163e2d",
+                  fontFamily: "inherit",
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                }}
+              >
+                <img
+                  src={imgLogo}
+                  alt=""
+                  style={{
+                    display: "block",
+                    width: "72%",
+                    height: "auto",
+                    maxHeight: "65px",
+                    objectFit: "contain",
+                    margin: "0 auto 5px",
+                  }}
+                />
+                {fullName && (
+                  <div style={{ fontSize: "17px", overflowWrap: "anywhere" }}>
+                    {fullName}
+                  </div>
+                )}
+                {personalData?.phone && (
+                  <div style={{ marginTop: "2px", fontSize: "15px" }}>
+                    {personalData.phone}
+                  </div>
+                )}
+              </div>
+            )),
+          )}
+        </div>
           <header
             style={{
+              ...foreground,
               display: "flex",
               gap: 22,
               alignItems: "center",
@@ -148,6 +215,8 @@ export default function SpaceSuggestPdfPage({
           </header>
           <main
             style={{
+              position: "relative",
+              zIndex: 1,
               display: "flex",
               flexDirection: "column",
               flex: "1 0 auto",
@@ -185,6 +254,7 @@ export default function SpaceSuggestPdfPage({
             </div>
             <div
               style={{
+                ...foreground,
                 display: "flex",
                 alignItems: "center",
                 gap: 24,
@@ -296,6 +366,7 @@ export default function SpaceSuggestPdfPage({
           </main>
           <p
             style={{
+              ...foreground,
               fontSize: 11,
               color: "#657080",
               margin: "0 0 14px",
@@ -307,6 +378,7 @@ export default function SpaceSuggestPdfPage({
           </p>
           <footer
             style={{
+              ...foreground,
               display: "flex",
               justifyContent: "space-between",
               borderTop: "1px solid #dce5ef",
