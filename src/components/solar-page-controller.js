@@ -257,9 +257,9 @@ export function mountSolarPage(
         "baseSummary",
         "ยังไม่ติดแบต • ใช้ไฟ " +
           fmt(b.monthlyKWh, 1) +
-          " kWh • Solar ใช้ตรง " +
+          " kWh • การใช้ไฟจากโซลาเซลล์โดยตรง " +
           fmt(bt.direct, 1) +
-          " kWh • ซื้อไฟ " +
+          " kWh • Grid มิเตอร์การไฟฟ้า " +
           fmt(bt.grid, 1) +
           " kWh • รายได้ขายไฟ " +
           money(b.exportRevenue) +
@@ -531,24 +531,23 @@ export function mountSolarPage(
           Math.min(95, Math.floor(((e.clientX - bounds.left - l) / pw) * 96)),
         ),
         v = rows[i];
-        console.log('v', v);
-        
+      console.log("v", v);
+
       if (!v) return;
       tooltip.textContent = [
         "วันที่ " + v.day + " · " + timeLabel(v.hour),
-        "โหลดรวม: " + fmt(v.load, 2) + " kW",
-        "☀ Solar ผลิต: " + fmt(v.pv, 2) + " kW",
-        "☀ Solar ใช้ตรง: " + fmt(v.direct, 2) + " kW",
-        
-        
+        "โหลดการใช้ไฟฟ้า: " + fmt(v.load, 2) + " kW",
+        "☀ กำลังการผลิตของโซลาเซลล์: " + fmt(v.pv, 2) + " kW",
+        "☀ การใช้ไฟจากโซลาเซลล์โดยตรง: " + fmt(v.direct, 2) + " kW",
+
         ...(id === "baseChart"
           ? []
           : [
               "ชาร์จแบต: " + fmt(v.charge, 2) + " kW",
-              "แบตจ่าย: " + fmt(v.discharge, 2) + " kW",
+              "พลังงานจากแบตเตอรี่: " + fmt(v.discharge, 2) + " kW",
               "ระดับแบต: " + fmt(v.soc, 1) + "%",
             ]),
-        "ซื้อไฟ: " + fmt(v.grid, 2) + " kW",
+        "Grid มิเตอร์การไฟฟ้า: " + fmt(v.grid, 2) + " kW",
         "ส่งออก: " + fmt(v.export, 2) + " kW",
         "จำกัดผลิต: " + fmt(v.curtailed, 2) + " kW",
       ].join("\n");
@@ -566,7 +565,8 @@ export function mountSolarPage(
       tooltip.style.top = Math.max(8, top) + "px";
       setText(
         id === "baseChart" ? "baseReadout" : "readout",
-        `${String(Math.floor(v.hour)).padStart(2, "0")}:${String(Math.round((v.hour % 1) * 60)).padStart(2, "0")} · โหลด ${fmt(v.load, 2)} / Solar ${fmt(v.pv, 2)} / ใช้ตรง ${fmt(v.direct, 2)} / ชาร์จ ${fmt(v.charge, 2)} / แบตจ่าย ${fmt(v.discharge, 2)} / ซื้อไฟ ${fmt(v.grid, 2)} / ส่งออก ${fmt(v.export, 2)} / จำกัดผลิต ${fmt(v.curtailed, 2)} kW · SOC ${fmt(v.soc, 1)}%`,
+        `${String(Math.floor(v.hour)).padStart(2, "0")}:${String(Math.round((v.hour % 1) * 60)).padStart(2, "0")} · โหลดการใช้ไฟฟ้า ${fmt(v.load, 2)} / กำลังการผลิตของโซลาเซลล์ ${fmt(v.pv, 2)} / การใช้ไฟจากโซลาเซลล์โดยตรง
+ ${fmt(v.direct, 2)} / ชาร์จ ${fmt(v.charge, 2)} / พลังงานจากแบตเตอรี่ ${fmt(v.discharge, 2)} / Grid มิเตอร์การไฟฟ้า ${fmt(v.grid, 2)} / ส่งออก ${fmt(v.export, 2)} / จำกัดผลิต ${fmt(v.curtailed, 2)} kW · SOC ${fmt(v.soc, 1)}%`,
       );
     };
   }
