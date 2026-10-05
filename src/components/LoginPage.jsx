@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
+import "./LoginPage.css";
+import imgLogo from "./assets/images/LOGO-TE.png";
 
 const BUSINESS_LIST = [
   { id: 0, title: "Terawatt Energy" },
@@ -34,6 +36,20 @@ function getLoginErrorMessage(error) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem("teramatch_login_theme") === "light" ? "light" : "dark";
+    } catch {
+      return "dark";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("teramatch_login_theme", theme);
+    } catch {
+      // The theme still works when browser storage is unavailable.
+    }
+  }, [theme]);
   const submittingRef = useRef(false);
 
   const [businessId, setBusinessId] = useState("");
@@ -443,15 +459,45 @@ export default function LoginPage() {
   };
 
   return (
-    <main
-      className="container d-flex align-items-center justify-content-center py-5"
-      style={{ minHeight: "75vh" }}
-    >
-      <div
-        className="card border-0 shadow-sm rounded-4 w-100"
-        style={{ maxWidth: 440 }}
-      >
-        <div className="card-body p-4 p-md-5">
+    <main className="tm-auth" data-theme={theme}>
+      <div className="tm-auth__shell">
+        <aside className="tm-auth__visual">
+          <div className="tm-auth__brand"><img className="tm-auth__logo" src={imgLogo} alt="Terawatt Energy" /><div>TeraMatch<small>BY TERAWATT ENERGY</small></div></div>
+          <div className="tm-auth__story">
+            <span className="tm-auth__eyebrow">INTELLIGENT ENERGY DESIGN</span>
+            <h2>พลังงานแห่งอนาคต<br /><span>เริ่มต้นที่คุณ</span></h2>
+            <p>ออกแบบระบบโซลาร์และแบตเตอรี่<br />ให้ทุกหน่วยพลังงานตอบโจทย์การใช้งาน</p>
+          </div>
+          <div className="tm-auth__diagram" aria-hidden="true">
+            <svg viewBox="0 0 480 280" fill="none">
+              <defs><linearGradient id="auth-energy" x1="70" y1="0" x2="410" y2="280" gradientUnits="userSpaceOnUse"><stop stopColor="#2584bf" /><stop offset="1" stopColor="#8dbbd5" /></linearGradient></defs>
+              <ellipse className="tm-auth__orbit" cx="240" cy="157" rx="208" ry="85" stroke="#aec9da" strokeDasharray="3 8" />
+              <ellipse cx="240" cy="157" rx="150" ry="56" stroke="#d4e4ef" />
+              <path className="tm-auth__flow" d="M80 150L240 85L400 150L240 222Z" stroke="url(#auth-energy)" strokeWidth="2" strokeDasharray="8 7" />
+              <path d="M180 141L240 108L300 141V203L240 237L180 203Z" fill="#eaf4fb" stroke="url(#auth-energy)" strokeWidth="2" />
+              <path d="M180 141L240 175L300 141M240 175V237" stroke="#8aabbf" />
+              <path className="tm-auth__pulse" d="M248 130L229 157H243L234 180L260 150H245Z" fill="#2584bf" />
+              <circle cx="80" cy="150" r="29" fill="#ffffff" stroke="#2584bf" />
+              <path d="M64 158L69 140H92L97 158ZM68 149H94M78 140L76 158M86 140L88 158" stroke="#2584bf" strokeWidth="1.5" />
+              <circle cx="400" cy="150" r="29" fill="#ffffff" stroke="#9ba7ae" />
+              <rect x="385" y="141" width="27" height="18" rx="3" stroke="#2584bf" strokeWidth="2" /><path d="M415 146V154M391 147V153M398 147V153M405 147V153" stroke="#2584bf" strokeWidth="2" />
+              <circle cx="240" cy="64" r="24" fill="#ffffff" stroke="#2584bf" />
+              <circle cx="240" cy="64" r="8" stroke="#2584bf" strokeWidth="2" /><path d="M240 49V53M240 75V79M225 64H229M251 64H255" stroke="#2584bf" strokeWidth="2" />
+            </svg>
+            <div className="tm-auth__diagram-labels"><span>SOLAR</span><span>ENERGY CONNECTED</span><span>STORAGE</span></div>
+          </div>
+          <div className="tm-auth__visual-footer"><span className="tm-auth__dot" /> SOLAR + STORAGE CONFIGURATOR <span>01 / ACCESS</span></div>
+        </aside>
+        <section className="tm-auth__form-panel">
+          <div className="tm-auth__form-top"><span>TERAMATCH PORTAL</span><div className="tm-auth__theme" role="group" aria-label="เลือกธีม">
+            <button type="button" aria-pressed={theme === "light"} onClick={() => setTheme("light")}>
+              <span aria-hidden="true">☀</span> สว่าง
+            </button>
+            <button type="button" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}>
+              <span aria-hidden="true">☾</span> มืด
+            </button>
+          </div></div>
+          <div className="tm-auth__form-body">
           <h1 className="h3 fw-bold mb-2">
             {mode === "signup"
               ? "สมัครสมาชิก"
@@ -461,12 +507,12 @@ export default function LoginPage() {
                   ? "ลืมรหัสผ่าน"
                   : mode === "done"
                     ? "เปลี่ยนรหัสผ่านสำเร็จ"
-                    : "Login"}
+                    : "ยินดีต้อนรับกลับ"}
           </h1>
 
           {mode === "login" && (
             <p className="text-secondary mb-4">
-              เข้าสู่ระบบ หรือกดสมัครสมาชิกเพื่อสร้างบัญชีใหม่
+              เข้าสู่ระบบเพื่อเริ่มออกแบบพลังงานที่เหมาะกับคุณ
             </p>
           )}
           {notice && (
@@ -810,7 +856,7 @@ export default function LoginPage() {
                     กำลังเข้าสู่ระบบ...
                   </>
                 ) : (
-                  "Login"
+                  "เข้าสู่ระบบ →"
                 )}
               </button>
               <button
@@ -842,7 +888,9 @@ export default function LoginPage() {
               </button>
             </form>
           )}
-        </div>
+          </div>
+          <div className="tm-auth__form-footer">TeraMatch <span>Solar &amp; Storage Configurator</span></div>
+        </section>
       </div>
     </main>
   );
