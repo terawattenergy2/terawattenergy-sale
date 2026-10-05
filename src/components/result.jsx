@@ -1,3 +1,4 @@
+import { optimizeNeoProducts } from "./neo-battery-options";
 import React, { useEffect, useRef, useState } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import "./resultComparison.css";
@@ -266,7 +267,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
         Array.isArray(priceList) ? priceList : [],
       );
       setMatchedProducts(
-        mergedProducts.map((product) => restoreCatalogDetails(product, answer)),
+        optimizeNeoProducts(mergedProducts.map((product) => restoreCatalogDetails(product, answer)), Array.isArray(priceList) ? priceList : []),
       );
       return;
     }
@@ -383,6 +384,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
   };
 
   const handleSelectSug = (item) => {
+    if (item.batterySelectionError || item.neoBatteryError || item.missingCatalogDetails) return;
     setSpaceSug(item);
     setSpaceSugOpen(true);
     setIsCustom(false);
@@ -414,6 +416,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
             >
               <path d="M19 12H5m6-6-6 6 6 6" />
             </svg>
+            <span>ย้อนกลับ</span>
           </button>
         </div>
         {restartError && (
@@ -493,7 +496,12 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                         <div className="tera-compare__battery-info">
                           {fromSolar && item.solarRecommendation && (
                             <p>
-                              {item.selectedBatteryKWh > 0 ? (
+                              {item.batterySelectionError ? item.batterySelectionError : item.neoBatteryError ? item.neoBatteryError : item.batteryPlan ? (
+                                <>
+                                  {item.batteryPlan.items.map(b => <span key={b.name} style={{display: "block"}}>{b.name} · {b.count} ก้อน</span>)}
+                                  <span className="tera-compare__battery-total">รวม {item.batteryPlan.totalCapacity.toFixed(2)} kWh</span>
+                                </>
+                              ) : item.selectedBatteryKWh > 0 ? (
                                 <>
                                   แบต {item.solarRecommendation.bat || ""} ·{" "}
                                   {item.batteryCount} ก้อน
@@ -536,7 +544,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                           type="button"
                           className="tera-compare__choose"
                           onClick={() => handleSelectSug(item)}
-                          disabled={item.missingCatalogDetails}
+                          disabled={Boolean(item.missingCatalogDetails || item.batterySelectionError || item.neoBatteryError)}
                         >
                           เลือกรุ่นนี้
                         </button>

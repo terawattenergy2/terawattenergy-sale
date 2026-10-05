@@ -122,6 +122,7 @@ export function mountSolarPage(
   let withoutBattery,
     result,
     rows = [],
+    cycleResult,
     sizing;
   const timeLabel = (h) =>
     String(Math.floor(h)).padStart(2, "0") +
@@ -233,6 +234,16 @@ export function mountSolarPage(
           : fmt(c.batteryKWh, 2) + " kWh",
       );
       result = SolarEngine.simulate(c);
+      // Chart-only two-day preview for a one-day bill, keeping daily demand identical.
+      // Bill totals continue to use result and the original billing period.
+      cycleResult =
+        c.days >= 2
+          ? result
+          : SolarEngine.simulate({
+              ...c,
+              days: 2,
+              monthlyKWh: (result.monthlyKWh * 2) / c.days,
+            });
       withoutBattery = SolarEngine.simulate({ ...c, batteryKWh: 0 });
       setText(
         "periodInfo",
@@ -246,7 +257,7 @@ export function mountSolarPage(
       setText("error", "");
 
       if ($("download")) $("download").disabled = false;
-      const old = +$("viewDay").value || 1;
+      const old = 2;
       $("viewDay").replaceChildren(
         ...Array.from(
           { length: c.days },
@@ -404,10 +415,10 @@ export function mountSolarPage(
       ctx.fillStyle = palette("--te-muted");
       ctx.fillText(fmt(v, soc ? 0 : 1), 3, y(v) + 4);
     }
-    for (let hour = 0; hour <= 24; hour += 3) {
+    for (let hour = 0; hour <= 24; hour += w < 480 ? 6 : 3) {
       ctx.fillStyle = palette("--te-muted");
       ctx.fillText(
-        String(hour).padStart(2, "0") + ":00",
+        hour === 24 ? "23.59" : String(hour).padStart(2, "0") + ".00",
         x(hour * 4) - 14,
         h - 8,
       );
@@ -552,7 +563,7 @@ export function mountSolarPage(
 
       if (!v) return;
       tooltip.textContent = [
-        "วันที่ " + v.day + " · " + timeLabel(v.hour),
+        timeLabel(v.hour).replace(":", "."),
         "โหลดการใช้ไฟฟ้า: " + fmt(v.load, 2) + " kW",
         "☀ กำลังการผลิตของโซลาเซลล์: " + fmt(v.pv, 2) + " kW",
         "☀ การใช้ไฟจากโซลาเซลล์โดยตรง: " + fmt(v.direct, 2) + " kW",
@@ -582,7 +593,7 @@ export function mountSolarPage(
       tooltip.style.top = Math.max(8, top) + "px";
       setText(
         id === "baseChart" ? "baseReadout" : "readout",
-        `${String(Math.floor(v.hour)).padStart(2, "0")}:${String(Math.round((v.hour % 1) * 60)).padStart(2, "0")} · โหลดการใช้ไฟฟ้า ${fmt(v.load, 2)} / กำลังการผลิตของโซลาเซลล์ ${fmt(v.pv, 2)} / การใช้ไฟจากโซลาเซลล์โดยตรง
+        `${String(Math.floor(v.hour)).padStart(2, "0")}.${String(Math.round((v.hour % 1) * 60)).padStart(2, "0")} · โหลดการใช้ไฟฟ้า ${fmt(v.load, 2)} / กำลังการผลิตของโซลาเซลล์ ${fmt(v.pv, 2)} / การใช้ไฟจากโซลาเซลล์โดยตรง
  ${fmt(v.direct, 2)} / ชาร์จ ${fmt(v.charge, 2)} / พลังงานจากแบตเตอรี่ ${fmt(v.discharge, 2)} / Grid มิเตอร์การไฟฟ้า ${fmt(v.grid, 2)} / ส่งออก ${fmt(v.export, 2)} / จำกัดผลิต ${fmt(v.curtailed, 2)} kW · SOC ${fmt(v.soc, 1)}%`,
       );
     };
@@ -602,7 +613,7 @@ export function mountSolarPage(
     hideTooltip();
     if (!result) return;
     showFormulas();
-    rows = result.series.filter((v) => v.day === +$("viewDay").value);
+    rows = cycleResult.series.filter((v) => v.day === 2);
     plot(
       "baseChart",
       false,
@@ -610,19 +621,20 @@ export function mountSolarPage(
     );
     setText(
       "baseReadout",
-      "Solar อย่างเดียว • วันที่ " +
-        $("viewDay").value +
-        " • เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่า",
+      "Solar อย่างเดียว • 00.00–23.59 • แตะกราฟเพื่อดูค่า",
     );
     plot("chart");
     plot("socChart", true);
-    setText("readout", "เลื่อนเมาส์หรือแตะกราฟเพื่อดูค่ารายช่วงเวลา");
+    setText(
+      "readout",
+      "รอบวัน 00.00–23.59 · สีเขียวหลังเที่ยงคืนคือพลังงานแบตคงเหลือจากรอบก่อน · แตะกราฟเพื่อดูค่า",
+    );
   }
   root
     .querySelectorAll("input, #exportAllowed, #dayStart, #dayEnd, #phases")
     .forEach((el) => listen(el, "input", update));
   listen($("solarKWp"), "change", update);
-  listen($("viewDay"), "change", draw);
+
   listen(window, "resize", draw);
   listen(root, "solar:battery-visible", draw);
   listen($("download"), "click", () => {

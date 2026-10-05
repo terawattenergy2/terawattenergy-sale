@@ -11,13 +11,12 @@ import PersonalPage from "./personalPage";
 function filterBatteryOptionsByType(matches, selectedBatteryKWh) {
   if (selectedBatteryKWh <= 0) return matches;
 
-  const neoBatteryCapacity = selectedBatteryKWh > 15 ? 7.53 : 6.02;
   return matches.filter((item) => {
     const type = String(item.type ?? "")
       .trim()
       .toLowerCase();
     const capacity = Number(item.bat_caculated);
-    if (type === "neo") return capacity === neoBatteryCapacity;
+    if (type === "neo") return capacity === 6.02 || capacity === 7.53;
     if (type === "stor" || type === "hybrid") return capacity === 9.04;
     return true;
   });
@@ -49,6 +48,7 @@ function ChartLegend({ battery = false }) {
   );
   return (
     <div
+      className="solar-chart-legend"
       aria-label="คำอธิบายกราฟ"
       style={{
         display: "flex",
@@ -79,6 +79,16 @@ function ChartLegend({ battery = false }) {
 export default function SolarPage({ resultPath = "/result" }) {
   const navigate = useNavigate();
   const root = useRef(null);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 600px)");
+    const sync = () => {
+      const details = root.current?.querySelector(".battery-mobile-help");
+      if (details) details.open = !media.matches;
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
   const [pendingSearch, setPendingSearch] = useState(null);
   const [latestCalculation, setLatestCalculation] = useState(null);
   const [result, setResult] = useState(null);
@@ -502,6 +512,8 @@ export default function SolarPage({ resultPath = "/result" }) {
                 />
                 <output id={"batteryOut"}></output>
               </label>
+              <details className="battery-mobile-help">
+                <summary>เงื่อนไขการเลือกแบต</summary>
               <div className={"note"}>
                 <b>{"เลือกแบตตามพลังงาน Solar ส่วนเกิน"}</b>
                 <div id={"batterySizing"} aria-live={"polite"}></div>
@@ -511,6 +523,7 @@ export default function SolarPage({ resultPath = "/result" }) {
                   "เลือก 0 (ไม่ติดแบต) หรือ 6.0–30.4 kWh ทีละ 0.1 โดยไม่เกิน Solar ส่วนเกิน หากไม่ถึง 6 จะเลือกได้เฉพาะ 0"
                 }
               </p>
+              </details>
             </section>
             <h2>{"3. Solar + แบตเตอรี่ที่เลือก"}</h2>
             <div className={"note"} id={"batteryDelta"}></div>
@@ -520,7 +533,7 @@ export default function SolarPage({ resultPath = "/result" }) {
                   {"กำลังไฟตลอดวัน "}
                   <span className={"hint"}>{"· kW"}</span>
                 </b>
-                <label hidden>
+                <label hidden style={{ display: "none" }}>
                   วันที่แสดง
                   <select id="viewDay" defaultValue="1">
                     <option value="1">1</option>

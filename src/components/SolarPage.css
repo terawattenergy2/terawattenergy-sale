@@ -479,3 +479,125 @@
     transform: none;
   }
 }
+
+/* Compact mobile battery control and chart; desktop retains its layout. */
+.solar-page .battery-mobile-help {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.solar-page .battery-mobile-help > summary {
+  display: none;
+}
+@media (max-width: 600px) {
+  .solar-page {
+    padding: 12px;
+  }
+  .solar-page #battery-calculation {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .solar-page #battery-calculation[style*="none"] {
+    display: none !important;
+  }
+  .solar-page #battery-calculation > h2 {
+    font-size: 18px;
+    margin: 10px 0 0;
+    line-height: 1.4;
+  }
+  .solar-page #battery-calculation > h2:nth-of-type(2) {
+    display: none;
+  }
+  .solar-page #battery-calculation .battery-panel {
+    padding: 12px 14px;
+    margin: 0;
+    border-radius: 16px;
+  }
+  .solar-page #battery-calculation .battery-panel > label {
+    display: block;
+    font-size: 13px;
+  }
+  .solar-page #batteryChoice {
+    width: 100%;
+    margin: 6px 0;
+    min-height: 32px;
+  }
+  .solar-page #batteryOptions {
+    display: none !important;
+  }
+  .solar-page #batteryOut {
+    display: block;
+    font-size: 23px;
+    line-height: 1.3;
+    margin: 2px 0 6px;
+  }
+  .solar-page .battery-mobile-help > summary {
+    display: list-item;
+    font-size: 12px;
+    color: #147dc5;
+    cursor: pointer;
+  }
+  .solar-page .battery-mobile-help .note {
+    padding: 10px;
+    margin: 8px 0;
+    font-size: 12px;
+  }
+  .solar-page .battery-mobile-help .hint {
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 6px 0 0;
+  }
+  .solar-page #battery-calculation > .chart-box {
+    order: 1;
+    padding: 12px 10px;
+    margin: 0;
+    border-radius: 16px;
+  }
+  .solar-page #battery-calculation .chart-head {
+    font-size: 13px;
+    margin: 0;
+  }
+  .solar-page #battery-calculation .solar-chart-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 8px !important;
+    margin: 8px 0 !important;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .solar-page #battery-calculation .solar-chart-legend > span {
+    gap: 4px !important;
+    min-width: 0;
+  }
+  .solar-page #battery-calculation .solar-chart-legend svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+  }
+  .solar-page #battery-calculation .solar-chart-legend > span > span {
+    flex-shrink: 0;
+  }
+  .solar-page #chart {
+    display: block;
+    width: 100%;
+    height: clamp(180px, 29svh, 240px);
+    min-height: 0;
+  }
+  .solar-page #readout {
+    font-size: 10px;
+    line-height: 1.4;
+    margin: 4px 0 0;
+    min-height: 0;
+  }
+  .solar-page #batteryDelta {
+    order: 2;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 12px;
+    margin: 0;
+  }
+  .solar-page #battery-calculation > .cards {
+    order: 3;
+  }
+}

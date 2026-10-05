@@ -5,6 +5,16 @@ export const priceNumber = (v) => {
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 export function getBatterySummary(product, prices = [], catalog = []) {
+  if (product?.batteryPlan) {
+    const plan = product.batteryPlan;
+    const items = plan.items.map(item => {
+      const detail = catalog.find(row => nameKey(row.ans_product) === nameKey(item.name));
+      return { ...item, image: detail?.img_product || null,
+        detail: detail?.detail_product || "", subDetail: detail?.sub_detail_product || "" };
+    });
+    return { ...plan, items, notice: product.batteryNotice || "", name: items.map(i => `${i.name} × ${i.count} ก้อน`).join(" + "),
+      capacity: null, unitPrice: null, image: null, detail: "", subDetail: "" };
+  }
   const selected = product?.solarRecommendation;
   if (!selected) return null;
   const count = Number(product.batteryCount);
@@ -15,7 +25,7 @@ export function getBatterySummary(product, prices = [], catalog = []) {
   const detail = catalog.find((row) => name && nameKey(row.ans_product) === nameKey(name));
   const unitPrice = priceNumber(priceRow?.price);
   const capacity = priceNumber(selected.bat_caculated);
-  return { name: name || "ยังไม่ระบุรุ่นแบต", count, unitPrice,
+  return { notice: product.batteryNotice || "", name: name || "ยังไม่ระบุรุ่นแบต", count, unitPrice,
     totalPrice: unitPrice === null ? null : unitPrice * count,
     capacity, totalCapacity: capacity === null ? null : capacity * count,
     image: detail?.img_product || null,
