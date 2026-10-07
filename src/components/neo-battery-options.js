@@ -2,12 +2,12 @@ import { priceNumber } from "./battery-summary";
 export const MAX_BATTERY_MODULES = 6;
 const key = v => String(v ?? "").normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
 
-// Enumerate every combination within the capacity band; prices come from price_list.
+// Prefer the cheapest set within ±0.5 kWh; otherwise use the nearest capacity.
 export function cheapestBatteryMix(target, modules) {
   if (!Number.isFinite(target) || target <= 0 || !modules.length) return null;
   const low = Math.ceil((target - 0.5) * 100 - 1e-7);
   const high = Math.floor((target + 0.5) * 100 + 1e-7);
-  if (modules.some(m => !(m.capacity > 0) || m.unitPrice === null)) return null;
+  if (modules.some(m => !(m.capacity > 0) || !Number.isFinite(m.unitPrice) || m.unitPrice < 0)) return null;
   const minCapacity = Math.min(...modules.map(m => Math.round(m.capacity * 100)));
   if (target * 100 < minCapacity - 1e-7) {
     const smallest = modules.filter(m => Math.round(m.capacity * 100) === minCapacity)
@@ -27,10 +27,24 @@ export function cheapestBatteryMix(target, modules) {
       items: [{ ...largest, count: MAX_BATTERY_MODULES, totalPrice: largest.unitPrice * MAX_BATTERY_MODULES }] };
   }
   let best = null;
+  let nearest = null;
   function visit(i, capacity, cents, counts, count) {
     if (i === modules.length) {
-      if (!count || capacity < low || capacity > high) return;
+      if (!count) return;
       const distance = Math.abs(capacity - target * 100);
+      const candidate = {
+        cents, distance, count, totalCapacity: capacity / 100, totalPrice: cents / 100,
+        items: modules.flatMap((m, j) => counts[j] ? [{
+          ...m, count: counts[j],
+          totalPrice: counts[j] * Math.round(m.unitPrice * 100) / 100,
+        }] : []),
+      };
+      if (!nearest || distance < nearest.distance - 1e-7 ||
+          (Math.abs(distance - nearest.distance) < 1e-7 &&
+           (cents < nearest.cents || (cents === nearest.cents && count < nearest.count)))) {
+        nearest = candidate;
+      }
+      if (capacity < low || capacity > high) return;
       if (!best || cents < best.cents || (cents === best.cents && (distance < best.distance || (distance === best.distance && count < best.count)))) {
         best = { cents, distance, count, totalCapacity: capacity / 100,
           totalPrice: cents / 100,
@@ -39,17 +53,24 @@ export function cheapestBatteryMix(target, modules) {
       return;
     }
     const size = Math.round(modules[i].capacity * 100);
-    for (let n = 0; n <= Math.min(MAX_BATTERY_MODULES - count, Math.floor((high - capacity) / size)); n++) {
+    for (let n = 0; n <= MAX_BATTERY_MODULES - count; n++) {
       visit(i + 1, capacity + n * size, cents + n * Math.round(modules[i].unitPrice * 100), [...counts, n], count + n);
     }
   }
   visit(0, 0, 0, [], 0);
-  return best;
+  return best || (nearest ? {
+    ...nearest, nearestFallback: true,
+    capacityDifference: Number((nearest.totalCapacity - target).toFixed(2)),
+  } : null);
 }
 
 export function optimizeNeoProducts(products, prices = []) {
   const seen = new Set();
   return products.flatMap(product => {
+    if (Number(product.selectedBatteryKWh) === 0) return [{
+      ...product, batteryCount: 0, batteryPlan: null, batteryNotice: "",
+      batterySelectionError: null, neoBatteryError: null,
+    }];
     if (!(product.selectedBatteryKWh > 0)) return [product];
     if (!/\bneo\b/i.test(product.ans_product)) {
       const capacity = priceNumber(product.solarRecommendation?.bat_caculated);
@@ -82,7 +103,7 @@ export function optimizeNeoProducts(products, prices = []) {
     if (!plan) return [{ ...product, batteryCount: null, batteryPlan: null,
       batterySelectionError: modules.some(m => m.unitPrice === null)
         ? "ข้อมูลราคาแบต NEO ยังไม่ครบ จึงยังเลือกชุดที่คุ้มที่สุดไม่ได้"
-        : "ไม่มีชุดแบต NEO ไม่เกิน 6 ก้อนที่ความจุต่างจากที่เลือกไม่เกิน 0.5 kWh กรุณาปรับความจุแบต" }];
-    return [{ ...product, batteryCount: plan.count, batteryPlan: plan, batteryNotice: plan.capped ? `ติดได้สูงสุด ${plan.totalCapacity} kWh (6 ก้อน) · ต่ำกว่าเป้าหมาย ${plan.shortfall} kWh` : plan.minimumFallback ? `เลือกแบตก้อนเล็กสุด ${plan.totalCapacity} kWh · มากกว่าเป้าหมาย ${plan.excess} kWh` : "" }];
+        : "ยังไม่มีข้อมูลรุ่นแบต NEO ที่รองรับสำหรับคำนวณ" }];
+    return [{ ...product, batterySelectionError: null, neoBatteryError: null, batteryCount: plan.count, batteryPlan: plan, batteryNotice: plan.capped ? `ติดได้สูงสุด ${plan.totalCapacity} kWh (6 ก้อน) · ต่ำกว่าเป้าหมาย ${plan.shortfall} kWh` : plan.minimumFallback ? `เลือกแบตก้อนเล็กสุด ${plan.totalCapacity} kWh · มากกว่าเป้าหมาย ${plan.excess} kWh` : plan.nearestFallback ? `เลือกความจุใกล้ที่สุด ${plan.totalCapacity.toFixed(2)} kWh · ${plan.capacityDifference < 0 ? "ต่ำกว่า" : "มากกว่า"}เป้าหมาย ${Math.abs(plan.capacityDifference).toFixed(2)} kWh` : "" }];
   });
 }
