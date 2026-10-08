@@ -326,7 +326,7 @@ export async function exportPdf(rows, description, guard, signal, progress) {
     const mark = document.createElement("img");
     mark.src = logo;
     mark.style.cssText =
-      "position:absolute;left:222px;top:410px;width:350px;height:220px;object-fit:contain;opacity:0.055;pointer-events:none;";
+      "position:absolute;left:222px;top:410px;width:350px;height:220px;object-fit:contain;opacity:0.0605;pointer-events:none;";
     page.appendChild(mark);
     page.appendChild(
       node(

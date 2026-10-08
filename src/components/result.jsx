@@ -1,3 +1,4 @@
+import { sortSuggestionProducts } from "./suggestion-order";
 import { optimizeNeoProducts } from "./neo-battery-options";
 import React, { useEffect, useRef, useState } from "react";
 import { Row, Col, Button } from "react-bootstrap";
@@ -200,7 +201,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
     setIsCustom(false);
     setSpaceSug(undefined);
     setSpaceSugOpen(false);
-    navigate("/mainpage", { replace: true, state: null });
+    navigate("/solar", { replace: true, state: null });
     window.scrollTo({ top: 0, behavior: "auto" });
   };
   const scrollToSection = (selector) => {
@@ -267,7 +268,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
         Array.isArray(priceList) ? priceList : [],
       );
       setMatchedProducts(
-        optimizeNeoProducts(mergedProducts.map((product) => restoreCatalogDetails(product, answer)), Array.isArray(priceList) ? priceList : []),
+        sortSuggestionProducts(optimizeNeoProducts(mergedProducts.map((product) => restoreCatalogDetails(product, answer)), Array.isArray(priceList) ? priceList : [])),
       );
       return;
     }
@@ -312,7 +313,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
         };
       });
 
-    setMatchedProducts(productsWithPrice);
+    setMatchedProducts(sortSuggestionProducts(productsWithPrice));
   }, [answer, priceList, fromSolar, solarSearch]);
 
   const filterType = (type) => {

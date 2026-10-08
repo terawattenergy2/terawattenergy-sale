@@ -112,7 +112,7 @@ function PdfPage({
                   width: "29%",
                   transform: "translate(-50%, -50%) rotate(-25deg)",
                   transformOrigin: "center",
-                  opacity: 0.055,
+                  opacity: 0.0605,
                   textAlign: "center",
                   color: "#163e2d",
                   fontFamily: "inherit",
@@ -266,7 +266,8 @@ function PdfPage({
               <>
                 {/* ข้อมูลของ Hybrid, SigenStor และ NEO */}
                 {space?.map((item) => (
-                  <div className="pdf-spec-row" key={item.id}>
+                  <React.Fragment key={item.id}>
+                  <div className="pdf-spec-row">
                     <div className="pdf-spec-title">
                       <strong>{item.title}</strong>
 
@@ -277,9 +278,22 @@ function PdfPage({
                       {selectedOptions?.[item.id] || "-"}
                     </div>
                   </div>
+            {String(item.id) === "2" && priceSummary?.lines?.some(
+              (item) => item.title === "SigenStor BC",
+            ) && (
+              <div className="pdf-spec-row">
+                <div className="pdf-spec-title">
+                  <strong>SigenStor BC</strong>
+                  <small className="text-secondary">Battery Controller</small>
+                </div>
+                <div className="pdf-spec-value">1</div>
+              </div>
+            )}
+                  </React.Fragment>
                 ))}
               </>
             )}
+
 
             {/* คำถาม EV DC ของ SigenStor */}
             {/* {!isMicro && data?.label === "SigenStor" && (
@@ -396,35 +410,7 @@ function PdfPage({
                     ))}
                   </tbody>
                 </table>
-                <p
-                  style={{
-                    fontSize: "11px",
-                    lineHeight: 1.6,
-                    color: "#596579",
-                    margin: "10px 0 4px",
-                  }}
-                >
-                  ประมาณการตามสูตรที่กำหนด: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
-                  โดยสมมุติขนาดแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย และแอร์ (12,000
-                  BTU) ใช้กำลังไฟเฉลี่ย 1 kW อ้างอิงจากการใช้แบตเตอรี่ 1 รอบ/
-                  วัน ผลจริงขึ้นกับการติดตั้งและการใช้งาน
-                </p>
-                <p
-                  style={{
-                    fontSize: "11px",
-                    lineHeight: 1.6,
-                    color: "#596579",
-                    margin: 0,
-                  }}
-                >
-                  {/* ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 50% ต่อรอบ */}
-                  {isMicro
-                    ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
-                    : energySummary.savings == null ||
-                        energySummary.airconHours == null
-                      ? " ยังไม่มีข้อมูลแบตเตอรี่ที่ใช้คำนวณได้ กรุณาตรวจสอบรุ่นและจำนวนแบตเตอรี่"
-                      : ""}
-                </p>
+               
               </section>
             )}
           {priceSummary?.lines?.some((item) => item.text || item.end_text) && (

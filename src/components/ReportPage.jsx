@@ -253,7 +253,7 @@ export default function ReportPage() {
       <main className="tr-report">
         <h1>ไม่สามารถเปิด Report ได้</h1>
         <p role="alert">{access.error || "บัญชีนี้ไม่มีสิทธิ์ดูรายงาน"}</p>
-        <Link className="tr-home-link" to="/mainpage"><span aria-hidden="true">←</span> กลับหน้าหลัก</Link>
+        <Link className="tr-home-link" to="/solar"><span aria-hidden="true">←</span> กลับหน้าหลัก</Link>
       </main>
     );
 
@@ -289,7 +289,7 @@ export default function ReportPage() {
   return (
     <main className="tr-report">
       <nav className="tr-topbar" aria-label="นำทางรายงาน">
-        <Link className="tr-home-link" to="/mainpage"><span aria-hidden="true">←</span> กลับหน้าหลัก</Link>
+        <Link className="tr-home-link" to="/solar"><span aria-hidden="true">←</span> กลับหน้าหลัก</Link>
         <span>รายงานลูกค้า</span>
       </nav>
       <header className="tr-header">

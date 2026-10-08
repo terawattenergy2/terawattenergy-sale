@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Button, Col, Row } from "react-bootstrap";
+// import { Button, Col, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import PersonalPage from "./personalPage";
-import { IoHome, IoWarningOutline } from "react-icons/io5";
-import CheckPhase from "../components/assets/images/checkPhae.png";
+// import { IoHome, IoWarningOutline } from "react-icons/io5";
+// import CheckPhase from "../components/assets/images/checkPhae.png";
 const getOptionValue = (option) => option.value ?? option.title ?? option.ans;
 
 const hasValidAnswer = (question, answers) => {
@@ -82,7 +82,7 @@ function WizardPage({ question = [] }) {
 
   return (
     <div>
-      <div className="wizard-step-summary">
+      {/* <div className="wizard-step-summary">
         <span>
           ขั้นตอนที่ {step + 1} จาก {question.length}
         </span>
@@ -97,7 +97,6 @@ function WizardPage({ question = [] }) {
         </div>
       </div>
 
-      {/* Question */}
       <div className="question-card">
         <h2>{currentQuestion?.ques || currentQuestion?.title}</h2>
         <p className="sub-title">
@@ -216,7 +215,7 @@ function WizardPage({ question = [] }) {
             {step === question.length - 1 ? "เสร็จสิ้น" : "ถัดไป →"}
           </Button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

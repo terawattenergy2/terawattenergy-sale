@@ -1718,7 +1718,7 @@ border-bottom: var(--blue);
   left: 50%;
   z-index: 1;
   width: 420px;
-  opacity: 0.06;
+  opacity: 0.066;
   transform: translate(-50%, -50%) rotate(-25deg);
   pointer-events: none;
 }
@@ -2223,7 +2223,7 @@ border-bottom: var(--blue);
   left: 50%;
   z-index: 0;
   width: 460px;
-  opacity: 0.045;
+  opacity: 0.0495;
   transform: translate(-50%, -50%) rotate(-25deg);
 }
 

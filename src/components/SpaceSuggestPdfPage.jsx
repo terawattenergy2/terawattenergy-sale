@@ -61,6 +61,7 @@ export default function SpaceSuggestPdfPage({
   pdfRef,
   spaceSug,
   battery,
+  accessories = [],
   getDriveImageUrl,
 }) {
   const name = spaceSug?.ans_product || "ยังไม่ได้เลือกอินเวอร์เตอร์";
@@ -80,7 +81,7 @@ export default function SpaceSuggestPdfPage({
       ? "1 Phase"
       : /\bTP\d*\b/i.test(name)
         ? "3 Phase"
-        : "ไม่ได้ระบุ";
+        : "ไม่เพิ่มเติม";
   // Parse only an explicit model power, never the rounded load-search bucket.
   const modelPower = name.match(/(?:\bEC|\bNEO|\bHybrid)\s+(\d+(?:\.\d+)?)/i);
   const units = name.match(/\b(\d+)\s*Units?\b/i);
@@ -94,12 +95,12 @@ export default function SpaceSuggestPdfPage({
     ? packs.map((p) => `${p.name} × ${p.count}`).join(" + ")
     : battery?.count === 0
       ? "ไม่ติดแบต"
-      : "ไม่ได้ระบุ";
+      : "ไม่เพิ่มเติม";
   const inverterPrice = priceNumber(spaceSug?.price);
   const batteryPrice = battery ? priceNumber(battery.totalPrice) : null;
   const total =
     inverterPrice !== null && batteryPrice !== null
-      ? inverterPrice + batteryPrice
+      ? (accessories.every(item => priceNumber(item.price) !== null) ? inverterPrice + batteryPrice + accessories.reduce((sum, item) => sum + priceNumber(item.price), 0) : null)
       : null;
   const features = String(spaceSug?.detail_product || "")
     .split(/[,\n]+/)
@@ -133,15 +134,14 @@ export default function SpaceSuggestPdfPage({
       "จำนวนโมดูลแบตเตอรี่",
       battery
         ? `${battery.count} ก้อน · รวม ${number(capacity)} kWh`
-        : "ไม่ได้ระบุ",
+        : "ไม่เพิ่มเติม",
     ],
     [
       "Sigen Energy Gateway (ระบบไฟสำรอง)",
-      spaceSug?.gateway || "ไม่ได้ระบุ",
+      spaceSug?.gateway || "ไม่เพิ่มเติม",
       "อุปกรณ์ตัดและสลับไฟระหว่างการไฟฟ้า แบตเตอรี่ และเครื่องปั่นไฟ",
     ],
-    ["Meter Sigen Power Sensor", spaceSug?.meter || "ไม่ได้ระบุ"],
-    ["Installation Kits", spaceSug?.installationKit || "ไม่ได้ระบุ"],
+    ...accessories.map(item => [item.label, `${item.product} × 1`, item.description]),
   ];
   const benefits = [
     [
@@ -191,7 +191,7 @@ export default function SpaceSuggestPdfPage({
               position: "absolute",
               inset: 28,
               overflow: "hidden",
-              opacity: 0.045,
+              opacity: 0.0495,
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
               gridTemplateRows: "repeat(5, 1fr)",
@@ -380,12 +380,7 @@ export default function SpaceSuggestPdfPage({
                   </span>
                 </div>
               ))}
-              <p style={{ color: muted, fontSize: 9, margin: "7px 0 0" }}>
-                ประมาณการตามสูตรในแม่แบบ: กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน
-                โดยสมมุติแผงเพียงพอ; ค่าไฟ 4.50 บาท/หน่วย แบตเตอรี่ใช้ 1 รอบ/วัน
-                และแอร์ใช้กำลังเฉลี่ย 1 kW ไม่หักการสูญเสีย
-                ตัวเลขส่วนนี้เป็นสมมติฐานของแม่แบบ ไม่ใช่ผลจำลองกราฟ
-              </p>
+              
             </section>
             <section
               style={{
@@ -452,7 +447,7 @@ export default function SpaceSuggestPdfPage({
               </div>
               <p style={{ margin: "6px 0 0", fontSize: 9, color: "#60796e" }}>
                 ราคารวมอินเวอร์เตอร์และแบตเตอรี่ที่เลือก กรุณายืนยันราคา ภาษี
-                และค่าติดตั้งกับเจ้าหน้าที่
+                และค่าติดตั้งกับเซลล์ที่ดูแลก่อนสั่งซื้อ เนื่องจากราคาอาจเปลี่ยนแปลงได้ตามช่วงเวลาและโปรโมชั่น
               </p>
             </section>
             <footer

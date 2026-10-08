@@ -12,55 +12,7 @@ import { useNavigate } from "react-router-dom";
 import PdfPage from "./pdfPage";
 import { supabase } from "../supabase";
 
-// สมมติฐานคำนวณตามสูตรที่กำหนด ใช้พลังงานแบตเตอรี่ 100%
-const ENERGY_ASSUMPTIONS = {
-  equivalentSunHours: 4,
-  electricityRate: 4.5,
-  batteryEnergyFraction: 1, // ใช้ความจุแบตเตอรี่รวม 100%
-  airconPowerKw: 1,
-};
-
-function calculateEnergySummary(options, isMicro) {
-  const model = String(isMicro ? options.microSize || "" : options["1"] || "");
-  // อ่านเลขกำลังเฉพาะรูปแบบชื่อรุ่นที่ใช้ในตัวเลือก ไม่อ่าน SP2 เป็นกำลังไฟ
-  const powerMatch = isMicro
-    ? model.match(/^(\d+(?:\.\d+)?)\s*kW\b/i)
-    : model.match(/(?:Hybrid|EC|NEO)\s+(\d+(?:\.\d+)?)\s+(?:SP|TP)/i);
-
-  const inverterKw = powerMatch ? Number(powerMatch[1]) : null;
-  const production =
-    inverterKw === null
-      ? null
-      : inverterKw * ENERGY_ASSUMPTIONS.equivalentSunHours;
-  const capacityMatch = String(options["2"] || "").match(
-    /\(\s*(\d+(?:\.\d+)?)\s*kWh\s*\)/i,
-  );
-  const rawCount = String(options["3"] ?? "").trim();
-  const count = /^\d+$/.test(rawCount) ? Number(rawCount) : null;
-  const batteryKwh =
-    !isMicro && capacityMatch && count !== null
-      ? Number(capacityMatch[1]) * count
-      : null;
-  const usableForEstimate =
-    batteryKwh === null
-      ? null
-      : batteryKwh * ENERGY_ASSUMPTIONS.batteryEnergyFraction;
-  return {
-    production, // kWh/day; retained for existing PDF consumers
-    productionValue:
-      production === null
-        ? null
-        : production * ENERGY_ASSUMPTIONS.electricityRate, // baht/day
-    savings:
-      usableForEstimate === null
-        ? null
-        : usableForEstimate * ENERGY_ASSUMPTIONS.electricityRate,
-    airconHours:
-      usableForEstimate === null
-        ? null
-        : usableForEstimate / ENERGY_ASSUMPTIONS.airconPowerKw,
-  };
-}
+import { calculateEnergySummary } from "./energy-summary";
 
 const formatEnergyValue = (value) =>
   value === null || !Number.isFinite(value)
@@ -104,6 +56,7 @@ function isInstallationKitVisible(item, data) {
   const isMicro = productId === "3" || productType === "micro";
   const kitType = normalizeProduct(item?.type);
 
+  if (productType === "hybrid" || /hybrid/i.test(data?.label || "")) return false;
   if (isMicro) return false;
   if (kitType === "neo") return isNeo;
   if (kitType === "all") return !isNeo;
@@ -221,6 +174,19 @@ function SpaceProductResult({
   priceList,
 }) {
   const detail = data?.detail;
+  const isHybrid = /hybrid/i.test(`${data?.short} ${data?.label}`);
+  const [canViewFormula, setCanViewFormula] = useState(false);
+  useEffect(() => {
+    let active = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      setCanViewFormula(false);
+    });
+    supabase.rpc("teramatch_my_profile").then(({ data: profile, error }) => {
+      const row = Array.isArray(profile) ? profile[0] : profile;
+      if (active && !error) setCanViewFormula(Number(row?.roldID ?? row?.roleID ?? row?.rold_id ?? row?.role_id) === 1);
+    }).catch(() => {});
+    return () => { active = false; subscription.unsubscribe(); };
+  }, []);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isExporting, setIsExporting] = useState(false);
   const exportLockRef = useRef(false);
@@ -902,6 +868,10 @@ function SpaceProductResult({
     selectedPriceItems.push(...buildAccessoryPriceItems(activeSpace, selectedOptions));
   }
 
+  if (isHybrid && !noBattery && Number(selectedOptions["3"]) > 0) {
+    const controller = (priceList || []).find(item => String(item.id) === "60");
+    selectedPriceItems.push({ title: "SigenStor BC", product: controller?.product || "SigenStor BC", price: controller?.price, quantity: 1 });
+  }
   const priceSummary = buildPriceSummary(selectedPriceItems, priceList);
   const totalPrice =
     isFormCompleted && priceSummary.complete
@@ -1096,9 +1066,9 @@ function SpaceProductResult({
                   : "";
 
                 return (
+                  <React.Fragment key={item.id}>
                   <div
                     className="space-data row w-100 progressive-question"
-                    key={item.id}
                     data-question-id={item.id}
                   >
                     <div className="space-left col-6">
@@ -1160,6 +1130,27 @@ function SpaceProductResult({
                       </div>
                     )}
                   </div>
+                  {String(item.id) === "2" && isHybrid && hasAnswer(selectBat) && !noBattery && (
+                    <div className="space-data row w-100 progressive-question" data-question-id="battery-controller">
+                      <div className="space-left col-6">
+                        <h5>SigenStor BC</h5>
+                        <p className="text-secondary">Battery Controller</p>
+                      </div>
+                      <div className="space-right col-6">
+                        <Button
+                          type="button"
+                          className="me-2 mb-2 btn-space"
+                          variant="primary"
+                          aria-pressed="true"
+                          aria-disabled="true"
+                          aria-label="SigenStor BC จำนวน 1 เลือกให้อัตโนมัติเมื่อรับแบตเตอรี่"
+                        >
+                          SigenStor BC
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -1201,23 +1192,18 @@ function SpaceProductResult({
                 </div>
               ))}
             </div>
+            {canViewFormula && <details className="mt-3"><summary>แสดง/ซ่อนสูตรการคำนวณ</summary>
             <p className="small text-secondary mt-3 mb-1">
+              ลดค่าไฟจากแบตเตอรี่ = ความจุแบตเตอรี่ต่อก้อน × จำนวนก้อน × 4.50 บาท/หน่วย;
+              ชั่วโมงแอร์ = ความจุแบตเตอรี่รวม ÷ 1 kW. 
               ประมาณการตามสูตรที่กำหนด: มูลค่าไฟฟ้าที่ผลิตได้ =
               กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน × 4.50 บาท/หน่วย
               โดยสมมุติขนาดแผงเพียงพอ; คิดพลังงานแบตเตอรี่ 100% ของความจุรวม
               ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW
               อ้างอิงการใช้แบตเตอรี่ 1 รอบ/วัน ไม่หักการสูญเสีย
               ผลจริงขึ้นกับการติดตั้งและการใช้งาน
-            </p>
-            <p className="small text-secondary mb-0">
-              {/* ค่าไฟและชั่วโมงแอร์ใช้พลังงานแบต 100% ต่อรอบ */}
-              {isMicro
-                ? " ระบบ Micro ไม่มีแบตเตอรี่ จึงไม่แสดงสองค่าที่อิงแบตเตอรี่"
-                : energySummary.savings === null ||
-                    energySummary.airconHours === null
-                  ? " ยังไม่มีข้อมูลแบตเตอรี่ที่ใช้คำนวณได้ กรุณาตรวจสอบรุ่นและจำนวนแบตเตอรี่"
-                  : ""}
-            </p>
+            </p></details>}
+           
           </section>
         )}
         {/* {priceSummary.lines.length > 0 && (
