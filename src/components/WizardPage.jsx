@@ -1,84 +1,86 @@
-import React, { useEffect, useState } from "react";
+// import React, { useEffect, useState } from "react";
 // import { Button, Col, Row } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
-import PersonalPage from "./personalPage";
+// import { useNavigate } from "react-router-dom";
+// import PersonalPage from "./personalPage";
 // import { IoHome, IoWarningOutline } from "react-icons/io5";
 // import CheckPhase from "../components/assets/images/checkPhae.png";
-const getOptionValue = (option) => option.value ?? option.title ?? option.ans;
+// const getOptionValue = (option) => option.value ?? option.title ?? option.ans;
 
-const hasValidAnswer = (question, answers) => {
-  const value = answers[question?.id]?.value;
-  return (
-    value !== undefined &&
-    value !== null &&
-    String(value).trim() !== "" &&
-    (question?.options ?? []).some((option) => getOptionValue(option) === value)
-  );
-};
+// const hasValidAnswer = (question, answers) => {
+//   const value = answers[question?.id]?.value;
+//   return (
+//     value !== undefined &&
+//     value !== null &&
+//     String(value).trim() !== "" &&
+//     (question?.options ?? []).some((option) => getOptionValue(option) === value)
+//   );
+// };
 
-function WizardPage({ question = [] }) {
-  useEffect(() => {
-    localStorage.removeItem("personal_data");
-  }, []);
+function WizardPage(
+  // { question = [] }
+) {
+  // useEffect(() => {
+  //   localStorage.removeItem("personal_data");
+  // }, []);
 
-  const [showPersonalPage, setShowPersonalPage] = useState(false);
-  const navigate = useNavigate();
+  // const [showPersonalPage, setShowPersonalPage] = useState(false);
+  // const navigate = useNavigate();
 
-  const [step, setStep] = useState(0);
+  // const [step, setStep] = useState(0);
 
-  // 1. โหลดค่าเดิมจาก localStorage ถ้ามี (ป้องกันข้อมูลหายถ้ารีเฟรชหน้าเว็บ)
-  const [answers, setAnswers] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("wizard_answers") || "{}");
-      return saved && typeof saved === "object" && !Array.isArray(saved)
-        ? saved
-        : {};
-    } catch {
-      return {};
-    }
-  });
-  // 2. บันทึกลง localStorage อัตโนมัติทุกครั้งที่ answers เปลี่ยนแปลง
-  useEffect(() => {
-    localStorage.setItem("wizard_answers", JSON.stringify(answers));
-  }, [answers]);
+  // // 1. โหลดค่าเดิมจาก localStorage ถ้ามี (ป้องกันข้อมูลหายถ้ารีเฟรชหน้าเว็บ)
+  // const [answers, setAnswers] = useState(() => {
+  //   try {
+  //     const saved = JSON.parse(localStorage.getItem("wizard_answers") || "{}");
+  //     return saved && typeof saved === "object" && !Array.isArray(saved)
+  //       ? saved
+  //       : {};
+  //   } catch {
+  //     return {};
+  //   }
+  // });
+  // // 2. บันทึกลง localStorage อัตโนมัติทุกครั้งที่ answers เปลี่ยนแปลง
+  // useEffect(() => {
+  //   localStorage.setItem("wizard_answers", JSON.stringify(answers));
+  // }, [answers]);
 
-  const currentQuestion = question[step];
-  const canProceed = hasValidAnswer(currentQuestion, answers);
-  const handlePersonalComplete = (personalData) => {
-    localStorage.setItem("wizard_answers", JSON.stringify(answers));
+  // const currentQuestion = question[step];
+  // const canProceed = hasValidAnswer(currentQuestion, answers);
+  // const handlePersonalComplete = (personalData) => {
+  //   localStorage.setItem("wizard_answers", JSON.stringify(answers));
 
-    navigate("/result", {
-      state: {
-        answers,
-        personalData,
-      },
-    });
-  };
+  //   navigate("/result", {
+  //     state: {
+  //       answers,
+  //       personalData,
+  //     },
+  //   });
+  // };
 
-  // ใช้ answers เป็นแหล่งข้อมูลเดียวสำหรับคำตอบและสถานะการ์ดที่เลือก
-  const handleSelect = (questionId, option) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: { value: getOptionValue(option) },
-    }));
-  };
+  // // ใช้ answers เป็นแหล่งข้อมูลเดียวสำหรับคำตอบและสถานะการ์ดที่เลือก
+  // const handleSelect = (questionId, option) => {
+  //   setAnswers((prev) => ({
+  //     ...prev,
+  //     [questionId]: { value: getOptionValue(option) },
+  //   }));
+  // };
 
-  if (!question || question.length === 0) {
-    return (
-      <div className="p-5 text-center" role="status">
-        ไม่พบข้อมูลคำถาม
-      </div>
-    );
-  }
+  // if (!question || question.length === 0) {
+  //   return (
+  //     <div className="p-5 text-center" role="status">
+  //       ไม่พบข้อมูลคำถาม
+  //     </div>
+  //   );
+  // }
 
-  if (showPersonalPage) {
-    return (
-      <PersonalPage
-        onComplete={handlePersonalComplete}
-        onBack={() => setShowPersonalPage(false)}
-      />
-    );
-  }
+  // if (showPersonalPage) {
+  //   return (
+  //     <PersonalPage
+  //       onComplete={handlePersonalComplete}
+  //       onBack={() => setShowPersonalPage(false)}
+  //     />
+  //   );
+  // }
 
   return (
     <div>
