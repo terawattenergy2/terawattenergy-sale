@@ -115,6 +115,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 15px;
+  padding-bottom: 12px;
 }
 .solar-page .chart-head select {
   width: auto;
@@ -548,7 +549,7 @@
     line-height: 1.5;
     margin: 6px 0 0;
   }
-  .solar-page #battery-calculation > .chart-box {
+  .solar-page #battery-calculation .planning-results > .chart-box {
     order: 1;
     padding: 12px 10px;
     margin: 0;
@@ -597,7 +598,495 @@
     padding: 12px;
     margin: 0;
   }
-  .solar-page #battery-calculation > .cards {
+  .solar-page #battery-calculation .planning-results > .cards {
     order: 3;
   }
 }
+
+.solar-page .battery-recommendation {
+  margin-top: 16px;
+  color: var(--te-text);
+}
+.solar-page .battery-capacity-track {
+  height: 12px;
+  margin: 12px 0 8px;
+  border-radius: 999px;
+  background: var(--te-border, #dce2e8);
+  overflow: hidden;
+}
+.solar-page #batteryCapacityFill {
+  height: 100%;
+  background: #a855f7;
+  border-radius: inherit;
+  transition: width 150ms ease;
+}
+
+/* Balanced controls and chart workspace. */
+.solar-page main {
+  max-width: 1440px;
+  padding: 24px;
+}
+.solar-page .sub {
+  margin: 6px 0 22px;
+}
+.solar-page #error:empty {
+  display: none;
+}
+.solar-page #battery-calculation {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 16px 24px;
+  align-items: start;
+}
+.solar-page .planning-inputs {
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.solar-page .planning-time-settings,
+.solar-page #battery-calculation .controls > label,
+.solar-page #battery-calculation .battery-panel {
+  background: var(--te-card, #fff);
+  color: var(--te-text, #20354b);
+  border: 1px solid var(--te-border, #e1e7ee);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin: 0;
+}
+.solar-page .planning-time-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.solar-page .planning-time-title {
+  grid-column: 1 / -1;
+}
+.solar-page .planning-time-title b {
+  font-size: 14px;
+}
+.solar-page .planning-time-title small {
+  display: block;
+  color: var(--te-muted, #657080);
+  font-size: 11px;
+  margin-top: 5px;
+}
+.solar-page .planning-time-settings label {
+  font-size: 11px;
+}
+.solar-page .planning-time-settings select {
+  font-size: 19px;
+  font-weight: 600;
+  padding: 9px 10px;
+  border: 1px solid #bfd8ee;
+  border-radius: 10px;
+  background: var(--te-card, #f5faff);
+  color: var(--te-text, #20354b);
+  margin-top: 5px;
+  width: 100%;
+  cursor: pointer;
+}
+.solar-page .planning-time-settings label:nth-of-type(3) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+.solar-page .planning-time-settings label:nth-of-type(3) select {
+  width: auto;
+  padding: 4px 8px;
+  font-size: 12px;
+  margin: 0;
+}
+.solar-page .planning-time-settings > div:last-child {
+  grid-column: 1 / -1;
+  color: var(--te-muted, #657080);
+  font-size: 11px;
+}
+.solar-page #battery-calculation .controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  padding: 0;
+  gap: 12px;
+  background: transparent;
+  box-shadow: none;
+}
+.solar-page #battery-calculation .controls > label,
+.solar-page #battery-calculation .battery-panel > label {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.solar-page #battery-calculation output {
+  order: 1;
+  font-size: 21px;
+  line-height: 1.3;
+  margin: 0;
+  color: #147dc5;
+}
+.solar-page #battery-calculation input[type="range"] {
+  order: 2;
+  flex: 0 0 100%;
+  margin-top: 14px;
+  height: 16px;
+  min-height: 0;
+  accent-color: #147dc5;
+}
+.solar-page #batteryOptions {
+  display: none !important;
+}
+.solar-page #battery-calculation .battery-panel {
+  display: block;
+}
+.solar-page #battery-calculation #batteryOut {
+  font-size: 17px;
+  color: #16a34a;
+}
+.solar-page #batteryChoice {
+  accent-color: #16a34a !important;
+}
+.solar-page .battery-recommendation {
+  font-size: 11px;
+  margin-top: 10px;
+  color: #9333ea;
+  line-height: 1.6;
+}
+.solar-page .battery-mobile-help {
+  margin-top: 8px;
+}
+.solar-page .battery-mobile-help > summary {
+  display: list-item;
+  font-size: 11px;
+  color: var(--te-muted, #657080);
+  cursor: pointer;
+}
+.solar-page #batteryDelta {
+  display: none;
+}
+.solar-page #battery-calculation .planning-results > .chart-box {
+  grid-column: 2;
+  padding: 22px 24px 16px;
+  border-radius: 20px;
+  width: 100%;
+  min-width: 0;
+}
+.solar-page #battery-calculation .chart-head {
+  font-size: 16px;
+}
+.solar-page #battery-calculation .solar-chart-legend {
+  display: flex;
+  gap: 8px 18px !important;
+  margin: 16px 0 !important;
+  font-size: 11px;
+  color: var(--te-muted, #657080);
+}
+.solar-page #battery-calculation .solar-chart-legend svg {
+  width: 18px;
+  height: 18px;
+}
+.solar-page .battery-runtime {
+  background: #a855f70d;
+  border: 1px solid #a855f71a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #9333ea;
+  font-size: 12px;
+  line-height: 1.7;
+  font-weight: 500;
+}
+.solar-page #chart {
+  height: clamp(260px, 38vh, 410px);
+  margin-top: 16px;
+}
+.solar-page #readout {
+  font-size: 10px;
+  line-height: 1.6;
+  min-height: 18px;
+  margin-top: 8px;
+}
+.solar-page #battery-calculation .planning-results > .cards {
+  grid-column: 2;
+  margin: 0;
+  gap: 12px;
+}
+.solar-page #battery-calculation .card {
+  padding: 14px 18px;
+  border-radius: 14px;
+}
+.solar-page #battery-calculation .card strong {
+  font-size: 24px;
+  margin: 6px 0;
+}
+.solar-page select:focus-visible,
+.solar-page input:focus-visible {
+  outline: 3px solid #147dc54d;
+  outline-offset: 3px;
+}
+@media (max-width: 1050px) {
+  .solar-page #battery-calculation {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .solar-page #battery-calculation .planning-results > .chart-box {
+    padding: 18px;
+  }
+  .solar-page #battery-calculation .controls > label {
+    font-size: 12px;
+  }
+  .solar-page #battery-calculation output {
+    font-size: 18px;
+  }
+}
+@media (max-width: 760px) {
+  .solar-page main {
+    padding: 16px 12px;
+  }
+  .solar-page #battery-calculation {
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .solar-page .planning-inputs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .solar-page #battery-calculation .controls {
+    display: contents;
+  }
+  .solar-page .planning-time-settings {
+    grid-column: 1 / -1;
+  }
+  .solar-page #battery-calculation .controls > label {
+    padding: 14px;
+  }
+  .solar-page #battery-calculation .battery-panel {
+    grid-column: 1 / -1;
+  }
+  .solar-page #chart {
+    height: 250px;
+  }
+  .solar-page #battery-calculation .planning-results > .cards {
+    width: 100%;
+  }
+}
+/* Open desktop canvas; mobile keeps the live preview visible while adjusting. */
+.solar-page {
+  background: transparent;
+  padding: 0;
+}
+.solar-page main {
+  max-width: 1800px;
+  width: 100%;
+  padding: 24px 8px;
+}
+.solar-page .planning-time-settings,
+.solar-page #battery-calculation .controls > label,
+.solar-page #battery-calculation .battery-panel {
+  background: var(--te-surface);
+}
+.solar-page .planning-time-settings select {
+  background: var(--te-soft);
+}
+.solar-page .fine-adjust {
+  display: none;
+}
+@media (max-width: 760px) {
+  .main-page:has(.solar-page) {
+    padding: 12px;
+  }
+  .solar-page main {
+    padding: 12px 0;
+  }
+  .solar-page h1 {
+    font-size: 21px;
+  }
+  .solar-page .eyebrow {
+    font-size: 9px;
+  }
+  .solar-page .sub {
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .solar-page #battery-calculation {
+    gap: 12px;
+  }
+  .solar-page #battery-calculation .planning-results > .chart-box {
+    order: -1;
+    position: sticky;
+    top: 8px;
+    z-index: 5;
+    padding: 12px;
+    border-radius: 16px;
+    box-shadow: 0 6px 24px #20354b12;
+  }
+  .solar-page #battery-calculation .chart-head {
+    font-size: 14px;
+  }
+  .solar-page #battery-calculation .solar-chart-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px !important;
+    font-size: 10px;
+    margin: 8px 0 !important;
+  }
+  .solar-page #battery-calculation .solar-chart-legend > span {
+    gap: 5px !important;
+  }
+  .solar-page #battery-calculation .solar-chart-legend svg {
+    width: 13px;
+    height: 13px;
+  }
+  .solar-page .battery-runtime {
+    padding: 6px 8px;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .solar-page #chart {
+    height: clamp(145px, 23svh, 220px);
+    margin-top: 6px;
+  }
+  .solar-page #readout {
+    display: none;
+  }
+  .solar-page .planning-inputs {
+    grid-template-columns: 1fr;
+  }
+  .solar-page #battery-calculation .controls > label {
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  .solar-page #battery-calculation input[type="range"] {
+    height: 32px;
+    margin-top: 8px;
+    touch-action: pan-y;
+  }
+  .solar-page #battery-calculation output {
+    font-size: 20px;
+  }
+  .solar-page .fine-adjust {
+    display: flex;
+    order: 3;
+    flex: 0 0 100%;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+  .solar-page .fine-adjust button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--te-border);
+    border-radius: 12px;
+    background: var(--te-soft);
+    color: var(--te-accent);
+    font-size: 23px;
+    line-height: 1;
+    box-shadow: none;
+  }
+  .solar-page .fine-adjust span {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--te-muted);
+  }
+  .solar-page .planning-time-settings select {
+    min-height: 44px;
+  }
+  .solar-page #battery-calculation .planning-results > .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .solar-page #battery-calculation .card {
+    padding: 10px 8px;
+  }
+  .solar-page #battery-calculation .card span {
+    font-size: 10px;
+  }
+  .solar-page #battery-calculation .card strong {
+    font-size: 17px;
+  }
+  .solar-page #battery-calculation .card small {
+    font-size: 9px;
+  }
+}
+@media (max-width: 760px) and (max-height: 550px) {
+  .solar-page #battery-calculation .planning-results > .chart-box {
+    position: static;
+  }
+}
+/* Anchor the battery card to the summary baseline without stretching controls. */
+@media (min-width: 761px) {
+  .solar-page #battery-calculation > .planning-inputs {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: stretch;
+  }
+  .solar-page #battery-calculation .planning-inputs > .controls {
+    flex: 1 0 auto;
+    grid-template-rows: repeat(3, 1fr);
+  }
+  .solar-page #battery-calculation .planning-inputs > .controls > label {
+    align-content: center;
+  }
+  .solar-page #battery-calculation .planning-inputs > .battery-panel {
+    margin-top: 0;
+  }
+  .solar-page #battery-calculation .planning-results > .chart-box { grid-column: 2; grid-row: 1; }
+  .solar-page #battery-calculation .planning-results > .cards { grid-column: 2; grid-row: 2; }
+}
+
+/* Keep the chart and totals in one independent column. */
+.solar-page .planning-results { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 761px) {
+  .solar-page #battery-calculation > .planning-inputs { grid-row: 1; }
+  .solar-page .planning-results { grid-column: 2; grid-row: 1; align-self: start; }
+}
+@media (max-width: 760px) {
+  .solar-page .planning-results { display: contents; }
+  .solar-page #battery-calculation .planning-results > .cards { order: 2; }
+}
+/* Readable type with the existing compact workspace proportions. */
+.solar-page #battery-calculation .solar-chart-legend {
+  font-size: 15px;
+  line-height: 1.5;
+  gap: 6px 16px !important;
+  margin: 12px 0 !important;
+}
+.solar-page .battery-runtime { font-size: 16px; line-height: 1.6; padding: 9px 12px; }
+.solar-page .battery-recommendation { font-size: 15px; line-height: 1.6; }
+.solar-page .battery-mobile-help > summary { font-size: 15px; }
+.solar-page .planning-time-title b { font-size: 18px; }
+.solar-page .planning-time-title small,
+.solar-page .planning-time-settings label,
+.solar-page .planning-time-settings > div:last-child { font-size: 15px; }
+.solar-page #battery-calculation .controls > label,
+.solar-page #battery-calculation .battery-panel > label { font-size: 16px; }
+.solar-page #battery-calculation .card span { font-size: 16px; }
+.solar-page #battery-calculation .card small { font-size: 14px; line-height: 1.5; }
+.solar-page #readout { font-size: 14px; line-height: 1.5; }
+@media (max-width: 1050px) and (min-width: 761px) {
+  .solar-page #battery-calculation { grid-template-columns: 290px minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .solar-page #battery-calculation .solar-chart-legend { font-size: 14px; line-height: 1.4; gap: 4px 8px !important; margin: 6px 0 !important; }
+  .solar-page .battery-runtime { font-size: 14px; padding: 7px 9px; line-height: 1.5; }
+  .solar-page #battery-calculation .card span { font-size: 14px; }
+  .solar-page #battery-calculation .card small { font-size: 13px; }
+  .solar-page .fine-adjust span { font-size: 14px; }
+  .solar-page #chart { height: clamp(140px, 21svh, 200px); }
+}
+
+/* Give controls room and keep energy values with their units. */
+@media (min-width: 1051px) {
+  .solar-page #battery-calculation { grid-template-columns: 360px minmax(0, 1fr); }
+}
+@media (min-width: 761px) and (max-width: 1050px) {
+  .solar-page #battery-calculation { grid-template-columns: 320px minmax(0, 1fr); }
+}
+.solar-page #batteryRecommendation { white-space: pre-line; display: block; line-height: 1.6; }
+.solar-page #battery-calculation output,
+.solar-page #battery-calculation .card strong { white-space: nowrap; }
