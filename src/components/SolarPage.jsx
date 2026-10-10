@@ -57,14 +57,14 @@ function ChartLegend({ battery = false }) {
         margin: "16px 0",
       }}
     >
-      <span style={itemStyle}>{sun("var(--te-direct)")}Solar ใช้ตรง</span>
+      <span style={itemStyle}>{sun("var(--te-direct)")}การใช้ไฟจากโซลาเซลล์โดยตรง</span>
       {battery && (
         <span style={itemStyle}>{dot("var(--te-battery)")}แบตที่เลือก</span>
       )}
       {battery && <span style={itemStyle}>{dot("#a855f7")}แบตสูงสุดที่แนะนำ</span>}
-      <span style={itemStyle}>{dot("var(--te-grid, #9bd5f5)")}ไฟจากการไฟฟ้า</span>
+      <span style={itemStyle}>{dot("var(--te-grid, #9bd5f5)")}Grid มิเตอร์การไฟฟ้า</span>
       <span style={itemStyle}>
-        {sun("var(--te-pv)")}กำลังผลิต Solar
+        {sun("var(--te-pv)")}กำลังการผลิตของโซลาเซลล์
       </span>
       <span style={itemStyle}>
         <span
