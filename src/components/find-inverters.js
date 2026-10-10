@@ -12,32 +12,39 @@ export function calculateBatteryCount(selectedKWh, capacityPerBattery) {
   return Math.ceil(selectedKWh / capacity);
 }
 
-// Public catalog lookup via Supabase Data API (Create React App environment).
-export function matchProducts(rows, result) {
-  return rows.flatMap((row) => {
-    if (row.phase !== result.phase || Number(row.point) !== result.point)
-      return [];
-    if (!Array.isArray(row.product)) return [];
-    return row.product.flatMap((product, index) => {
-      if (!product || typeof product.product !== "string") return [];
-      // Spelling matches the database screenshot: bat_caculated.
-      const capacity = product.bat_caculated;
-      if (
-        capacity === null ||
-        capacity === undefined ||
-        capacity === "" ||
-        !Number.isFinite(Number(capacity))
-      )
-        return [];
-      // Capacity is per module, not the requested system capacity.
-      if (result.bat > 0 ? Number(capacity) <= 0 : Number(capacity) !== 0)
-        return [];
-      return [{ ...product, matchKey: `${row.id}-${index}` }];
-    });
-  });
+export function inverterModel(name) {
+  const match = String(name || '').trim().match(/^(SigenStor\s+(?:EC|NEO)|Sigen\s+Hybrid)\s+(\d+(?:\.\d+)?)\s+(SP2?|TP2?)$/i);
+  return match ? { size: +match[2], phase: match[3].toUpperCase().startsWith('SP') ? '1 phase' : '3 phase' } : null;
+}
+export function solarSizes(rows = [], phase) {
+  const points = rows.filter(row => (!phase || row.phase === phase) && Array.isArray(row.product) && row.product.some(p => typeof p?.product === "string" && p.product.trim()))
+    .map(row => Number(row.point)).filter(point => point > 0 && Number.isFinite(point));
+  const available = rows.length ? points : [5,10,15,20,25];
+  return [...new Set([...available, ...(phase !== '1 phase' && available.includes(25) ? [30] : [])])].sort((a,b) => a-b);
+}
+export function matchProducts(rows, result, { filterProducts = products => products } = {}) {
+  const target = result.point === 30 ? 25 : result.point;
+  const points = [...new Set(rows.filter(row => row.phase === result.phase).map(row => Number(row.point)).filter(point => point > 0 && Number.isFinite(point)))]
+    .sort((a,b) => Math.abs(a-target)-Math.abs(b-target) || b-a);
+  for (const point of points) {
+    const candidates = [];
+    for (const row of rows) {
+      if (row.phase !== result.phase || Number(row.point) !== point || !Array.isArray(row.product)) continue;
+      for (const product of row.product) {
+        if (typeof product?.product !== "string" || !product.product.trim()) continue;
+        const capacity = Number(product.bat_caculated);
+        if (product.bat_caculated == null || !Number.isFinite(capacity) || capacity < 0 || (result.bat > 0 ? capacity <= 0 : capacity !== 0)) continue;
+        if (result.point === 30 && !/^SigenStor\s+EC\s+25(?:\.0)?\s+TP$/i.test(product.product.trim())) continue;
+        candidates.push({...product, matchKey: `${row.id}-${product.product.trim()}-${capacity}`});
+      }
+    }
+    const matches = filterProducts(candidates);
+    if (matches.length) return matches;
+  }
+  return [];
 }
 
-export async function findInverters(result, { signal } = {}) {
+export async function findInverters(result, { signal, filterProducts } = {}) {
   const projectUrl = process.env.REACT_APP_SUPABASE_URL;
   const apiKey =
     process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY ||
@@ -61,7 +68,6 @@ export async function findInverters(result, { signal } = {}) {
     url.search = new URLSearchParams({
       select: "id,phase,point,product",
       phase: `eq.${result.phase}`,
-      point: `eq.${result.point}`,
       order: "id.asc",
       offset: String(offset),
       limit: "100",
@@ -78,5 +84,5 @@ export async function findInverters(result, { signal } = {}) {
     rows.push(...page);
     offset += page.length;
   }
-  return matchProducts(rows, result);
+  return matchProducts(rows, result, { filterProducts });
 }

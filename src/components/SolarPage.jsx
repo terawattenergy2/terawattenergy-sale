@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { mountSolarPage } from "./solar-page-controller";
 import "./SolarPage.css";
 import { useNavigate } from "react-router-dom";
-import { findInverters, calculateBatteryCount } from "./find-inverters";
+import { findInverters, calculateBatteryCount, solarSizes } from "./find-inverters";
 import { Button } from "react-bootstrap";
 import PersonalPage from "./personalPage";
 
@@ -85,9 +85,10 @@ function FineAdjust({ input, label }) {
   </span>;
 }
 
-export default function SolarPage({ resultPath = "/result" }) {
+export default function SolarPage({ resultPath = "/result", suggestProducts = [] }) {
   const navigate = useNavigate();
   const root = useRef(null);
+  const catalogSizes = useRef({ 1: solarSizes(suggestProducts, "1 phase"), 3: solarSizes(suggestProducts, "3 phase") });
   const [pendingSearch, setPendingSearch] = useState(null);
   const [latestCalculation, setLatestCalculation] = useState(null);
   const [result, setResult] = useState(null);
@@ -106,6 +107,7 @@ export default function SolarPage({ resultPath = "/result" }) {
   useEffect(
     () =>
       mountSolarPage(root.current, {
+        solarSizesByPhase: catalogSizes.current,
         onCalculation: (calculation) => {
           clearSearch();
           setLatestCalculation(calculation);
@@ -121,7 +123,7 @@ export default function SolarPage({ resultPath = "/result" }) {
     const roundUpToFive = (value) => Math.ceil(value / 5) * 5;
     const selectedBatteryKWh = latestCalculation.batteryKWh;
     const result = {
-      point: roundUpToFive(latestCalculation.peakLoadKW),
+      point: latestCalculation.solarKWp,
       bat: roundUpToFive(latestCalculation.batteryKWh),
       phase: `${latestCalculation.phases} phase`,
     };
@@ -131,7 +133,10 @@ export default function SolarPage({ resultPath = "/result" }) {
     searchRequest.current = request;
     setSearchStatus("loading");
     try {
-      const matches = await findInverters(result, { signal: request.signal });
+      const matches = await findInverters(result, {
+        signal: request.signal,
+        filterProducts: matches => filterBatteryOptionsByType(matches, selectedBatteryKWh),
+      });
       if (searchRequest.current !== request || request.signal.aborted) return;
       const batteryMatches = filterBatteryOptionsByType(
         matches,
@@ -233,10 +238,10 @@ export default function SolarPage({ resultPath = "/result" }) {
               <input
                 id={"solarKWp"}
                 type={"range"}
-                min={"0"}
+                min={"5"}
                 max={"30"}
-                step={"0.5"}
-                defaultValue={"9"}
+                step={"1"}
+                defaultValue={"10"}
               />
               <output id={"solarOut"}></output>
               <FineAdjust input="solarKWp" label="ขนาด Solar" />

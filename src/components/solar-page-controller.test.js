@@ -25,7 +25,7 @@ test('daytime bounds and battery selection follow available solar surplus', () =
   root.appendChild(increase);
   document.body.appendChild(root);
   const onCalculation = jest.fn();
-  const cleanup = mountSolarPage(root, { onCalculation });
+  const cleanup = mountSolarPage(root, { onCalculation, solarSizes: [0, 9, 9.5] });
   const get = id => root.querySelector('#' + id);
   try {
     expect([...get('dayStart').options].every(o => +o.value >= 6 && +o.value < 18)).toBe(true);
@@ -39,6 +39,7 @@ test('daytime bounds and battery selection follow available solar surplus', () =
     }
     increase.click();
     expect(+get('solarKWp').value).toBe(9.5);
+    expect(onCalculation.mock.calls.at(-1)[0].solarKWp).toBe(9.5);
     const maximumRuntime = get('batteryRuntime').textContent;
     get('batteryChoice').value = get('batteryChoice').max;
     get('batteryChoice').dispatchEvent(new Event('input'));
@@ -51,6 +52,22 @@ test('daytime bounds and battery selection follow available solar surplus', () =
     expect(get('batteryRuntime').textContent).toContain('ยังไม่มีพลังงานส่วนเกิน');
     expect(get('batteryRecommendation').textContent).toContain('กรุณาเพิ่มขนาด Solar');
     expect(get('batteryCapacityMeter').getAttribute('aria-valuenow')).toBe('0');
+    cleanup();
+    get('phases').add(new Option('3', '3'));
+    get('solarKWp').step = '1';
+    const phaseCleanup = mountSolarPage(root, { onCalculation, solarSizesByPhase: { 1: [5,6,10,12], 3: [5,10,15,20,25,30] } });
+    try {
+      get('phases').value = '3';
+      get('phases').dispatchEvent(new Event('input'));
+      get('solarKWp').value = '25';
+      get('solarKWp').dispatchEvent(new Event('input'));
+      expect(onCalculation.mock.calls.at(-1)[0].solarKWp).toBe(25);
+      get('phases').value = '1';
+      get('phases').dispatchEvent(new Event('input'));
+      expect(get('solarKWp').max).toBe('12');
+      expect(onCalculation.mock.calls.at(-1)[0].solarKWp).toBe(12);
+    } finally { phaseCleanup(); }
+
   } finally {
     cleanup();
     root.remove();

@@ -42,6 +42,7 @@ function PrivateApp() {
     question: [],
     space: [],
     price_list: [],
+    suggest_product: [],
     status: [],
   });
   const [loading, setLoading] = useState(true);
@@ -68,9 +69,10 @@ function PrivateApp() {
             .select("*")
             .order("id", { ascending: true }),
           supabase.from("price_list").select("*"),
+          supabase.from("suggest_product").select("*"),
         ]);
         for (const result of results) if (result.error) throw result.error;
-        const [answer, inverter, question, space, price_list] = results.map(
+        const [answer, inverter, question, space, price_list, suggest_product] = results.map(
           (result) => result.data ?? [],
         );
         if (active)
@@ -80,6 +82,7 @@ function PrivateApp() {
             question,
             space,
             price_list,
+            suggest_product,
             status: [],
           });
       } catch (err) {
@@ -151,11 +154,11 @@ function PrivateApp() {
               inverter={data.inverter}
               answer={data.answer}
               space={data.space}
-              priceList={data.price_list}
+              suggestProducts={data.suggest_product}
             />,
           )}
         />
-        <Route path="/solar" element={<SolarPage />} />
+        <Route path="/solar" element={withData(<SolarPage suggestProducts={data.suggest_product} />)} />
         <Route path="*" element={<Navigate to="/solar" replace />} />
       </Routes>
     </div>

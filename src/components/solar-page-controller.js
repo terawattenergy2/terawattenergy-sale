@@ -17,7 +17,7 @@ function batteryOptionsFromLimit(capacityLimit) {
 
 export function mountSolarPage(
   root,
-  { onBatteryAvailability = () => {}, onCalculation = () => {} } = {},
+  { onBatteryAvailability = () => {}, onCalculation = () => {}, solarSizes = [5, 6, 10, 12, 15, 20, 25, 30], solarSizesByPhase } = {},
 ) {
   if (!root) return () => {};
   const cleanups = [];
@@ -140,7 +140,14 @@ export function mountSolarPage(
   $("formulaTime").value = 48;
   $("dayStart").value = 6;
   $("dayEnd").value = 18;
+  const availableSolarSizes = () => solarSizesByPhase?.[$("phases").value] || solarSizes;
   function update() {
+    const solarSizes = availableSolarSizes();
+    $("solarKWp").min = solarSizes[0];
+    $("solarKWp").max = solarSizes[solarSizes.length - 1];
+    const selectedSolar = +$("solarKWp").value;
+    $("solarKWp").value = solarSizes.reduce((best, size) => Math.abs(size-selectedSolar) < Math.abs(best-selectedSolar) ? size : best);
+
     // Model rule: charging power follows the selected Solar size.
     $("chargeKW").value = $("solarKWp").value;
     hideTooltip();
@@ -341,6 +348,7 @@ export function mountSolarPage(
       );
       draw();
       onCalculation({
+        solarKWp: c.solarKWp,
         peakLoadKW: result.series.reduce(
           (peak, row) => Math.max(peak, row.load),
           0,
@@ -679,7 +687,12 @@ export function mountSolarPage(
     listen(button, "click", () => {
       const input = $(button.dataset.adjustInput);
       if (!input || input.disabled) return;
-      if (+button.dataset.adjustDirection > 0) input.stepUp();
+      if (input.id === "solarKWp") {
+        const solarSizes = availableSolarSizes();
+        const index = solarSizes.indexOf(+input.value);
+        input.value = solarSizes[Math.max(0, Math.min(solarSizes.length - 1, index + +button.dataset.adjustDirection))];
+      }
+      else if (+button.dataset.adjustDirection > 0) input.stepUp();
       else input.stepDown();
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
