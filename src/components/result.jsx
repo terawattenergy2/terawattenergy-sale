@@ -425,7 +425,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
             {restartError}
           </p>
         )}
-        <div id="product-comparison" className="advanced-card mt-4 card-text">
+        <div id="product-comparison" className="advanced-card card-text">
           <h2>อินเวอร์เตอร์ที่แนะนำ: {inverterSug}</h2>
 
           <p className="text-secondary small">{desSug}</p>
