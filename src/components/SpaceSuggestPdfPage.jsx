@@ -2,6 +2,7 @@ import React from "react";
 import imgLogo from "../components/assets/images/LOGO-TE.png";
 import imgLine from "../components/assets/images/LineOA.png";
 import { priceNumber } from "./battery-summary";
+import { priceListTotal } from "./pricelist-pricing";
 
 const number = (value) =>
   Number.isFinite(value)
@@ -62,6 +63,8 @@ export default function SpaceSuggestPdfPage({
   spaceSug,
   battery,
   accessories = [],
+  priceList = null,
+  priceItems,
   getDriveImageUrl,
 }) {
   const name = spaceSug?.ans_product || "ยังไม่ได้เลือกอินเวอร์เตอร์";
@@ -97,11 +100,33 @@ export default function SpaceSuggestPdfPage({
       ? "ไม่ติดแบต"
       : "ไม่เพิ่มเติม";
   const inverterPrice = priceNumber(spaceSug?.price);
-  const batteryPrice = battery ? priceNumber(battery.totalPrice) : null;
-  const total =
-    inverterPrice !== null && batteryPrice !== null
-      ? (accessories.every(item => priceNumber(item.price) !== null) ? inverterPrice + batteryPrice + accessories.reduce((sum, item) => sum + priceNumber(item.price), 0) : null)
+  const batteryPrice =
+    battery?.count === 0 ? 0 : priceNumber(battery?.totalPrice);
+  const accessoryPrices = accessories.map((item) => priceNumber(item.price));
+  const previousTotal =
+    inverterPrice !== null &&
+    batteryPrice !== null &&
+    accessoryPrices.every((price) => price !== null)
+      ? inverterPrice +
+        batteryPrice +
+        accessoryPrices.reduce((sum, price) => sum + price, 0)
       : null;
+  const inverterProduct = name.replace(/\s*\b\d+\s*Units?\b\s*/i, " ").trim();
+  const mappedItems = priceItems ?? [
+    { product: inverterProduct, quantity: units ? Number(units[1]) : 1 },
+    ...(battery?.count === 0
+      ? []
+      : packs.length
+        ? packs.map((pack) => ({ product: pack.name, quantity: pack.count }))
+        : [{ product: "", quantity: 1 }]),
+    ...accessories.map((item) => ({ product: item.product, quantity: 1 })),
+    ...(spaceSug?.gateway && !["ไม่เพิ่มเติม", "ไม่ติดตั้ง", "ไม่ติด", "-", "—"].includes(spaceSug.gateway)
+      ? [{ product: spaceSug.gateway, quantity: 1 }]
+      : []),
+  ];
+  const total = priceList !== null
+    ? priceListTotal(priceList, mappedItems)
+    : previousTotal;
   const features = String(spaceSug?.detail_product || "")
     .split(/[,\n]+/)
     .map((v) => v.trim())

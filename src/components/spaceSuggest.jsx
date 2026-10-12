@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -6,15 +6,51 @@ import "./spaceSuggestCompact.css";
 import SpaceSuggestPdfPage from "./SpaceSuggestPdfPage";
 import { suggestionAccessories } from "./suggestion-accessories";
 import { getBatterySummary } from "./battery-summary";
+import { supabase } from "../supabase";
 
 export default function SpaceSuggest({
   spaceSug,
   getDriveImageUrl,
   onCompare,
   onCustomize,
-  priceList = [],
+  priceList: providedPriceList = [],
   batteryCatalog = [],
 }) {
+  const [loadedPriceList, setLoadedPriceList] = useState(null);
+  const priceList = loadedPriceList ?? (
+    Array.isArray(providedPriceList) ? providedPriceList : []
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPriceList() {
+      try {
+        const { data: rows, error } = await supabase
+          .from("price_list")
+          .select("*")
+          .order("id", { ascending: true });
+        if (cancelled) return;
+        if (error) {
+          console.error("[SpaceSuggest] โหลด price_list ไม่สำเร็จ:", error.message);
+          return;
+        }
+        console.info("[SpaceSuggest price_list] loaded", {
+          count: rows?.length ?? 0,
+          columns: rows?.[0] ? Object.keys(rows[0]) : [],
+          products: (rows ?? []).map((row) => row.product),
+        });
+        if (!rows?.length) {
+          console.warn("[SpaceSuggest price_list] query succeeded but returned no rows");
+        }
+        setLoadedPriceList(rows ?? []);
+      } catch (error) {
+        if (!cancelled) console.error("[SpaceSuggest] โหลด price_list ไม่สำเร็จ:", error);
+      }
+    }
+    loadPriceList();
+    return () => { cancelled = true; };
+  }, []);
+
   const pdfRef = useRef(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -246,6 +282,7 @@ export default function SpaceSuggest({
         personalData={personalData}
         pdfRef={pdfRef}
         spaceSug={spaceSug}
+        priceList={priceList}
         battery={battery}
         accessories={accessories}
         getDriveImageUrl={getDriveImageUrl}

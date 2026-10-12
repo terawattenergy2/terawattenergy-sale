@@ -93,7 +93,7 @@ function buildPriceSummary(items, priceList) {
       return null;
     }
 
-    const number = Number(value);
+    const number = Number(typeof value === "string" ? value.replace(/,/g, "") : value);
     return Number.isFinite(number) ? number : null;
   };
 
@@ -107,7 +107,7 @@ function buildPriceSummary(items, priceList) {
             normalizeProduct(entry.product) === normalizeProduct(product),
         )
       : undefined;
-    const parsedPrice = toNumber(item.price ?? match?.price);
+    const parsedPrice = toNumber(match?.price ?? item.price);
     const unitPrice =
       parsedPrice !== null && parsedPrice >= 0 ? parsedPrice : null;
 
@@ -171,8 +171,43 @@ function SpaceProductResult({
   inverterTypes,
   selectedInverter,
   handleSelect,
-  priceList,
+  priceList: providedPriceList,
 }) {
+  const [loadedPriceList, setLoadedPriceList] = useState(null);
+  const priceList = loadedPriceList ?? (
+    Array.isArray(providedPriceList) ? providedPriceList : []
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPriceList() {
+      try {
+        const { data: rows, error } = await supabase
+          .from("price_list")
+          .select("*")
+          .order("id", { ascending: true });
+        if (cancelled) return;
+        if (error) {
+          console.error("โหลด price_list ไม่สำเร็จ:", error.message);
+          return;
+        }
+        console.info("[price_list] loaded", {
+          count: rows?.length ?? 0,
+          columns: rows?.[0] ? Object.keys(rows[0]) : [],
+          products: (rows ?? []).map((row) => row.product),
+        });
+        if (!rows?.length) {
+          console.warn("[price_list] query succeeded but returned no rows");
+        }
+        setLoadedPriceList(rows ?? []);
+      } catch (error) {
+        if (!cancelled) console.error("โหลด price_list ไม่สำเร็จ:", error);
+      }
+    }
+    loadPriceList();
+    return () => { cancelled = true; };
+  }, []);
+
   const detail = data?.detail;
   const isHybrid = /hybrid/i.test(`${data?.short} ${data?.label}`);
   const [canViewFormula, setCanViewFormula] = useState(false);
@@ -843,7 +878,7 @@ function SpaceProductResult({
     const batteryOption = (matchedData?.bat ?? []).find(
       (item) => item.title === selectedOptions["2"],
     );
-    if (selectedOptions["2"]) {
+    if (selectedOptions["2"] && !noBattery) {
       selectedPriceItems.push({
         title: selectedOptions["2"],
         quantity: selectedOptions["3"],
@@ -873,6 +908,16 @@ function SpaceProductResult({
     selectedPriceItems.push({ title: "SigenStor BC", product: controller?.product || "SigenStor BC", price: controller?.price, quantity: 1 });
   }
   const priceSummary = buildPriceSummary(selectedPriceItems, priceList);
+  useEffect(() => {
+    if (loadedPriceList === null) return;
+    const missing = priceSummary.lines.filter((item) => item.unitPrice === null);
+    if (missing.length) {
+      console.warn("[price_list] unmatched products", missing.map((item) => ({
+        product: item.product,
+        normalizedProduct: normalizeProduct(item.product),
+      })));
+    }
+  }, [loadedPriceList, JSON.stringify(selectedPriceItems)]);
   const totalPrice =
     isFormCompleted && priceSummary.complete
       ? priceSummary.totalWithMarkup
@@ -1359,6 +1404,8 @@ function SpaceProductResult({
         <PdfPage
           formatPrice={formatPrice}
           priceSummary={priceSummary}
+          priceList={priceList}
+          priceItems={selectedPriceItems}
           totalPrice={totalPrice}
           energySummary={energySummary}
           pdfRef={pdfRef}
