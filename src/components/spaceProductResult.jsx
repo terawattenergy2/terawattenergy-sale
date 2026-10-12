@@ -56,7 +56,8 @@ function isInstallationKitVisible(item, data) {
   const isMicro = productId === "3" || productType === "micro";
   const kitType = normalizeProduct(item?.type);
 
-  if (productType === "hybrid" || /hybrid/i.test(data?.label || "")) return false;
+  if (productType === "hybrid" || /hybrid/i.test(data?.label || ""))
+    return false;
   if (isMicro) return false;
   if (kitType === "neo") return isNeo;
   if (kitType === "all") return !isNeo;
@@ -67,13 +68,17 @@ function isInstallationKitVisible(item, data) {
 // Include only accessories currently visible and selected in the configurator.
 function buildAccessoryPriceItems(activeSpace, selectedOptions) {
   const declinedOptions = new Set([
-    "ไม่รับมิเตอร์", "ไม่ติดตั้ง", "ไม่เพิ่มเติม", "ไม่รับชุดติดตั้ง",
+    "ไม่รับมิเตอร์",
+    "ไม่ติดตั้ง",
+    "ไม่เพิ่มเติม",
+    "ไม่รับชุดติดตั้ง",
   ]);
   return activeSpace.flatMap((item) => {
     const id = String(item.id);
     const title = String(item.title ?? "");
     const isSensor = id === "6" || /sigen\s+power\s+sensor/i.test(title);
-    const isKit = id === "7" || id === "8" || /installation\s+kits?\b/i.test(title);
+    const isKit =
+      id === "7" || id === "8" || /installation\s+kits?\b/i.test(title);
     if (!isSensor && !isKit) return [];
 
     const product = String(selectedOptions[item.id] ?? "").trim();
@@ -93,7 +98,9 @@ function buildPriceSummary(items, priceList) {
       return null;
     }
 
-    const number = Number(typeof value === "string" ? value.replace(/,/g, "") : value);
+    const number = Number(
+      typeof value === "string" ? value.replace(/,/g, "") : value,
+    );
     return Number.isFinite(number) ? number : null;
   };
 
@@ -174,8 +181,11 @@ function SpaceProductResult({
   priceList: providedPriceList,
 }) {
   const [loadedPriceList, setLoadedPriceList] = useState(null);
-  const priceList = loadedPriceList ?? (
-    Array.isArray(providedPriceList) ? providedPriceList : []
+  const priceList = useMemo(
+    () =>
+      loadedPriceList ??
+      (Array.isArray(providedPriceList) ? providedPriceList : []),
+    [loadedPriceList, providedPriceList],
   );
 
   useEffect(() => {
@@ -205,7 +215,9 @@ function SpaceProductResult({
       }
     }
     loadPriceList();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const detail = data?.detail;
@@ -213,14 +225,27 @@ function SpaceProductResult({
   const [canViewFormula, setCanViewFormula] = useState(false);
   useEffect(() => {
     let active = true;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
       setCanViewFormula(false);
     });
-    supabase.rpc("teramatch_my_profile").then(({ data: profile, error }) => {
-      const row = Array.isArray(profile) ? profile[0] : profile;
-      if (active && !error) setCanViewFormula(Number(row?.roldID ?? row?.roleID ?? row?.rold_id ?? row?.role_id) === 1);
-    }).catch(() => {});
-    return () => { active = false; subscription.unsubscribe(); };
+    supabase
+      .rpc("teramatch_my_profile")
+      .then(({ data: profile, error }) => {
+        const row = Array.isArray(profile) ? profile[0] : profile;
+        if (active && !error)
+          setCanViewFormula(
+            Number(
+              row?.roldID ?? row?.roleID ?? row?.rold_id ?? row?.role_id,
+            ) === 1,
+          );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isExporting, setIsExporting] = useState(false);
@@ -803,7 +828,8 @@ function SpaceProductResult({
       );
       // Always offer opting out, even when the meter row has no such option.
       const hasNoMeter = sensorOptions.some(
-        (option) => String(option ?? "").replace(/\s+/g, "") === "ไม่รับมิเตอร์",
+        (option) =>
+          String(option ?? "").replace(/\s+/g, "") === "ไม่รับมิเตอร์",
       );
       return hasNoMeter ? sensorOptions : [...sensorOptions, "ไม่รับมิเตอร์"];
     }
@@ -900,24 +926,38 @@ function SpaceProductResult({
         quantity: 1,
       });
     }
-    selectedPriceItems.push(...buildAccessoryPriceItems(activeSpace, selectedOptions));
+    selectedPriceItems.push(
+      ...buildAccessoryPriceItems(activeSpace, selectedOptions),
+    );
   }
 
   if (isHybrid && !noBattery && Number(selectedOptions["3"]) > 0) {
-    const controller = (priceList || []).find(item => String(item.id) === "60");
-    selectedPriceItems.push({ title: "SigenStor BC", product: controller?.product || "SigenStor BC", price: controller?.price, quantity: 1 });
+    const controller = (priceList || []).find(
+      (item) => String(item.id) === "60",
+    );
+    selectedPriceItems.push({
+      title: "SigenStor BC",
+      product: controller?.product || "SigenStor BC",
+      price: controller?.price,
+      quantity: 1,
+    });
   }
   const priceSummary = buildPriceSummary(selectedPriceItems, priceList);
-  useEffect(() => {
-    if (loadedPriceList === null) return;
-    const missing = priceSummary.lines.filter((item) => item.unitPrice === null);
-    if (missing.length) {
-      console.warn("[price_list] unmatched products", missing.map((item) => ({
+  const missingPriceProducts = JSON.stringify(
+    priceSummary.lines
+      .filter((item) => item.unitPrice === null)
+      .map((item) => ({
         product: item.product,
         normalizedProduct: normalizeProduct(item.product),
-      })));
+      })),
+  );
+  useEffect(() => {
+    if (loadedPriceList === null) return;
+    const missing = JSON.parse(missingPriceProducts);
+    if (missing.length) {
+      console.warn("[price_list] unmatched products", missing);
     }
-  }, [loadedPriceList, JSON.stringify(selectedPriceItems)]);
+  }, [loadedPriceList, missingPriceProducts]);
   const totalPrice =
     isFormCompleted && priceSummary.complete
       ? priceSummary.totalWithMarkup
@@ -1112,89 +1152,100 @@ function SpaceProductResult({
 
                 return (
                   <React.Fragment key={item.id}>
-                  <div
-                    className="space-data row w-100 progressive-question"
-                    data-question-id={item.id}
-                  >
-                    <div className="space-left col-6">
-                      <h5>{item.title}</h5>
-                      <p>{item.sub_title}</p>
-                    </div>
+                    <div
+                      className="space-data row w-100 progressive-question"
+                      data-question-id={item.id}
+                    >
+                      <div className="space-left col-6">
+                        <h5>{item.title}</h5>
+                        <p>{item.sub_title}</p>
+                      </div>
 
-                    {item.status ? (
-                      <div className="space-right col-6">
-                        <>
-                          <div className="space-right col-6 d-flex flex-column align-items-start">
-                            <select
-                              name={`space-${item.id}`}
-                              value={selectedValue}
-                              onChange={(event) =>
-                                handleSelectOption(item.id, event.target.value)
+                      {item.status ? (
+                        <div className="space-right col-6">
+                          <>
+                            <div className="space-right col-6 d-flex flex-column align-items-start">
+                              <select
+                                name={`space-${item.id}`}
+                                value={selectedValue}
+                                onChange={(event) =>
+                                  handleSelectOption(
+                                    item.id,
+                                    event.target.value,
+                                  )
+                                }
+                              >
+                                <option value="" disabled>
+                                  กรุณาเลือก
+                                </option>
+
+                                {options.map((option, optionIndex) => (
+                                  <option
+                                    key={`${item.id}-${option}-${optionIndex}`}
+                                    value={option}
+                                  >
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {String(data?.id) === 1 &&
+                                String(item?.id) === 3 &&
+                                String(selectedValue) === 6 && (
+                                  <p className="text-danger mt-2 mb-0">
+                                    หากติดแบต 6 ก้อน ไม่สามารถติด EVDC ได้
+                                  </p>
+                                )}
+                            </div>
+                          </>
+                        </div>
+                      ) : (
+                        <div className=" row w-100 progressive-question space-right col-6">
+                          {options.map((option, optionIndex) => (
+                            <Button
+                              key={`${item.id}-${option}-${optionIndex}`}
+                              className="me-2 mb-2 btn-space"
+                              variant={
+                                selectedValue === option
+                                  ? "primary"
+                                  : "outline-primary"
+                              }
+                              onClick={() =>
+                                handleSelectOption(item.id, option)
                               }
                             >
-                              <option value="" disabled>
-                                กรุณาเลือก
-                              </option>
-
-                              {options.map((option, optionIndex) => (
-                                <option
-                                  key={`${item.id}-${option}-${optionIndex}`}
-                                  value={option}
-                                >
-                                  {option}
-                                </option>
-                              ))}
-                            </select>
-
-                            {String(data?.id) === 1 &&
-                              String(item?.id) === 3 &&
-                              String(selectedValue) === 6 && (
-                                <p className="text-danger mt-2 mb-0">
-                                  หากติดแบต 6 ก้อน ไม่สามารถติด EVDC ได้
-                                </p>
-                              )}
-                          </div>
-                        </>
-                      </div>
-                    ) : (
-                      <div className=" row w-100 progressive-question space-right col-6">
-                        {options.map((option, optionIndex) => (
-                          <Button
-                            key={`${item.id}-${option}-${optionIndex}`}
-                            className="me-2 mb-2 btn-space"
-                            variant={
-                              selectedValue === option
-                                ? "primary"
-                                : "outline-primary"
-                            }
-                            onClick={() => handleSelectOption(item.id, option)}
-                          >
-                            {option}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {String(item.id) === "2" && isHybrid && hasAnswer(selectBat) && !noBattery && (
-                    <div className="space-data row w-100 progressive-question" data-question-id="battery-controller">
-                      <div className="space-left col-6">
-                        <h5>SigenStor BC</h5>
-                        <p className="text-secondary">Battery Controller</p>
-                      </div>
-                      <div className="space-right col-6">
-                        <Button
-                          type="button"
-                          className="me-2 mb-2 btn-space"
-                          variant="primary"
-                          aria-pressed="true"
-                          aria-disabled="true"
-                          aria-label="SigenStor BC จำนวน 1 เลือกให้อัตโนมัติเมื่อรับแบตเตอรี่"
-                        >
-                          SigenStor BC
-                        </Button>
-                      </div>
+                              {option}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    {String(item.id) === "2" &&
+                      isHybrid &&
+                      hasAnswer(selectBat) &&
+                      !noBattery && (
+                        <div
+                          className="space-data row w-100 progressive-question"
+                          data-question-id="battery-controller"
+                        >
+                          <div className="space-left col-6">
+                            <h5>SigenStor BC</h5>
+                            <p className="text-secondary">Battery Controller</p>
+                          </div>
+                          <div className="space-right col-6">
+                            <Button
+                              type="button"
+                              className="me-2 mb-2 btn-space"
+                              variant="primary"
+                              aria-pressed="true"
+                              aria-disabled="true"
+                              aria-label="SigenStor BC จำนวน 1 เลือกให้อัตโนมัติเมื่อรับแบตเตอรี่"
+                            >
+                              SigenStor BC
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                   </React.Fragment>
                 );
               })}
@@ -1237,18 +1288,21 @@ function SpaceProductResult({
                 </div>
               ))}
             </div>
-            {canViewFormula && <details className="mt-3"><summary>แสดง/ซ่อนสูตรการคำนวณ</summary>
-            <p className="small text-secondary mt-3 mb-1">
-              ลดค่าไฟจากแบตเตอรี่ = ความจุแบตเตอรี่ต่อก้อน × จำนวนก้อน × 4.50 บาท/หน่วย;
-              ชั่วโมงแอร์ = ความจุแบตเตอรี่รวม ÷ 1 kW. 
-              ประมาณการตามสูตรที่กำหนด: มูลค่าไฟฟ้าที่ผลิตได้ =
-              กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน × 4.50 บาท/หน่วย
-              โดยสมมุติขนาดแผงเพียงพอ; คิดพลังงานแบตเตอรี่ 100% ของความจุรวม
-              ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW
-              อ้างอิงการใช้แบตเตอรี่ 1 รอบ/วัน ไม่หักการสูญเสีย
-              ผลจริงขึ้นกับการติดตั้งและการใช้งาน
-            </p></details>}
-           
+            {canViewFormula && (
+              <details className="mt-3">
+                <summary>แสดง/ซ่อนสูตรการคำนวณ</summary>
+                <p className="small text-secondary mt-3 mb-1">
+                  ลดค่าไฟจากแบตเตอรี่ = ความจุแบตเตอรี่ต่อก้อน × จำนวนก้อน ×
+                  4.50 บาท/หน่วย; ชั่วโมงแอร์ = ความจุแบตเตอรี่รวม ÷ 1 kW.
+                  ประมาณการตามสูตรที่กำหนด: มูลค่าไฟฟ้าที่ผลิตได้ =
+                  กำลังอินเวอร์เตอร์ × 4 ชั่วโมง/วัน × 4.50 บาท/หน่วย
+                  โดยสมมุติขนาดแผงเพียงพอ; คิดพลังงานแบตเตอรี่ 100% ของความจุรวม
+                  ค่าไฟ 4.50 บาท/หน่วย และแอร์ใช้กำลังไฟเฉลี่ย 1 kW
+                  อ้างอิงการใช้แบตเตอรี่ 1 รอบ/วัน ไม่หักการสูญเสีย
+                  ผลจริงขึ้นกับการติดตั้งและการใช้งาน
+                </p>
+              </details>
+            )}
           </section>
         )}
         {/* {priceSummary.lines.length > 0 && (
