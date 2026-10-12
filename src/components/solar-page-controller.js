@@ -1,5 +1,6 @@
 import * as SolarEngine from "./solar-engine";
 import { renderFormulas } from "./solar-formulas";
+import { recommendSolarSize } from "./solar-recommendation";
 
 const MAX_BATTERY_KWH = 54.24;
 
@@ -17,13 +18,22 @@ function batteryOptionsFromLimit(capacityLimit) {
 
 export function mountSolarPage(
   root,
-  { onBatteryAvailability = () => {}, onCalculation = () => {}, solarSizes = [5, 6, 10, 12, 15, 20, 25, 30], solarSizesByPhase } = {},
+  {
+    onBatteryAvailability = () => {},
+    onCalculation = () => {},
+    solarSizes = [5, 6, 10, 12, 15, 20, 25, 30],
+    solarSizesByPhase,
+  } = {},
 ) {
   if (!root) return () => {};
   const cleanups = [];
   const setText = (id, value) => {
     const element = root.querySelector("#" + id);
-    if (element) element.textContent = String(value).replace(/(\d) +(kWh|kWp|kW)(?=\b)/g, "$1\u00a0$2");
+    if (element)
+      element.textContent = String(value).replace(
+        /(\d) +(kWh|kWp|kW)(?=\b)/g,
+        "$1\u00a0$2",
+      );
   };
   const requiredIds = [
     "dayStart",
@@ -140,13 +150,25 @@ export function mountSolarPage(
   $("formulaTime").value = 48;
   $("dayStart").value = 6;
   $("dayEnd").value = 18;
-  const availableSolarSizes = () => solarSizesByPhase?.[$("phases").value] || solarSizes;
-  function update() {
-    const solarSizes = availableSolarSizes();
-    $("solarKWp").min = solarSizes[0];
-    $("solarKWp").max = solarSizes[solarSizes.length - 1];
-    const selectedSolar = +$("solarKWp").value;
-    $("solarKWp").value = solarSizes.reduce((best, size) => Math.abs(size-selectedSolar) < Math.abs(best-selectedSolar) ? size : best);
+  const availableSolarSizes = () =>
+    solarSizesByPhase?.[$("phases").value] || solarSizes;
+  let recommendationPending = true;
+  const recommendationInputs = new Set([
+    "bill",
+    "daytimeShare",
+    "dayStart",
+    "dayEnd",
+    "rate",
+    "fixed",
+    "days",
+    "monthlyKWh",
+  ]);
+  function update(event) {
+    if (recommendationInputs.has(event?.target?.id))
+      recommendationPending = true;
+    $("solarKWp").min = "0.5";
+    $("solarKWp").max = "30";
+    $("solarKWp").step = "0.5";
 
     // Model rule: charging power follows the selected Solar size.
     $("chargeKW").value = $("solarKWp").value;
@@ -190,6 +212,31 @@ export function mountSolarPage(
           (input.id !== "monthlyKWh" && input.value === "")
         )
           throw Error("กรุณาตรวจสอบช่องตัวเลขและช่วงค่าที่กำหนด");
+      // Validate using the original engine before applying the new recommendation.
+      if (recommendationPending) {
+        SolarEngine.simulate({
+          ...c,
+          batteryKWh: 0,
+          days: 1,
+          monthlyKWh:
+            c.monthlyKWh === null
+              ? (c.bill - c.fixed) / c.rate / c.days
+              : c.monthlyKWh / c.days,
+        });
+        const recommendation = recommendSolarSize(c);
+        c.solarKWp = recommendation.solarKWp;
+        $("solarKWp").value = c.solarKWp;
+        c.chargeKW = c.solarKWp;
+        $("chargeKW").value = c.chargeKW;
+        setText("solarOut", fmt(c.solarKWp, 1) + " kWp");
+        setText(
+          "solarRecommendation",
+          recommendation.meetsTarget
+            ? "ขนาดแนะนำ " + fmt(c.solarKWp, 1) + " kWp • ปรับขนาดเองได้"
+            : "ขนาดเริ่มต้น 0.5 kWp ยังมีไฟส่วนเกินเกิน 20% • ปรับขนาดเองได้",
+        );
+        recommendationPending = false;
+      }
       sizing = SolarEngine.sizeBatteryFromSurplus(c);
       // Use the unrounded surplus-based capacity; rounding up must not unlock a size.
       const capacityLimit =
@@ -216,15 +263,20 @@ export function mountSolarPage(
       );
       const maxBattery = batteryOptions[batteryOptions.length - 1];
       onBatteryAvailability(maxBattery >= 6);
-      setText("batteryRecommendation", maxBattery >= 6
-        ? "แนะนำความจุแบตเตอรี่ได้สูงสุด\n" + fmt(maxBattery, 2) + " kWh"
-        : "หากต้องการติดตั้งแบตเตอรี่ กรุณาเพิ่มขนาด Solar เพื่อให้มีพลังงานส่วนเกินเพียงพอสำหรับชาร์จแบตเตอรี่ขั้นต่ำ 6 kWh");
+      setText(
+        "batteryRecommendation",
+        maxBattery >= 6
+          ? "แนะนำความจุแบตเตอรี่ได้สูงสุด\n" + fmt(maxBattery, 2) + " kWh"
+          : "หากต้องการติดตั้งแบตเตอรี่ กรุณาเพิ่มขนาด Solar เพื่อให้มีพลังงานส่วนเกินเพียงพอสำหรับชาร์จแบตเตอรี่ขั้นต่ำ 6 kWh",
+      );
       const meter = $("batteryCapacityMeter");
       if (meter) {
         meter.setAttribute("aria-valuenow", maxBattery);
         meter.setAttribute("aria-valuetext", fmt(maxBattery, 2) + " kWh");
       }
-      if ($("batteryCapacityFill")) $("batteryCapacityFill").style.width = (maxBattery / MAX_BATTERY_KWH * 100) + "%";
+      if ($("batteryCapacityFill"))
+        $("batteryCapacityFill").style.width =
+          (maxBattery / MAX_BATTERY_KWH) * 100 + "%";
 
       setText(
         "batteryOptions",
@@ -264,25 +316,49 @@ export function mountSolarPage(
               monthlyKWh: (result.monthlyKWh * 2) / c.days,
             });
       maximumPreview = SolarEngine.simulate({
-        ...c, batteryKWh: maxBattery, days: 3,
-        monthlyKWh: result.monthlyKWh * 3 / c.days,
+        ...c,
+        batteryKWh: maxBattery,
+        days: 3,
+        monthlyKWh: (result.monthlyKWh * 3) / c.days,
       });
-      maximumRows = maximumPreview.series.filter(v => v.day === 2);
-      const night = maximumPreview.series.filter(v =>
-        (v.day === 2 && v.hour >= 18) || (v.day === 3 && v.hour < 6));
+      maximumRows = maximumPreview.series.filter((v) => v.day === 2);
+      const night = maximumPreview.series.filter(
+        (v) => (v.day === 2 && v.hour >= 18) || (v.day === 3 && v.hour < 6),
+      );
       const reserve = maxBattery * c.minSOC;
-      const exhausted = night.find(v => v.energy <= reserve + 1e-8);
+      const exhausted = night.find((v) => v.energy <= reserve + 1e-8);
       let runtime = "";
-      if (maxBattery < 6) runtime = "ยังไม่มีพลังงานส่วนเกินเพียงพอสำหรับแบตเตอรี่ขั้นต่ำ 6 kWh";
-      else if (!exhausted) runtime = "แบตขนาดสูงสุดยังมีพลังงานเหลือถึง 06:00 น. ของวันถัดไป";
+      if (maxBattery < 6)
+        runtime = "ยังไม่มีพลังงานส่วนเกินเพียงพอสำหรับแบตเตอรี่ขั้นต่ำ 6 kWh";
+      else if (!exhausted)
+        runtime = "แบตขนาดสูงสุดยังมีพลังงานเหลือถึง 06:00 น. ของวันถัดไป";
       else {
         const deficit = Math.max(0, exhausted.load - exhausted.pv);
-        const duration = deficit > 0 ? Math.min(0.25, exhausted.discharge * 0.25 / Math.min(deficit, c.dischargeKW || deficit)) : 0;
+        const duration =
+          deficit > 0
+            ? Math.min(
+                0.25,
+                (exhausted.discharge * 0.25) /
+                  Math.min(deficit, c.dischargeKW || deficit),
+              )
+            : 0;
         const minutes = Math.round((exhausted.hour + duration) * 60);
-        const clock = String(Math.floor(minutes / 60) % 24).padStart(2, "0") + ":" + String(minutes % 60).padStart(2, "0");
-        runtime = "แบตขนาดสูงสุด " + fmt(maxBattery, 2) + " kWh จ่ายพลังงานช่วงเย็นได้ถึงประมาณ " + clock + " น." + (exhausted.day === 3 || minutes >= 1440 ? " ของวันถัดไป" : "");
+        const clock =
+          String(Math.floor(minutes / 60) % 24).padStart(2, "0") +
+          ":" +
+          String(minutes % 60).padStart(2, "0");
+        runtime =
+          "แบตขนาดสูงสุด " +
+          fmt(maxBattery, 2) +
+          " kWh จ่ายพลังงานช่วงเย็นได้ถึงประมาณ " +
+          clock +
+          " น." +
+          (exhausted.day === 3 || minutes >= 1440 ? " ของวันถัดไป" : "");
       }
-      setText("batteryRuntime", runtime + " • ประมาณจากโหลดและกำลังจ่ายที่ตั้งไว้");
+      setText(
+        "batteryRuntime",
+        runtime + " • ประมาณจากโหลดและกำลังจ่ายที่ตั้งไว้",
+      );
       withoutBattery = SolarEngine.simulate({ ...c, batteryKWh: 0 });
       setText(
         "periodInfo",
@@ -389,10 +465,14 @@ export function mountSolarPage(
         setText(id, "—");
       setText("summary", "แก้ไขข้อมูลเพื่อคำนวณใหม่");
       setText("batterySizing", "แก้ไขข้อมูลเพื่อคำนวณความจุแบต");
-      setText("batteryRecommendation", "แก้ไขข้อมูลเพื่อแสดงขนาดแบตเตอรี่ที่แนะนำ");
+      setText(
+        "batteryRecommendation",
+        "แก้ไขข้อมูลเพื่อแสดงขนาดแบตเตอรี่ที่แนะนำ",
+      );
       $("batteryChoice").disabled = true;
       if ($("batteryCapacityFill")) $("batteryCapacityFill").style.width = "0%";
-      if ($("batteryCapacityMeter")) $("batteryCapacityMeter").setAttribute("aria-valuenow", "0");
+      if ($("batteryCapacityMeter"))
+        $("batteryCapacityMeter").setAttribute("aria-valuenow", "0");
     }
   }
   function plot(id, soc = false, data = rows) {
@@ -562,7 +642,14 @@ export function mountSolarPage(
         palette("--te-grid"),
       );
       if (id === "chart" && maximumRows.length === rows.length) {
-        area(combined, rows.map((v, i) => v.direct + Math.max(v.discharge, maximumRows[i].discharge)), "rgba(168, 85, 247, 0.65)");
+        area(
+          combined,
+          rows.map(
+            (v, i) =>
+              v.direct + Math.max(v.discharge, maximumRows[i].discharge),
+          ),
+          "rgba(168, 85, 247, 0.65)",
+        );
       }
       line(
         rows.map((v) => v.pv),
@@ -683,16 +770,14 @@ export function mountSolarPage(
     .querySelectorAll("input, #exportAllowed, #dayStart, #dayEnd, #phases")
     .forEach((el) => listen(el, "input", update));
   listen($("solarKWp"), "change", update);
-  root.querySelectorAll("[data-adjust-input]").forEach(button => {
+  root.querySelectorAll("[data-adjust-input]").forEach((button) => {
     listen(button, "click", () => {
       const input = $(button.dataset.adjustInput);
       if (!input || input.disabled) return;
       if (input.id === "solarKWp") {
-        const solarSizes = availableSolarSizes();
-        const index = solarSizes.indexOf(+input.value);
-        input.value = solarSizes[Math.max(0, Math.min(solarSizes.length - 1, index + +button.dataset.adjustDirection))];
-      }
-      else if (+button.dataset.adjustDirection > 0) input.stepUp();
+        if (+button.dataset.adjustDirection > 0) input.stepUp();
+        else input.stepDown();
+      } else if (+button.dataset.adjustDirection > 0) input.stepUp();
       else input.stepDown();
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });

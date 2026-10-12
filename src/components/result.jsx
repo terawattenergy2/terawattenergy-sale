@@ -1,5 +1,6 @@
 import { sortSuggestionProducts } from "./suggestion-order";
-import { optimizeNeoProducts } from "./neo-battery-options";
+import { optimizeNeoProducts, isNeoProduct } from "./neo-battery-options";
+import { finalizeRecommendations } from "./recommendation-policy";
 import React, { useEffect, useRef, useState } from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import "./resultComparison.css";
@@ -167,7 +168,8 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
     solarSearch?.source === "solar" && Array.isArray(solarSearch.products);
   const inverterTypes = Array.isArray(inverter) ? inverter : [];
   const isLoading =
-    !Array.isArray(inverter) || !Array.isArray(answer) || !Array.isArray(space);
+    !Array.isArray(inverter) || !Array.isArray(answer) || !Array.isArray(space) ||
+    (fromSolar && !Array.isArray(priceList));
   // 🌟 States
   const spaceSugRef = useRef(null);
   const customSpaceRef = useRef(null);
@@ -268,7 +270,12 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
         Array.isArray(priceList) ? priceList : [],
       );
       setMatchedProducts(
-        sortSuggestionProducts(optimizeNeoProducts(mergedProducts.map((product) => restoreCatalogDetails(product, answer)), Array.isArray(priceList) ? priceList : [])),
+        sortSuggestionProducts(finalizeRecommendations(optimizeNeoProducts(
+          mergedProducts.map((product) => restoreCatalogDetails(product, answer)),
+          Array.isArray(priceList) ? priceList : [],
+          solarSearch.selectedBatteryKWh,
+          answer,
+        ))),
       );
       return;
     }
@@ -313,7 +320,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
         };
       });
 
-    setMatchedProducts(sortSuggestionProducts(productsWithPrice));
+    setMatchedProducts(sortSuggestionProducts(finalizeRecommendations(productsWithPrice)));
   }, [answer, priceList, fromSolar, solarSearch]);
 
   const filterType = (type) => {
@@ -321,7 +328,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
   };
 
   const filteredProducts = matchedProducts.filter((item) => {
-    const type = String(item?.solarRecommendation?.type ?? "")
+    const type = isNeoProduct(item) ? "neo" : String(item?.solarRecommendation?.type ?? "")
       .trim()
       .toLowerCase();
 

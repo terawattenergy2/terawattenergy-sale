@@ -154,6 +154,7 @@ function PrivateApp() {
               inverter={data.inverter}
               answer={data.answer}
               space={data.space}
+              priceList={data.price_list}
               suggestProducts={data.suggest_product}
             />,
           )}

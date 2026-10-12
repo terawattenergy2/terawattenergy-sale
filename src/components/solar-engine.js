@@ -103,7 +103,7 @@ export function simulate(options = {}) {
       const load =
         dailyKWh *
         (isDay ? c.daytimeShare / dayHours : (1 - c.daytimeShare) / nightHours);
-      const pv = (c.solarKWp * c.yieldPerKWp * shape[i]) / shapeArea;
+      const pv = (c.solarKWp * c.yieldPerKWp * 0.8 * shape[i]) / shapeArea;
       const direct = Math.min(load, pv),
         surplus = Math.max(pv - load, 0),
         deficit = Math.max(load - pv, 0);

@@ -148,6 +148,7 @@ export default function SolarPage({ resultPath = "/result", suggestProducts = []
         batteryCount: calculateBatteryCount(
           selectedBatteryKWh,
           item.bat_caculated,
+          Number(String(item.product ?? "").match(/\b(\d+)\s+Units?\s*$/i)?.[1] ?? 1),
         ),
       }));
       setProducts(recommendations);
@@ -210,6 +211,36 @@ export default function SolarPage({ resultPath = "/result", suggestProducts = []
           <p id={"error"} role={"alert"}></p>
           <div id="battery-calculation">
             <div className="planning-inputs">
+          <div className={"controls"}>
+
+            <label>
+              {"บิลเดิมต่อเดือน"}
+              <input
+                id={"bill"}
+                type={"range"}
+                min={"0"}
+                max={"30000"}
+                step={"100"}
+                defaultValue={"7000"}
+              />
+              <output id={"billOut"}></output>
+              <FineAdjust input="bill" label="บิลต่อเดือน" />
+            </label>
+
+            <label>
+              {"◐ สัดส่วนใช้ไฟกลางวัน"}
+              <input
+                id={"daytimeShare"}
+                type={"range"}
+                min={"0"}
+                max={"100"}
+                step={"1"}
+                defaultValue={"20"}
+              />
+              <output id={"dayOut"}></output>
+              <FineAdjust input="daytimeShare" label="สัดส่วนใช้ไฟกลางวัน" />
+            </label>
+          </div>
             <div className="planning-time-settings" style={{ marginTop: "0" }}>
               <div className="planning-time-title"><b>ช่วงเวลาที่ใช้ไฟกลางวัน</b><small>เลือกเวลาให้ตรงกับการใช้งานของคุณ</small></div>
               <label>
@@ -238,39 +269,14 @@ export default function SolarPage({ resultPath = "/result", suggestProducts = []
               <input
                 id={"solarKWp"}
                 type={"range"}
-                min={"5"}
+                min={"0.5"}
                 max={"30"}
-                step={"1"}
+                step={"0.5"}
                 defaultValue={"10"}
               />
               <output id={"solarOut"}></output>
               <FineAdjust input="solarKWp" label="ขนาด Solar" />
-            </label>
-            <label>
-              {"บิลเดิมต่อเดือน"}
-              <input
-                id={"bill"}
-                type={"range"}
-                min={"0"}
-                max={"30000"}
-                step={"100"}
-                defaultValue={"7000"}
-              />
-              <output id={"billOut"}></output>
-              <FineAdjust input="bill" label="บิลต่อเดือน" />
-            </label>
-            <label>
-              {"◐ สัดส่วนใช้ไฟกลางวัน"}
-              <input
-                id={"daytimeShare"}
-                type={"range"}
-                min={"0"}
-                max={"100"}
-                step={"1"}
-                defaultValue={"20"}
-              />
-              <output id={"dayOut"}></output>
-              <FineAdjust input="daytimeShare" label="สัดส่วนใช้ไฟกลางวัน" />
+              <small id="solarRecommendation" role="status"></small>
             </label>
           </div>
             <section className={"battery-panel"}>
