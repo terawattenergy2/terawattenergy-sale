@@ -10,6 +10,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNavigate } from "react-router-dom";
 import PdfPage from "./pdfPage";
+import { getSaleScript } from "./sale-script";
 import { supabase } from "../supabase";
 
 import { calculateEnergySummary } from "./energy-summary";
@@ -136,6 +137,7 @@ function buildPriceSummary(items, priceList) {
       price: unitPrice,
       text: match?.text ?? item.text ?? null,
       end_text: match?.end_text ?? item.end_text ?? null,
+      saleScript: getSaleScript(match) ?? getSaleScript(item),
       status,
       end_calculate: rawEndCalculate === false ? false : endCalculate,
       // คำนวณเฉพาะ status ที่เป็น boolean
@@ -600,48 +602,41 @@ function SpaceProductResult({
 
       await waitForImages(pdfRef.current);
 
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        imageTimeout: 5000,
-      });
-
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
         compress: true,
       });
-
+      const pages = Array.from(pdfRef.current.querySelectorAll("[data-pdf-page]"));
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 5;
-
-      const availableWidth = pageWidth - margin * 2;
-      const availableHeight = pageHeight - margin * 2;
-
-      // รักษาสัดส่วนภาพ และให้เนื้อหาทั้งหมดอยู่ในหน้าเดียว
-      const scale = Math.min(
-        availableWidth / canvas.width,
-        availableHeight / canvas.height,
-      );
-
-      const renderWidth = canvas.width * scale;
-      const renderHeight = canvas.height * scale;
-
-      // เพิ่มภาพเพียงครั้งเดียว
-      pdf.addImage({
-        imageData: canvas.toDataURL("image/jpeg", 0.95),
-        format: "JPEG",
-        x: (pageWidth - renderWidth) / 2,
-        y: margin,
-        width: renderWidth,
-        height: renderHeight,
-        compression: "FAST",
-      });
+      for (const [index, page] of pages.entries()) {
+        const canvas = await html2canvas(page, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          imageTimeout: 5000,
+        });
+        if (index) pdf.addPage();
+        const scale = Math.min(
+          (pageWidth - margin * 2) / canvas.width,
+          (pageHeight - margin * 2) / canvas.height,
+        );
+        const renderWidth = canvas.width * scale;
+        pdf.addImage({
+          imageData: canvas.toDataURL("image/jpeg", 0.95),
+          format: "JPEG",
+          x: (pageWidth - renderWidth) / 2,
+          y: margin,
+          width: renderWidth,
+          height: canvas.height * scale,
+          compression: "FAST",
+        });
+      }
 
       const safeName = (fullName || "customer").replace(/[/\\?%*:|"<>]/g, "-");
 

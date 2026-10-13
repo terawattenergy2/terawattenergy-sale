@@ -71,21 +71,33 @@ function PdfPage({
         .pdf-compact-page .pdf-section-title { margin: 10px 0 5px !important; padding-bottom: 5px !important; font-size: 16px !important; }
         .pdf-compact-page .pdf-spec-row { padding: 7px 0 !important; min-height: 0 !important; font-size: 12px !important; }
         .pdf-compact-page section { margin-top: 10px !important; }
+        .pdf-summary-page .pdf-summary-content { display: flex; flex-direction: column; min-height: 1026px; }
+        .pdf-summary-page .pdf-header { margin-bottom: 22px !important; }
+        .pdf-summary-page .pdf-summary-section { padding: 20px !important; background: #f4f8f6; }
+        .pdf-summary-page .pdf-summary-item { padding: 16px; border: 1px solid #dce8e1; border-radius: 8px; background: #fff; }
+        .pdf-summary-page .pdf-summary-item + .pdf-summary-item { margin-top: 12px !important; }
+        .pdf-summary-page .pdf-summary-text { font-size: 15px !important; line-height: 1.8 !important; font-weight: 600; }
+        .pdf-summary-page .pdf-summary-text strong { font-size: 15px !important; }
+        .pdf-summary-page .pdf-sale-script { display: block; margin-top: 9px; padding-top: 9px; border-top: 1px solid #e6eee9; font-size: 14px; font-weight: 400; line-height: 1.8; color: #52695e; }
+        .pdf-summary-page .pdf-summary-footer { margin-top: auto !important; padding-top: 14px !important; }
         .pdf-compact-page .pdf-footer { margin-top: 10px !important; padding-top: 5px !important; }
       `}</style>
 
+      <div ref={pdfRef}>
+      {[1, 2].map((pageNumber) => (
       <div
-        ref={pdfRef}
-        className="pdf-specification pdf-compact-page"
+        key={pageNumber}
+        data-pdf-page={pageNumber}
+        className={`pdf-specification pdf-compact-page${pageNumber === 2 ? " pdf-summary-page" : ""}`}
         style={{
           position: "relative",
           overflow: "hidden",
           width: "794px",
           maxWidth: "none",
           height: "auto",
-          minHeight: 0,
+          minHeight: pageNumber === 2 ? "1090px" : 0,
           margin: 0,
-          padding: "12px",
+          padding: pageNumber === 2 ? "32px" : "12px",
           boxSizing: "border-box",
           backgroundColor: "#ffffff",
         }}
@@ -101,15 +113,15 @@ function PdfPage({
             pointerEvents: "none",
           }}
         >
-          {Array.from({ length: 8 }, (_, row) =>
-            Array.from({ length: 3 }, (_, column) => (
+          {Array.from({ length: 6 }, (_, row) =>
+            Array.from({ length: 2 }, (_, column) => (
               <div
                 key={`watermark-${row}-${column}`}
                 style={{
                   position: "absolute",
-                  top: `${6 + row * 12.5}%`,
-                  left: `${16 + column * 34}%`,
-                  width: "29%",
+                  top: `${100 + row * 190}px`,
+                  left: `${26 + column * 48}%`,
+                  width: "210px",
                   transform: "translate(-50%, -50%) rotate(-25deg)",
                   transformOrigin: "center",
                   opacity: 0.0605,
@@ -149,11 +161,13 @@ function PdfPage({
 
         {/* เนื้อหา PDF */}
         <div
+          className={pageNumber === 2 ? "pdf-summary-content" : undefined}
           style={{
             position: "relative",
             zIndex: 1,
           }}
         >
+          {pageNumber === 1 && (<>
           <div className="pdf-header">
             <h2>สรุปสเปกระบบ</h2>
 
@@ -413,8 +427,13 @@ function PdfPage({
                
               </section>
             )}
-          {priceSummary?.lines?.some((item) => item.text || item.end_text) && (
+          </>)}
+          {pageNumber === 2 && (
+            <div className="pdf-header"><h2>สรุปสเปกระบบ</h2><p>{data?.label || "ยังไม่ได้เลือกอินเวอร์เตอร์"}</p></div>
+          )}
+          {pageNumber === 2 && priceSummary?.lines?.some((item) => item.text || item.end_text || item.saleScript) && (
             <section
+              className="pdf-summary-section"
               style={{
                 marginTop: "20px",
                 padding: "12px 16px",
@@ -459,10 +478,11 @@ function PdfPage({
               </div>
 
               {priceSummary.lines
-                .filter((item) => item.text || item.end_text)
+                .filter((item) => item.text || item.end_text || item.saleScript)
                 .map((item, index) => (
                   <div
                     key={`${item.title}-${index}`}
+                    className="pdf-summary-item"
                     style={{
                       display: "flex",
                       alignItems: "baseline",
@@ -485,6 +505,7 @@ function PdfPage({
                     </span>
 
                     <p
+                      className="pdf-summary-text"
                       style={{
                         margin: 0,
                         fontSize: "12px",
@@ -521,12 +542,15 @@ function PdfPage({
                             {formatEnergyValue(item.endCalculateTotal)} kWh
                           </strong>
                         )}
+                      {typeof item.saleScript === "string" && item.saleScript.trim() && (
+                        <span className="pdf-sale-script" style={{ whiteSpace: "pre-wrap" }}>{" "}{item.saleScript}</span>
+                      )}
                     </p>
                   </div>
                 ))}
             </section>
           )}
-          <section
+          {pageNumber === 1 && (<section
             aria-label="ราคาโดยประมาณ"
             style={{
               marginTop: "20px",
@@ -582,8 +606,10 @@ function PdfPage({
             </p>
           </section>
 
+          )}
           {/* Footer ติดต่อและวันที่ในแถบเดียว */}
           <footer
+            className={pageNumber === 2 ? "pdf-summary-footer" : undefined}
             style={{
               display: "flex",
               alignItems: "center",
@@ -628,6 +654,8 @@ function PdfPage({
             </span>
           </footer>
         </div>
+      </div>
+      ))}
       </div>
     </div>
   );
