@@ -515,7 +515,7 @@ export function mountSolarPage(
     ctx.scale(dpr, dpr);
     const l = 46,
       r = 15,
-      top = 15,
+      top = soc ? 15 : 32,
       bottom = 30,
       pw = w - l - r,
       ph = h - top - bottom,
@@ -531,6 +531,10 @@ export function mountSolarPage(
       y = (v) => top + ph * (1 - v / max);
     ctx.font = (w < 480 ? "13px" : "14px") + " Tahoma";
     ctx.lineWidth = 1;
+    if (!soc) {
+      ctx.fillStyle = palette("--te-muted");
+      ctx.fillText("kW", 3, 14);
+    }
     for (let i = 0; i <= 4; i++) {
       const v = (max * i) / 4;
       ctx.strokeStyle = palette("--te-border");
@@ -567,42 +571,44 @@ export function mountSolarPage(
       ctx.fillStyle = color;
       ctx.fill();
     }
-    function line(values, color, dash = []) {
-      // Shape-preserving cubic interpolation for the Solar outline only.
-      // Values at interval midpoints remain unchanged; no energy is recalculated.
-      if (color === palette("--te-pv") && !soc) {
-        const points = [
-          { x: x(0), y: y(0) },
-          ...values.map((v, i) => ({ x: x(i + 0.5), y: y(v) })),
-          { x: x(96), y: y(0) },
-        ];
-        const slopes = points
-          .slice(1)
-          .map((p, i) => (p.y - points[i].y) / (p.x - points[i].x));
-        const tangents = points.map((p, i) =>
-          i === 0
-            ? slopes[0]
-            : i === points.length - 1
-              ? slopes[slopes.length - 1]
-              : slopes[i - 1] * slopes[i] <= 0
-                ? 0
-                : 2 / (1 / slopes[i - 1] + 1 / slopes[i]),
+    function solarPath(values) {
+      // Use the same interval-start curve for the outline and the direct-use fill.
+      // Drawing interpolation does not change the simulated energy values.
+      const points = [
+        ...values.map((v, i) => ({ x: x(i), y: y(v) })),
+        { x: x(96), y: y(0) },
+      ];
+      const slopes = points
+        .slice(1)
+        .map((p, i) => (p.y - points[i].y) / (p.x - points[i].x));
+      const tangents = points.map((p, i) =>
+        i === 0
+          ? slopes[0]
+          : i === points.length - 1
+            ? slopes[slopes.length - 1]
+            : slopes[i - 1] * slopes[i] <= 0
+              ? 0
+              : 2 / (1 / slopes[i - 1] + 1 / slopes[i]),
+      );
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i],
+          b = points[i + 1],
+          dx = (b.x - a.x) / 3;
+        ctx.bezierCurveTo(
+          a.x + dx,
+          a.y + tangents[i] * dx,
+          b.x - dx,
+          b.y - tangents[i + 1] * dx,
+          b.x,
+          b.y,
         );
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 0; i < points.length - 1; i++) {
-          const a = points[i],
-            b = points[i + 1],
-            dx = (b.x - a.x) / 3;
-          ctx.bezierCurveTo(
-            a.x + dx,
-            a.y + tangents[i] * dx,
-            b.x - dx,
-            b.y - tangents[i + 1] * dx,
-            b.x,
-            b.y,
-          );
-        }
+      }
+    }
+    function line(values, color, dash = []) {
+      if (color === palette("--te-pv") && !soc) {
+        solarPath(values);
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.setLineDash([]);
@@ -630,17 +636,24 @@ export function mountSolarPage(
     } else {
       const direct = rows.map((v) => v.direct),
         combined = rows.map((v) => v.direct + v.discharge);
-      area(
-        rows.map(() => 0),
-        direct,
-        palette("--te-direct"),
-      );
+      // Draw Grid first, then clip the smooth Solar fill to the stepped load.
+      // This keeps the orange boundary aligned with the Solar outline.
+      area(rows.map(() => 0), rows.map((v) => v.load), palette("--te-grid"));
+      ctx.save();
+      ctx.beginPath();
+      path(rows.map((v) => v.load));
+      ctx.lineTo(x(96), y(0));
+      ctx.lineTo(x(0), y(0));
+      ctx.closePath();
+      ctx.clip();
+      solarPath(rows.map((v) => v.pv));
+      ctx.lineTo(x(96), y(0));
+      ctx.lineTo(x(0), y(0));
+      ctx.closePath();
+      ctx.fillStyle = palette("--te-direct");
+      ctx.fill();
+      ctx.restore();
       area(direct, combined, palette("--te-battery"));
-      area(
-        combined,
-        rows.map((v) => v.load),
-        palette("--te-grid"),
-      );
       if (id === "chart" && maximumRows.length === rows.length) {
         area(
           combined,
@@ -667,7 +680,7 @@ export function mountSolarPage(
         (best, row, index) => (row.pv > rows[best].pv ? index : best),
         0,
       );
-      const sunX = x(peakIndex + 0.5);
+      const sunX = x(peakIndex);
       const sunY = Math.max(top + 19, y(rows[peakIndex].pv) - 24);
       ctx.save();
       ctx.strokeStyle = palette("--te-pv");

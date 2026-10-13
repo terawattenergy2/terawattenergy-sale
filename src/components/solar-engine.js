@@ -76,10 +76,9 @@ export function simulate(options = {}) {
   const dayHours = c.dayEnd - c.dayStart,
     nightHours = 24 - dayHours;
   const shape = Array.from({ length: steps }, (_, i) => {
-    const h = (i + 0.5) * dt;
+    const h = i * dt;
     return h > 6 && h < 18 ? Math.sin((Math.PI * (h - 6)) / 12) ** 2 : 0;
   });
-  const shapeArea = shape.reduce((a, b) => a + b, 0) * dt;
   const minEnergy = c.batteryKWh * c.minSOC,
     maxEnergy = c.batteryKWh * c.maxSOC;
   // Start at reserve: no free initial stored energy. Carry state across days.
@@ -103,7 +102,7 @@ export function simulate(options = {}) {
       const load =
         dailyKWh *
         (isDay ? c.daytimeShare / dayHours : (1 - c.daytimeShare) / nightHours);
-      const pv = (c.solarKWp * c.yieldPerKWp * 0.8 * shape[i]) / shapeArea;
+      const pv = c.solarKWp * 0.8 * shape[i];
       const direct = Math.min(load, pv),
         surplus = Math.max(pv - load, 0),
         deficit = Math.max(load - pv, 0);

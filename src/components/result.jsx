@@ -28,7 +28,7 @@ import { IoRefresh } from "react-icons/io5";
 const normalizeProductName = (value) =>
   String(value ?? "")
     .trim()
-    .replace(/\s+2\s+Unit$/i, "")
+    .replace(/\s+\d+\s+Units?$/i, "")
     .trim();
 
 const restoreCatalogDetails = (product, catalog) => {
@@ -327,13 +327,20 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
     setIsType(type);
   };
 
-  const filteredProducts = matchedProducts.filter((item) => {
-    const type = isNeoProduct(item) ? "neo" : String(item?.solarRecommendation?.type ?? "")
-      .trim()
-      .toLowerCase();
-
-    return !fromSolar || !istype || type === istype;
-  });
+  const productType = (item) => {
+    if (isNeoProduct(item)) return "neo";
+    const type = String(item?.solarRecommendation?.type ?? item?.short ?? "")
+      .trim().toLowerCase();
+    const name = String(item?.ans_product ?? "");
+    if (/hybrid/i.test(name) || type === "hybrid") return "hybrid";
+    if (/sigenstor/i.test(name) || ["stor", "sigenstor", "ec"].includes(type)) return "stor";
+    return type;
+  };
+  const availableTypes = new Set(matchedProducts.map(productType));
+  const activeType = availableTypes.has(istype) ? istype : "";
+  const filteredProducts = matchedProducts.filter((item) =>
+    !fromSolar || !activeType || productType(item) === activeType,
+  );
 
   const inverterSug =
     matchedProducts.length > 0 ? matchedProducts[0].ans_product : "SigenStor";
@@ -444,7 +451,7 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
             </p>
           )}
 
-          {fromSolar && (
+          {fromSolar && matchedProducts.length > 0 && (
             <div className="tera-type-bar" role="group" aria-label="กรองประเภทอินเวอร์เตอร์">
               <div className="tera-type-bar__track">
                 {[
@@ -452,12 +459,12 @@ function ResultPage({ inverter, answer, space, priceList, error = null }) {
                   { value: "stor", label: "SigenStor" },
                   { value: "neo", label: "SigenStor NEO" },
                   { value: "hybrid", label: "Sigen Hybrid" },
-                ].map(({ value, label }) => (
+                ].filter(({ value }) => !value || availableTypes.has(value)).map(({ value, label }) => (
                   <button
                     type="button"
                     key={value}
                     className="tera-type-bar__item"
-                    aria-pressed={istype === value}
+                    aria-pressed={activeType === value}
                     onClick={(event) => {
                       filterType(value);
                       event.currentTarget.scrollIntoView({

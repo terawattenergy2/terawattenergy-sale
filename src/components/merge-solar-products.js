@@ -3,7 +3,7 @@ const normalizeName = (value) =>
     .normalize("NFKC")
     .trim()
     .replace(/\s+/g, " ")
-    .replace(/\s+2\s+Unit$/i, "")
+    .replace(/\s+\d+\s+Units?$/i, "")
     .trim()
     .toLowerCase();
 // The recommended models come exclusively from suggest_product.

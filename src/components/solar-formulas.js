@@ -19,7 +19,7 @@ ${c.monthlyKWh === null ? `หน่วยไฟเดือน = (บิล ${f
 โหลดนอกช่วง = ${f(daily)} × (1 − ${f(c.daytimeShare)}) ÷ (24 − ${f(h)}) = ${f((daily * (1 - c.daytimeShare)) / (24 - h))} kW
 
 2. Solar และเพดานแบต
-Solar ต่อวัน = ขนาด ${f(c.solarKWp)} kWp × ผลผลิตสมมติ ${f(c.yieldPerKWp)} × 0.8 = ${f(c.solarKWp * c.yieldPerKWp * 0.8)} kWh
+Solar ต่อวัน = ขนาด ${f(c.solarKWp)} kWp × 0.8 × 6 = ${f(t.pv / c.days)} kWh
 ส่วนเกินทั้งวัน = รวม max(Solar − โหลดการใช้ไฟฟ้า, 0) × 0.25 ทั้ง 96 ช่วง = ${f(s.surplusKWh)} kWh
 ช่วงความจุใช้ได้ = SOCสูงสุด ${f(c.maxSOC)} − SOCขั้นต่ำ ${f(c.minSOC)} = ${f(s.usableFraction)}
 เพดานก่อนปัด = ${f(s.surplusKWh)} × ประสิทธิภาพชาร์จ ${f(c.chargeEfficiency)} ÷ ${f(s.usableFraction)} = ${f((s.surplusKWh * c.chargeEfficiency) / s.usableFraction)} kWh
@@ -47,13 +47,13 @@ Emax = ${f(c.batteryKWh)} × ${f(c.maxSOC)} = ${f(c.batteryKWh * c.maxSOC)} kWh
 
   const surplus = Math.max(0, v.pv - v.load),
     deficit = Math.max(0, v.load - v.pv),
-    mid = v.hour + 0.125;
+    mid = v.hour;
 
   const weight =
     mid > 6 && mid < 18 ? Math.sin((Math.PI * (mid - 6)) / 12) ** 2 : 0;
 
   const area = Array.from({ length: 96 }, (_, i) => {
-    const m = (i + 0.5) * 0.25;
+    const m = i * 0.25;
     return m > 6 && m < 18 ? Math.sin((Math.PI * (m - 6)) / 12) ** 2 * 0.25 : 0;
   }).reduce((a, b) => a + b, 0);
 
@@ -61,7 +61,7 @@ Emax = ${f(c.batteryKWh)} × ${f(c.maxSOC)} = ${f(c.batteryKWh * c.maxSOC)} kWh
     `วันที่ ${day} ช่วงเริ่ม ${String(Math.floor(v.hour)).padStart(2, "0")}:${String((v.hour % 1) * 60).padStart(2, "0")} • Δt = 0.25 ชั่วโมง
 น้ำหนัก Solar = sin²(π × (${f(mid)} − 6) ÷ 12) ภายในช่วงแดด 06–18; นอกช่วงเป็น 0 → ${f(weight)}
 ผลรวมพื้นที่น้ำหนักทั้งวัน = ${f(area)} ชั่วโมง
-Solar = ${f(c.solarKWp)} × ${f(c.yieldPerKWp)} × 0.8 × ${f(weight)} ÷ ${f(area)} = ${f(v.pv)} kW
+Solar = ${f(c.solarKWp)} × 0.8 × ${f(weight)} = ${f(v.pv)} kW
 โหลดการใช้ไฟฟ้า = ${f(v.load)} kW จากสูตรโหลดใน/นอกช่วงด้านบน
 การใช้ไฟจากโซลาเซลล์โดยตรง = min(${f(v.load)}, ${f(v.pv)}) = ${f(v.direct)} kW
 ส่วนเกิน = max(${f(v.pv)} − ${f(v.load)}, 0) = ${f(surplus)} kW

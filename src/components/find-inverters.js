@@ -28,7 +28,8 @@ export function matchProducts(rows, result, { filterProducts = products => produ
   const target = result.point === 30 ? 25 : result.point;
   // Keep the original nearest-point rule, but select the point once.
   // Do not fall back to another point because the requested battery set is absent.
-  const points = [...new Set(rows.filter(row => row.phase === result.phase)
+  const points = [...new Set(rows.filter(row => row.phase === result.phase && Array.isArray(row.product) &&
+    row.product.some(product => typeof product?.product === 'string' && product.product.trim()))
     .map(row => Number(row.point)).filter(point => point > 0 && Number.isFinite(point)))]
     .sort((a, b) => Math.abs(a - target) - Math.abs(b - target) || b - a);
   const point = points[0];
