@@ -150,8 +150,8 @@ export function mountSolarPage(
   $("formulaTime").value = 48;
   $("dayStart").value = 6;
   $("dayEnd").value = 18;
-  const availableSolarSizes = () =>
-    solarSizesByPhase?.[$("phases").value] || solarSizes;
+  // const availableSolarSizes = () =>
+  //   solarSizesByPhase?.[$("phases").value] || solarSizes;
   let recommendationPending = true;
   const recommendationInputs = new Set([
     "bill",
