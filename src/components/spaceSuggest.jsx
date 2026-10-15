@@ -193,7 +193,6 @@ export default function SpaceSuggest({
             <h3>
               <span>02</span> แบตเตอรี่ที่เลือก
             </h3>
-            {console.log("batteryItems", batteryItems)}
             {!battery ? (
               <p>ยังไม่มีข้อมูลแบตเตอรี่</p>
             ) : battery.count === 0 ? (

@@ -89,7 +89,6 @@ function buildAccessoryPriceItems(activeSpace, selectedOptions) {
 }
 
 function buildPriceSummary(items, priceList) {
-  console.log('priceList',priceList);
 
   const prices = Array.isArray(priceList) ? priceList : [];
 
@@ -1302,7 +1301,7 @@ function SpaceProductResult({
             )}
           </section>
         )}
-        {priceSummary.lines.length > 0 && (
+        {/* {priceSummary.lines.length > 0 && (
           <section
             className="border rounded-3 p-4 mt-4"
             aria-labelledby="selected-price-title"
@@ -1429,7 +1428,7 @@ function SpaceProductResult({
                   )}
               </p>
             </div>
-          ))}
+          ))} */}
 
         {isFormCompleted && (
           <>
