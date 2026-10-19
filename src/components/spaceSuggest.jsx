@@ -7,6 +7,7 @@ import SpaceSuggestPdfPage from "./SpaceSuggestPdfPage";
 import { suggestionAccessories } from "./suggestion-accessories";
 import { getBatterySummary } from "./battery-summary";
 import { supabase } from "../supabase";
+import { priceListTotal } from "./pricelist-pricing";
 
 export default function SpaceSuggest({
   spaceSug,
@@ -76,6 +77,34 @@ export default function SpaceSuggest({
   const features = [...new Set(detailLines(spaceSug?.detail_product))];
   // const extraFeatures = detailLines(spaceSug?.sub_detail_product);
   const batteryItems = battery?.items || (battery?.count > 0 ? [battery] : []);
+  // Use the same item quantities and price calculation for PDF and saved quote.
+  const modelName = spaceSug?.ans_product || "";
+  const units = modelName.match(/\b(\d+)\s*Units?\b/i);
+  const priceItems = [
+    { product: modelName.replace(/\s*\b\d+\s*Units?\b\s*/i, " ").trim(), quantity: units ? Number(units[1]) : 1 },
+    ...(battery?.count === 0
+      ? []
+      : batteryItems.length
+        ? batteryItems.map((item) => ({ product: item.name, quantity: item.count }))
+        : [{ product: "", quantity: 1 }]),
+    ...accessories.map((item) => ({ product: item.product, quantity: 1 })),
+    ...(spaceSug?.gateway && !["ไม่เพิ่มเติม", "ไม่ติดตั้ง", "ไม่ติด", "-", "—"].includes(spaceSug.gateway)
+      ? [{ product: spaceSug.gateway, quantity: 1 }]
+      : []),
+  ];
+  const totalPrice = priceListTotal(priceList, priceItems);
+  const priceSummary = {
+    lines: priceItems.map((item) => ({
+      ...item,
+      title: item.product,
+      unitPrice: priceListTotal(priceList, [{ product: item.product, quantity: 1 }]),
+      subtotal: priceListTotal(priceList, [item]),
+    })),
+    complete: totalPrice !== null,
+    knownTotal: totalPrice,
+    totalWithMarkup: totalPrice,
+    markupAmount: 0,
+  };
   const fullName = [personalData.firstName, personalData.lastName]
     .filter(Boolean)
     .join(" ");
@@ -84,6 +113,10 @@ export default function SpaceSuggest({
     setIsExporting(true);
     setExportError("");
     try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData?.user) {
+        throw new Error("กรุณาเข้าสู่ระบบใหม่ก่อน Export");
+      }
       if (document.fonts?.ready) await document.fonts.ready;
       await Promise.all(
         Array.from(pdfRef.current.querySelectorAll("img")).map((img) =>
@@ -135,12 +168,48 @@ export default function SpaceSuggest({
           h,
         );
       }
+      const model = spaceSug?.ans_product || "";
+      const phase = spaceSug?.solarRecommendation?.phase || spaceSug?.phase ||
+        (/\bSP\d*\b/i.test(model) ? "1 Phase" : /\bTP\d*\b/i.test(model) ? "3 Phase" : "");
+      const batteryNames = battery?.count === 0
+        ? "ไม่ติดแบต"
+        : batteryItems.map((item) => `${item.name} × ${item.count} ก้อน`).join(" + ");
+      const { error: saveError } = await supabase.from("customer_quotes").insert({
+        first_name: personalData.firstName || "",
+        last_name: personalData.lastName || "",
+        email: personalData.email || "",
+        phone: personalData.phone || "",
+        suggest_product: model,
+        phase,
+        inverter_size: model,
+        bat: batteryNames,
+        bat_module: battery?.count == null ? "" : String(battery.count),
+        home_energy: spaceSug?.gateway || "",
+        capture_exporter: true,
+        price_summary: priceSummary,
+        total_price: totalPrice,
+        markup_percent: 0,
+        vat_included: false,
+        selected_options: {
+          0: phase,
+          1: model,
+          2: batteryNames,
+          3: battery?.count == null ? "" : String(battery.count),
+          4: spaceSug?.gateway || "",
+          batteries: batteryItems.map(({ name, count, capacity }) => ({ name, count, capacity })),
+          battery_total_kwh: battery?.totalCapacity ?? (battery?.count === 0 ? 0 : null),
+          accessories: accessories.map(({ label, product }) => ({ label, product, quantity: 1 })),
+        },
+      });
+      if (saveError) {
+        throw new Error(`บันทึกข้อมูลลง Supabase ไม่สำเร็จ: ${saveError.message}`);
+      }
       pdf.save(
         `${(spaceSug?.ans_product || "recommended-solution").replace(/[\\/:*?"<>|]/g, "-")}.pdf`,
       );
     } catch (error) {
       console.error(error);
-      setExportError("สร้าง PDF ไม่สำเร็จ กรุณาลองใหม่");
+      setExportError(error.message || "สร้าง PDF ไม่สำเร็จ กรุณาลองใหม่");
     } finally {
       setIsExporting(false);
     }
@@ -282,6 +351,7 @@ export default function SpaceSuggest({
         pdfRef={pdfRef}
         spaceSug={spaceSug}
         priceList={priceList}
+        priceItems={priceItems}
         battery={battery}
         accessories={accessories}
         getDriveImageUrl={getDriveImageUrl}
