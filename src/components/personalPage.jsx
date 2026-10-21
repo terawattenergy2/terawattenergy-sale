@@ -87,7 +87,7 @@ function PersonalPage({ onComplete, onBack }) {
     <div className="personal-page">
       <div className="personal-card">
         <div className="mb-4">
-          <h2>ข้อมูลผู้ใช้งาน</h2>
+          <h2>ข้อมูลลูกค้า</h2>
           <p className="text-secondary">กรุณากรอกข้อมูลก่อนแสดงผลลัพธ์</p>
         </div>
         {error && <Alert variant="danger">{error}</Alert>}

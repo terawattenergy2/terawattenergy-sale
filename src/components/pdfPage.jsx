@@ -174,7 +174,7 @@ function PdfPage({
             <p>{data?.label || "ยังไม่ได้เลือกอินเวอร์เตอร์"}</p>
           </div>
 
-          {/* ข้อมูลผู้ใช้งาน */}
+          {/* ข้อมูลลูกค้า */}
           <div className="pdf-customer-section">
             <div className="pdf-customer-heading">
               <div>
@@ -182,7 +182,7 @@ function PdfPage({
                   CUSTOMER INFORMATION
                 </span>
 
-                <h3>ข้อมูลผู้ใช้งาน</h3>
+                <h3>ข้อมูลลูกค้า</h3>
               </div>
             </div>
 

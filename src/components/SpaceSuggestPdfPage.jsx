@@ -284,7 +284,7 @@ export default function SpaceSuggestPdfPage({
                 CUSTOMER INFORMATION
               </div>
               <h2 style={{ fontSize: 16, margin: "0 0 6px" }}>
-                ข้อมูลผู้ใช้งาน
+                ข้อมูลลูกค้า
               </h2>
               <div
                 style={{
