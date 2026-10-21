@@ -859,7 +859,7 @@ export default function LoginPage() {
                   "เข้าสู่ระบบ →"
                 )}
               </button>
-              <button
+              {/* <button
                 type="button"
                 className="btn btn-outline-primary w-100 mt-3"
                 disabled={loading || checking}
@@ -872,7 +872,7 @@ export default function LoginPage() {
                 }}
               >
                 สมัครสมาชิก
-              </button>
+              </button> */}
               <button
                 type="button"
                 className="btn btn-link w-100 mt-2"

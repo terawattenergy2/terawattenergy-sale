@@ -267,7 +267,7 @@ function SpaceProductResult({
           options: [
             {
               id: 0,
-              title: "3 kWh (Single Phase)",
+              title: "3 kW (Single Phase)",
               detail: [
                 {
                   id: 0,
@@ -277,7 +277,7 @@ function SpaceProductResult({
                 },
                 {
                   id: 1,
-                  title: "SigenMicro AC Trunk-20P-2.3M-2.5",
+                  title: "SigenMicro AC Trunk-1P-2.3M-2.5",
                   des: "SigenMicro AC Cable Kit-20-230-2.5",
                   count: "3",
                 },
@@ -315,7 +315,7 @@ function SpaceProductResult({
             },
             {
               id: 1,
-              title: "5 kWh (Single Phase)",
+              title: "5 kW (Single Phase)",
               detail: [
                 {
                   id: 0,
@@ -325,7 +325,7 @@ function SpaceProductResult({
                 },
                 {
                   id: 1,
-                  title: "SigenMicro AC Trunk-20P-2.3M-4.0",
+                  title: "SigenMicro AC Trunk-1P-2.3M-4.0",
                   des: "SigenMicro AC Cable Kit-20-230-2.5",
                   count: "5",
                 },
@@ -369,7 +369,7 @@ function SpaceProductResult({
           options: [
             {
               id: 0,
-              title: "9 kWh (Three Phase)",
+              title: "9 kW (Three Phase)",
               detail: [
                 {
                   id: 0,
@@ -379,7 +379,7 @@ function SpaceProductResult({
                 },
                 {
                   id: 1,
-                  title: "SigenMicro AC Trunk-20P-2.3M-2.5",
+                  title: "SigenMicro AC Trunk-1P-2.3M-2.5",
                   des: "SigenMicro AC Cable Kit-20-230-2.5",
                   count: "9",
                 },
@@ -417,7 +417,7 @@ function SpaceProductResult({
             },
             {
               id: 1,
-              title: "15 kWh (Three Phase)",
+              title: "15 kW (Three Phase)",
               detail: [
                 {
                   id: 0,
@@ -427,7 +427,7 @@ function SpaceProductResult({
                 },
                 {
                   id: 1,
-                  title: "SigenMicro AC Trunk-20P-2.3M-4.0",
+                  title: "SigenMicro AC Trunk-1P-2.3M-4.0",
                   des: "SigenMicro AC Cable Kit-20-230-2.5",
                   count: "15",
                 },
