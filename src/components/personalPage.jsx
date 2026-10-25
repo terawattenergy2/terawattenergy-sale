@@ -2,10 +2,12 @@ import React, { useRef, useState } from "react";
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
 import { supabase } from "../supabase";
 
+import { searchSnapshot } from "./customer-snapshot";
+
 const STORAGE_KEY = "personal_data";
 const EMPTY_DATA = { firstName: "", lastName: "", email: "", phone: "" };
 
-function PersonalPage({ onComplete, onBack }) {
+function PersonalPage({ onComplete, onBack, searchContext }) {
   const [personalData, setPersonalData] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
@@ -20,6 +22,7 @@ function PersonalPage({ onComplete, onBack }) {
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
   const savedPayload = useRef(null);
+  const leadRequest = useRef(null);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -52,15 +55,23 @@ function PersonalPage({ onComplete, onBack }) {
     setSaving(true);
     setError("");
     const payload = {
+      ...searchSnapshot(searchContext),
       first_name: cleaned.firstName,
       last_name: cleaned.lastName,
       email: cleaned.email,
       phone: cleaned.phone,
     };
-    const signature = JSON.stringify(payload);
+    let cachedCustomer;
     try {
+      const { data, error: authError } = await supabase.auth.getUser();
+      if (authError || !data?.user) throw new Error("กรุณาเข้าสู่ระบบใหม่");
+      const signature = JSON.stringify({ ...payload, owner: data.user.id });
+      if (leadRequest.current?.signature !== signature)
+        leadRequest.current = { signature, id: crypto.randomUUID() };
+      payload.id = leadRequest.current.id;
+      cachedCustomer = { ...cleaned, _leadId: payload.id, _owner: data.user.id, _snapshot: searchSnapshot(searchContext) };
       if (savedPayload.current !== signature) {
-        const { error: insertError } = await supabase.from("customer_leads").insert(payload);
+        const { error: insertError } = await supabase.rpc("teramatch_save_customer_lead", { p_id: payload.id, p_customer: cleaned, p_snapshot: searchSnapshot(searchContext) });
         if (insertError) throw insertError;
         savedPayload.current = signature;
       }
@@ -72,9 +83,9 @@ function PersonalPage({ onComplete, onBack }) {
     }
 
     // A local cache failure must not trigger another database insert.
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned)); } catch { /* Optional cache. */ }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedCustomer)); } catch { /* Optional cache. */ }
     try {
-      await onComplete?.(cleaned);
+      await onComplete?.(cachedCustomer);
     } catch {
       setError("บันทึกข้อมูลแล้ว แต่เปิดหน้าผลลัพธ์ไม่สำเร็จ กรุณากดดูผลลัพธ์อีกครั้ง");
     } finally {

@@ -190,6 +190,7 @@ export default function SolarPage({ resultPath = "/result", suggestProducts = []
     <>
       {pendingSearch && (
         <PersonalPage
+          searchContext={pendingSearch}
           onComplete={handlePersonalComplete}
           onBack={() => setPendingSearch(null)}
         />

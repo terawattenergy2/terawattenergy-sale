@@ -13,6 +13,7 @@ import PdfPage from "./pdfPage";
 import { getSaleScript } from "./sale-script";
 import { supabase } from "../supabase";
 
+import { currentCustomer, insertQuote, quoteSnapshot } from "./customer-snapshot";
 import { calculateEnergySummary } from "./energy-summary";
 
 const formatEnergyValue = (value) =>
@@ -253,6 +254,7 @@ function SpaceProductResult({
   const [selectedOptions, setSelectedOptions] = useState({});
   const [isExporting, setIsExporting] = useState(false);
   const exportLockRef = useRef(false);
+  const quoteRetry = useRef(null);
   const pdfRef = useRef(null);
   const MICRO_SIZE_KEY = "microSize";
   const sugMicro = [
@@ -668,6 +670,7 @@ function SpaceProductResult({
     .join(" ");
 
   const saveToSupabase = async () => {
+    const customer = await currentCustomer(personalData);
     const payload = {
       first_name: personalData.firstName || "",
       last_name: personalData.lastName || "",
@@ -692,21 +695,20 @@ function SpaceProductResult({
         : "",
     };
 
-    const { error: saveError } = await supabase.from("customer_quotes").insert({
+    await insertQuote({
       ...payload,
+      ...quoteSnapshot(customer, priceSummary.lines.map(p => ({ model: p.product || p.title, quantity: p.quantity })), {
+        phase: payload.phase, inverter_label: payload.inverter_size,
+        battery_label: payload.bat, battery_module_label: payload.bat_module,
+        selected_options: selectedOptions,
+      }),
       capture_exporter: true,
       selected_options: selectedOptions,
       price_summary: priceSummary,
       total_price: totalPrice, // <-- ตัวแปร totalPrice อาจมีค่าเป็น null / NaN
       markup_percent: 10,
       vat_included: false,
-    });
-
-    if (saveError) {
-      throw new Error(
-        `บันทึกข้อมูลลง Supabase ไม่สำเร็จ: ${saveError.message}`,
-      );
-    }
+    }, quoteRetry);
   };
 
   const [rawDataCus, setRawDataCus] = useState([]);

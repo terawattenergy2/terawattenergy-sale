@@ -7,6 +7,7 @@ import SpaceSuggestPdfPage from "./SpaceSuggestPdfPage";
 import { suggestionAccessories } from "./suggestion-accessories";
 import { getBatterySummary } from "./battery-summary";
 import { supabase } from "../supabase";
+import { currentCustomer, insertQuote, quoteSnapshot } from "./customer-snapshot";
 import { priceListTotal } from "./pricelist-pricing";
 
 export default function SpaceSuggest({
@@ -53,6 +54,8 @@ export default function SpaceSuggest({
   }, []);
 
   const pdfRef = useRef(null);
+  const quoteRetry = useRef(null);
+  const exportLock = useRef(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
   const [personalData] = useState(() => {
@@ -109,10 +112,12 @@ export default function SpaceSuggest({
     .filter(Boolean)
     .join(" ");
   const handleExportPDF = async () => {
-    if (!pdfRef.current || isExporting) return;
+    if (!pdfRef.current || exportLock.current) return;
+    exportLock.current = true;
     setIsExporting(true);
     setExportError("");
     try {
+      const customer = await currentCustomer(personalData);
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData?.user) {
         throw new Error("กรุณาเข้าสู่ระบบใหม่ก่อน Export");
@@ -174,7 +179,7 @@ export default function SpaceSuggest({
       const batteryNames = battery?.count === 0
         ? "ไม่ติดแบต"
         : batteryItems.map((item) => `${item.name} × ${item.count} ก้อน`).join(" + ");
-      const { error: saveError } = await supabase.from("customer_quotes").insert({
+      await insertQuote({
         first_name: personalData.firstName || "",
         last_name: personalData.lastName || "",
         email: personalData.email || "",
@@ -190,6 +195,9 @@ export default function SpaceSuggest({
         total_price: totalPrice,
         markup_percent: 0,
         vat_included: false,
+        ...quoteSnapshot(customer, priceItems.map(p => ({ model: p.product, quantity: p.quantity })), {
+          phase, inverter_label: model, battery_kwh: battery?.totalCapacity ?? (battery?.count === 0 ? 0 : null),
+        }),
         selected_options: {
           0: phase,
           1: model,
@@ -200,10 +208,7 @@ export default function SpaceSuggest({
           battery_total_kwh: battery?.totalCapacity ?? (battery?.count === 0 ? 0 : null),
           accessories: accessories.map(({ label, product }) => ({ label, product, quantity: 1 })),
         },
-      });
-      if (saveError) {
-        throw new Error(`บันทึกข้อมูลลง Supabase ไม่สำเร็จ: ${saveError.message}`);
-      }
+      }, quoteRetry);
       pdf.save(
         `${(spaceSug?.ans_product || "recommended-solution").replace(/[\\/:*?"<>|]/g, "-")}.pdf`,
       );
@@ -211,6 +216,7 @@ export default function SpaceSuggest({
       console.error(error);
       setExportError(error.message || "สร้าง PDF ไม่สำเร็จ กรุณาลองใหม่");
     } finally {
+      exportLock.current = false;
       setIsExporting(false);
     }
   };
